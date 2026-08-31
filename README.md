@@ -4,7 +4,7 @@ A Cloudflare-native status page. Operators update availability by hand. There is
 
 Public visitors get an Astro page that answers “is it up?” in one glance. Operators get a React admin at `/admin`. Both talk to a Hono API on a single Worker, with state in D1.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/patricktien/trustfall)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ivetian/trustfall)
 
 Replace the URL in that badge with your fork after you publish the repository.
 
