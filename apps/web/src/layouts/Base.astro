@@ -1,0 +1,28 @@
+---
+import { themeBootScript } from '@trustfall/design';
+import '../styles/global.css';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
+import '@fontsource/ibm-plex-mono/400.css';
+
+type Props = {
+  title: string;
+  description?: string;
+};
+
+const { title, description = 'Current service status.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <script is:inline set:html={themeBootScript} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

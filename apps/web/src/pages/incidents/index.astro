@@ -1,0 +1,49 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, listIncidents } from '@trustfall/db';
+import { IncidentCard, SiteChrome, Stack, Text, ThemeToggle } from '@trustfall/design';
+import Base from '../../layouts/Base.astro';
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+
+const db = createDb(env.DB);
+let incidents: Awaited<ReturnType<typeof listIncidents>>['incidents'] = [];
+let siteName = 'TrustFall';
+try {
+  const listed = await listIncidents(db, { pageSize: 50, filter: 'all' });
+  incidents = listed.incidents;
+  const { getSetting } = await import('@trustfall/db');
+  siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+} catch {
+  incidents = [];
+}
+---
+
+<Base title={`Incident history · ${siteName}`}>
+  <SiteChrome siteName={siteName}>
+    <Stack gap={4}>
+      <ThemeToggle client:load />
+      <Text as="h1" tone="display">Incident history</Text>
+      {
+        incidents.length === 0 ? (
+          <Text tone="muted">No incidents have been published.</Text>
+        ) : (
+          incidents.map((incident) => (
+            <IncidentCard
+              incident={{
+                id: incident.id,
+                title: incident.title,
+                status: incident.status,
+                impact: incident.impact,
+                startTime: incident.startTime,
+                resolveTime: incident.resolveTime,
+                updates: incident.updates,
+                href: `/incidents/${incident.id}`,
+              }}
+            />
+          ))
+        )
+      }
+    </Stack>
+  </SiteChrome>
+</Base>

@@ -1,0 +1,37 @@
+{
+  "name": "trustfall",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A Cloudflare-native, manually-updated status page.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm cf-typegen && pnpm --filter @trustfall/web dev",
+    "build": "pnpm cf-typegen && pnpm --filter @trustfall/admin build && pnpm --filter @trustfall/web build",
+    "preview": "pnpm build && wrangler dev --config apps/web/dist/server/wrangler.json --persist-to .wrangler/state",
+    "deploy": "pnpm build && wrangler d1 migrations apply DB --remote && wrangler deploy --config apps/web/dist/server/wrangler.json",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "cf-typegen": "wrangler types",
+    "typecheck": "pnpm cf-typegen && pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@astrojs/cloudflare": "^14.2.5",
+    "@eslint/js": "^9.34.0",
+    "@stylexjs/eslint-plugin": "^0.19.0",
+    "astro": "^7.2.9",
+    "eslint": "^9.34.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "hono": "^4.13.5",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "wrangler": "^4.127.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "workerd"]
+  }
+}

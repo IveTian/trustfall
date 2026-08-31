@@ -1,0 +1,6 @@
+# Optional. If unset, TrustFall generates a secret on first boot and stores it in D1.
+# Override in production with: wrangler secret put BETTER_AUTH_SECRET
+# BETTER_AUTH_SECRET=
+
+# Optional. Set this when the site is served on a custom domain.
+# BETTER_AUTH_URL=https://status.example.com

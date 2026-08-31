@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp.*
+
+# Build output
+dist/
+.astro/
+.vite/
+apps/web/public/admin/
+
+# Wrangler / Cloudflare
+.wrangler/
+.mf/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+worker-configuration.d.ts
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+*.pem
+
+# Logs and caches
+logs/
+*.log
+.pnpm-debug.log*
+npm-debug.log*
+.eslintcache
+.prettiercache
+*.tsbuildinfo
+.cache/
+coverage/
+.nyc_output/
+
+# Test artifacts
+test-results/
+playwright-report/
+blob-report/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+.idea/
+*.swp
+*.swo
+*~

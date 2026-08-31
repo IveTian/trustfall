@@ -1,0 +1,34 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getIncident, getSetting } from '@trustfall/db';
+import { IncidentTimeline, SiteChrome, Stack, StatusPill, Text, ThemeToggle } from '@trustfall/design';
+import Base from '../../layouts/Base.astro';
+
+const { id } = Astro.params;
+if (!id) {
+  return new Response('Not found', { status: 404 });
+}
+
+const db = createDb(env.DB);
+const incident = await getIncident(db, id);
+if (!incident) {
+  return new Response('Not found', { status: 404 });
+}
+
+const siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+---
+
+<Base title={`${incident.title} · ${siteName}`}>
+  <SiteChrome siteName={siteName}>
+    <Stack gap={4}>
+      <ThemeToggle client:load />
+      <Stack direction="horizontal" gap={2}>
+        <StatusPill status={incident.status} kind="incident" />
+        <StatusPill status={incident.impact} kind="impact" />
+      </Stack>
+      <Text as="h1" tone="display">{incident.title}</Text>
+      <IncidentTimeline updates={incident.updates} />
+    </Stack>
+  </SiteChrome>
+</Base>

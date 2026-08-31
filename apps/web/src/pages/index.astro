@@ -1,0 +1,102 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getSummary } from '@trustfall/db';
+import {
+  ComponentGroupSection,
+  IncidentCard,
+  OverallStatusBanner,
+  SiteChrome,
+  Stack,
+  Text,
+  ThemeToggle,
+} from '@trustfall/design';
+import type { ComponentStatus } from '@trustfall/shared';
+import Base from '../layouts/Base.astro';
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+
+const db = createDb(env.DB);
+let summary;
+try {
+  summary = await getSummary(db);
+} catch {
+  summary = {
+    overallStatus: 'OPERATIONAL' as const,
+    siteName: 'TrustFall',
+    siteDescription: '',
+    componentGroups: [],
+    ungroupedComponents: [],
+    activeIncidents: [],
+  };
+}
+---
+
+<Base title={summary.siteName} description={summary.siteDescription}>
+  <SiteChrome siteName={summary.siteName}>
+    <Stack gap={5}>
+      <Stack direction="horizontal" gap={2}>
+        <ThemeToggle client:load />
+      </Stack>
+      <OverallStatusBanner
+        status={summary.overallStatus}
+        siteName={summary.siteName}
+        description={summary.siteDescription}
+      />
+      {
+        summary.componentGroups.length === 0 && summary.ungroupedComponents.length === 0 ? (
+          <Text tone="muted">No components have been published yet.</Text>
+        ) : null
+      }
+      {
+        summary.componentGroups.map((group) => (
+          <ComponentGroupSection
+            displayName={group.displayName}
+            description={group.description}
+            components={group.components.map((component) => ({
+              id: component.id,
+              displayName: component.displayName,
+              description: component.description,
+              status: component.status as ComponentStatus,
+            }))}
+          />
+        ))
+      }
+      {
+        summary.ungroupedComponents.length > 0 ? (
+          <ComponentGroupSection
+            displayName="Other"
+            components={summary.ungroupedComponents.map((component) => ({
+              id: component.id,
+              displayName: component.displayName,
+              description: component.description,
+              status: component.status as ComponentStatus,
+            }))}
+          />
+        ) : null
+      }
+      {
+        summary.activeIncidents.length > 0 ? (
+          <Stack gap={3}>
+            <Text as="h2" tone="title">
+              Active incidents
+            </Text>
+            {summary.activeIncidents.map((incident) => (
+              <IncidentCard
+                incident={{
+                  id: incident.id,
+                  title: incident.title,
+                  status: incident.status,
+                  impact: incident.impact,
+                  startTime: incident.startTime,
+                  resolveTime: incident.resolveTime,
+                  updates: incident.updates,
+                  href: `/incidents/${incident.id}`,
+                }}
+              />
+            ))}
+          </Stack>
+        ) : null
+      }
+    </Stack>
+  </SiteChrome>
+</Base>

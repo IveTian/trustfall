@@ -1,0 +1,25 @@
+import * as stylex from '@stylexjs/stylex';
+
+export const color = stylex.defineVars({
+  surface: 'light-dark(#E8EDF2, #10141A)',
+  surfaceRaised: 'light-dark(#F7F9FB, #1A2028)',
+  surfaceSunken: 'light-dark(#DCE3EB, #0B0E13)',
+  border: 'light-dark(#C5CED8, #2E3846)',
+  borderStrong: 'light-dark(#8A97A8, #4A5568)',
+  textPrimary: 'light-dark(#14181F, #E6EBF1)',
+  textMuted: 'light-dark(#4E5968, #8B97A8)',
+  textInverse: 'light-dark(#F7F9FB, #14181F)',
+  accent: 'light-dark(#245A86, #7EB3DC)',
+  accentMuted: 'light-dark(#D5E6F2, #1B3348)',
+  focus: 'light-dark(#245A86, #7EB3DC)',
+  operational: 'light-dark(#1F6B4A, #5DCAA0)',
+  operationalMuted: 'light-dark(#D7EEE4, #143226)',
+  degraded: 'light-dark(#8A5A00, #E3B341)',
+  degradedMuted: 'light-dark(#F4E6C3, #3A2C0A)',
+  partialOutage: 'light-dark(#B42318, #F97066)',
+  partialOutageMuted: 'light-dark(#F8D5D2, #3A1412)',
+  majorOutage: 'light-dark(#7A1020, #FF8A80)',
+  majorOutageMuted: 'light-dark(#F3D0D4, #3B0E16)',
+  maintenance: 'light-dark(#1D4E89, #7EABD6)',
+  maintenanceMuted: 'light-dark(#D5E3F2, #152536)',
+});
