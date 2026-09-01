@@ -14,6 +14,7 @@ export const breakpoints = stylex.defineConsts({
 
 export const zIndex = stylex.defineConsts({
   header: '10',
+  menu: '30',
   toast: '40',
   dialog: '50',
 });
@@ -25,6 +26,7 @@ export const control = stylex.defineConsts({
   heightMd: '32px',
   heightLg: '40px',
   sidebarWidth: '240px',
+  menuMaxWidth: '280px',
 });
 
 export const mesh = stylex.defineConsts({

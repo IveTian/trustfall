@@ -1,19 +1,20 @@
 import {
   AppShell as Shell,
-  Button,
+  ProfileMenu,
   SidebarNavItem,
   SidebarNavSection,
   Stack,
   Text,
-  ThemeToggle,
 } from '@trustfall/design';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { signOut } from '../lib/auth.ts';
+import { signOut, useSession } from '../lib/auth.ts';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { data } = useSession();
+  const user = data?.user;
 
   return (
     <Shell
@@ -42,20 +43,29 @@ export function AppShell({ children }: { children: ReactNode }) {
                 active={location.pathname.startsWith('/incidents')}
                 onClick={() => navigate('/incidents')}
               />
-              <SidebarNavItem
-                icon="settings-line"
-                label="Settings"
-                active={location.pathname.startsWith('/settings')}
-                onClick={() => navigate('/settings')}
-              />
             </SidebarNavSection>
           </Stack>
           <Stack gap={3}>
             <SidebarNavItem icon="external-link-line" label="View status page" href="/" />
-            <ThemeToggle />
-            <Button type="button" variant="ghost" size="sm" onClick={() => void signOut()}>
-              Sign out
-            </Button>
+            <ProfileMenu
+              name={user?.name || 'Account'}
+              email={user?.email}
+              image={user?.image}
+              items={[
+                {
+                  id: 'settings',
+                  icon: 'settings-line',
+                  label: 'Settings',
+                  onSelect: () => navigate('/settings'),
+                },
+                {
+                  id: 'sign-out',
+                  icon: 'logout-box-r-line',
+                  label: 'Sign out',
+                  onSelect: () => void signOut(),
+                },
+              ]}
+            />
           </Stack>
         </Stack>
       }

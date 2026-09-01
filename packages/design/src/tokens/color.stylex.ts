@@ -7,6 +7,7 @@ import * as stylex from '@stylexjs/stylex';
  */
 export const color = stylex.defineConsts({
   surface: 'light-dark(#EFEFEF, #141414)',
+  sidebar: 'light-dark(#FFFFFF, #181818)',
   surfaceRaised: 'light-dark(#FFFFFF, #1A1A1A)',
   surfaceSubtle: 'light-dark(#F6F6F6, #1F1F1F)',
   surfaceSunken: 'light-dark(#EEEEEE, #242424)',

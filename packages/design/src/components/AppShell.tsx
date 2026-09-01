@@ -47,7 +47,7 @@ const styles = stylex.create({
     padding: space[2],
   },
   sidebar: {
-    backgroundColor: color.surfaceRaised,
+    backgroundColor: color.sidebar,
     borderRadius: radius.sm,
     boxSizing: 'border-box',
     display: 'flex',

@@ -44,4 +44,6 @@ export { SiteChrome } from './components/SiteChrome.tsx';
 export { MeshScreen } from './components/MeshScreen.tsx';
 export { AppShell } from './components/AppShell.tsx';
 export { SidebarNavItem, SidebarNavSection } from './components/SidebarNav.tsx';
+export { ProfileMenu } from './components/ProfileMenu.tsx';
+export type { ProfileMenuItem } from './components/ProfileMenu.tsx';
 export { Icon } from './components/Icon.tsx';

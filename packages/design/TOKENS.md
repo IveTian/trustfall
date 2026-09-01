@@ -11,7 +11,8 @@ Themed with CSS `light-dark()` inlined via `defineConsts`. `color-scheme` on `<h
 | Token                | Light              | Dark               | Role                       |
 | -------------------- | ------------------ | ------------------ | -------------------------- |
 | `surface`            | `#EFEFEF`          | `#141414`          | Canvas behind mesh / shell |
-| `surfaceRaised`      | `#FFFFFF`          | `#1A1A1A`          | Panels, cards, sidebar     |
+| `sidebar`            | `#FFFFFF`          | `#181818`          | App shell sidebar panel    |
+| `surfaceRaised`      | `#FFFFFF`          | `#1A1A1A`          | Panels, cards, dialogs     |
 | `surfaceSubtle`      | `#F6F6F6`          | `#1F1F1F`          | Hover fill, dialog footer  |
 | `surfaceSunken`      | `#EEEEEE`          | `#242424`          | Input fill, quiet wells    |
 | `border`             | `#E2E2E2`          | `#2E2E2E`          | Default stroke             |
@@ -81,13 +82,13 @@ Timestamps and durations use `familyMono` and tabular numerals.
 
 Inlined, not CSS variables.
 
-| Group         | Tokens                                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------------ |
-| `motion`      | `fast` 120ms, `base` 200ms, `ease` cubic-bezier(0.2, 0, 0, 1)                                                |
-| `breakpoints` | `sm` 640px, `md` 880px, `reduceMotion`                                                                       |
-| `zIndex`      | `header` 10, `toast` 40, `dialog` 50                                                                         |
-| `control`     | `focusWidth` 2px, `focusOffset` 2px, `heightSm` 28px, `heightMd` 32px, `heightLg` 40px, `sidebarWidth` 240px |
-| `mesh`        | `cell` 96px, `line` 1px                                                                                      |
+| Group         | Tokens                                                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `motion`      | `fast` 120ms, `base` 200ms, `ease` cubic-bezier(0.2, 0, 0, 1)                                                                      |
+| `breakpoints` | `sm` 640px, `md` 880px, `reduceMotion`                                                                                             |
+| `zIndex`      | `header` 10, `menu` 30, `toast` 40, `dialog` 50                                                                                    |
+| `control`     | `focusWidth` 2px, `focusOffset` 2px, `heightSm` 28px, `heightMd` 32px, `heightLg` 40px, `sidebarWidth` 240px, `menuMaxWidth` 280px |
+| `mesh`        | `cell` 96px, `line` 1px                                                                                                            |
 
 Motion durations must collapse to `0ms` under `breakpoints.reduceMotion` in the consuming `create` call.
 
