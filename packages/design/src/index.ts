@@ -3,7 +3,8 @@ export { space } from './tokens/space.stylex.ts';
 export { text } from './tokens/text.stylex.ts';
 export { radius } from './tokens/radius.stylex.ts';
 export { shadow } from './tokens/shadow.stylex.ts';
-export { motion, breakpoints, zIndex, control } from './tokens/const.stylex.ts';
+export { motion, breakpoints, zIndex, control, mesh } from './tokens/const.stylex.ts';
+export { MESH_CELL_PX } from './tokens/mesh.ts';
 export { compactSpace, compactText } from './themes.ts';
 export {
   componentStatusPresentation,
@@ -40,3 +41,7 @@ export { RelativeTime } from './components/RelativeTime.tsx';
 export { ThemeToggle } from './components/ThemeToggle.tsx';
 export { DesignGallery } from './components/Gallery.tsx';
 export { SiteChrome } from './components/SiteChrome.tsx';
+export { MeshScreen } from './components/MeshScreen.tsx';
+export { AppShell } from './components/AppShell.tsx';
+export { SidebarNavItem, SidebarNavSection } from './components/SidebarNav.tsx';
+export { Icon } from './components/Icon.tsx';

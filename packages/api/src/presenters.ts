@@ -5,56 +5,56 @@ import type {
   IncidentUpdateRow,
   IncidentWithRelations,
 } from '@trustfall/db';
-import { resourceName } from './schemas.ts';
 
 export function presentComponent(row: ComponentRow) {
   return {
-    name: resourceName('components', row.id),
-    displayName: row.displayName,
+    id: row.id,
+    display_name: row.displayName,
     description: row.description,
     status: row.status,
-    group: row.groupId ? resourceName('componentGroups', row.groupId) : null,
+    group_id: row.groupId,
     position: row.position,
-    createTime: toRfc3339(row.createTime)!,
-    updateTime: toRfc3339(row.updateTime)!,
+    created_at: toRfc3339(row.createTime)!,
+    updated_at: toRfc3339(row.updateTime)!,
   };
 }
 
 export function presentGroup(row: ComponentGroupRow) {
   return {
-    name: resourceName('componentGroups', row.id),
-    displayName: row.displayName,
+    id: row.id,
+    display_name: row.displayName,
     description: row.description,
     position: row.position,
-    createTime: toRfc3339(row.createTime)!,
-    updateTime: toRfc3339(row.updateTime)!,
+    created_at: toRfc3339(row.createTime)!,
+    updated_at: toRfc3339(row.updateTime)!,
   };
 }
 
-export function presentUpdate(row: IncidentUpdateRow, incidentId: string) {
+export function presentUpdate(row: IncidentUpdateRow) {
   return {
-    name: resourceName(`incidents/${incidentId}/updates`, row.id),
+    id: row.id,
+    incident_id: row.incidentId,
     status: row.status,
     body: row.body,
-    createTime: toRfc3339(row.createTime)!,
+    created_at: toRfc3339(row.createTime)!,
   };
 }
 
 export function presentIncident(row: IncidentWithRelations) {
   return {
-    name: resourceName('incidents', row.id),
+    id: row.id,
     title: row.title,
     status: row.status,
     impact: row.impact,
-    startTime: toRfc3339(row.startTime)!,
-    resolveTime: toRfc3339(row.resolveTime),
-    createTime: toRfc3339(row.createTime)!,
-    updateTime: toRfc3339(row.updateTime)!,
-    components: row.components.map((item) => ({
-      component: resourceName('components', item.componentId),
-      displayName: item.displayName,
+    started_at: toRfc3339(row.startTime)!,
+    resolved_at: toRfc3339(row.resolveTime),
+    created_at: toRfc3339(row.createTime)!,
+    updated_at: toRfc3339(row.updateTime)!,
+    affected_components: row.components.map((item) => ({
+      component_id: item.componentId,
+      display_name: item.displayName,
       status: item.status,
     })),
-    updates: row.updates.map((update) => presentUpdate(update, row.id)),
+    updates: row.updates.map(presentUpdate),
   };
 }

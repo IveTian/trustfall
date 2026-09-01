@@ -1,4 +1,12 @@
-import { Button, Field, Select, Stack, Text, Textarea, incidentStatusPresentation } from '@trustfall/design';
+import {
+  Button,
+  Field,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  incidentStatusPresentation,
+} from '@trustfall/design';
 import { IncidentTimeline } from '@trustfall/design';
 import type { IncidentStatus } from '@trustfall/shared';
 import { INCIDENT_STATUSES } from '@trustfall/shared';
@@ -7,12 +15,12 @@ import { useParams } from 'react-router';
 import { api } from '../lib/api.ts';
 
 type Incident = {
-  name: string;
+  id: string;
   title: string;
   status: IncidentStatus;
   impact: 'MINOR' | 'MAJOR' | 'CRITICAL';
-  startTime: string;
-  updates: Array<{ name: string; status: IncidentStatus; body: string; createTime: string }>;
+  started_at: string;
+  updates: Array<{ id: string; status: IncidentStatus; body: string; created_at: string }>;
 };
 
 export function IncidentDetailPage() {
@@ -23,7 +31,7 @@ export function IncidentDetailPage() {
     if (!incidentId) {
       return;
     }
-    setIncident(await api<Incident>(`/api/v1/incidents/${incidentId}`));
+    setIncident(await api<Incident>(`/api/incidents/${incidentId}`));
   }, [incidentId]);
 
   useEffect(() => {
@@ -36,7 +44,7 @@ export function IncidentDetailPage() {
       return;
     }
     const form = new FormData(event.currentTarget);
-    await api(`/api/v1/incidents/${incidentId}/updates`, {
+    await api(`/api/incidents/${incidentId}/updates`, {
       method: 'POST',
       body: JSON.stringify({
         status: form.get('status'),
@@ -47,13 +55,15 @@ export function IncidentDetailPage() {
     await refresh();
   }
 
+  // Resolving is a timeline update like any other: the status transition and
+  // the explanation readers get are the same act.
   async function resolve() {
     if (!incidentId) {
       return;
     }
-    await api(`/api/v1/incidents/${incidentId}:resolve`, {
+    await api(`/api/incidents/${incidentId}/updates`, {
       method: 'POST',
-      body: JSON.stringify({ body: 'This incident has been resolved.' }),
+      body: JSON.stringify({ status: 'RESOLVED', body: 'This incident has been resolved.' }),
     });
     await refresh();
   }
@@ -69,10 +79,10 @@ export function IncidentDetailPage() {
       </Text>
       <IncidentTimeline
         updates={incident.updates.map((update) => ({
-          id: update.name,
+          id: update.id,
           status: update.status,
           body: update.body,
-          createTime: Date.parse(update.createTime),
+          createTime: Date.parse(update.created_at),
         }))}
       />
       <form onSubmit={onUpdate}>

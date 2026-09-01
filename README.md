@@ -1,8 +1,14 @@
 # TrustFall
 
-A Cloudflare-native status page. Operators update availability by hand. There is no probe.
+A Cloudflare-native status page. Component states are asserted by people, not by
+monitoring. There is no probe.
 
 Public visitors get an Astro page that answers “is it up?” in one glance. Operators get a React admin at `/admin`. Both talk to a Hono API on a single Worker, with state in D1.
+
+TrustFall is being extended into incident response — severities, incident roles,
+a structured timeline, follow-ups and retrospectives — alongside fuller status
+pages. See [Where this is going](#where-this-is-going) for what exists today and
+what does not.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ivetian/trustfall)
 
@@ -35,6 +41,44 @@ pnpm dev
 
 `wrangler.jsonc` at the repo root is the source of bindings for the Astro Cloudflare adapter. After `astro build`, Wrangler deploys the generated `apps/web/dist/server` Worker (`entry.mjs`), which is why `preview` and `deploy` pass `--config apps/web/dist/server/wrangler.json`.
 
+`main` points at `apps/web/worker/index.ts` rather than the adapter default. That
+file re-exports Astro's `fetch` and adds the `scheduled` and `queue` handlers and
+the `Dispatcher` durable object. The adapter only supplies a default for `main`,
+so this is a supported extension rather than a patch.
+
+To trigger the cron handler locally:
+
+```bash
+curl "http://localhost:8787/cdn-cgi/local/scheduled"
+```
+
+## Background work
+
+Deferred work — maintenance windows moving through their schedule, uptime
+aggregation, webhook delivery, subscriber email — runs in one of three modes.
+The mode is chosen by probing which bindings exist, so `wrangler.jsonc` is the
+only switch and application code does not branch.
+
+| Mode                         | Requires     | How work is delivered                                    | Timer accuracy |
+| ---------------------------- | ------------ | -------------------------------------------------------- | -------------- |
+| **Durable Object** (default) | Workers Free | `Dispatcher` alarm, with a cron sweep for long backoffs  | 5 minutes      |
+| **Queue**                    | Workers Paid | Cloudflare Queues, with batching and a dead-letter queue | 5 minutes      |
+| **Inline**                   | nothing      | best effort during the request, no retry                 | none           |
+
+The default deliberately avoids Queues: they need a paid plan, and a `queues`
+block in `wrangler.jsonc` would make the one-click deploy button fail to
+provision on a free account. To opt in:
+
+```bash
+wrangler queues create trustfall-events
+wrangler queues create trustfall-events-dlq
+# then uncomment the queues block in wrangler.jsonc and redeploy
+```
+
+Scheduled work is paced by a table rather than by cron expressions, because the
+free plan allows three triggers and gives the scheduled handler a 10ms CPU
+budget. TrustFall spends one trigger and uses it as a heartbeat.
+
 ## Auth secret
 
 Better Auth needs a 32+ character secret.
@@ -48,9 +92,26 @@ On a custom domain, set `BETTER_AUTH_URL` to the public origin.
 
 Tokens, density themes, and components live in `packages/design`. See [PRINCIPLES.md](packages/design/PRINCIPLES.md), [TOKENS.md](packages/design/TOKENS.md), and [CHECKLIST.md](packages/design/CHECKLIST.md). Color uses CSS `light-dark()` and a `color-scheme` switch. The admin applies a compact density theme at its root. Status color, icon shape, and label are defined once in `packages/design/src/status.ts`.
 
+## Where this is going
+
+Today TrustFall is a status page: component groups, components, incidents with a
+linear update feed, and a public page. Incident response is being built on top of
+it, tracked against [incident.io](https://incident.io)'s Response and Status
+Pages products.
+
+Not yet built: configurable severities and statuses, incident roles, custom
+fields, a curated timeline, actions and follow-ups, post-incident reviews,
+maintenance windows, subscribers, uptime history, RBAC, API keys and outbound
+webhooks.
+
+Explicit non-goals: on-call scheduling and escalation, alert ingestion and
+routing, a workflow engine, a service catalog, and multi-tenancy. TrustFall is
+one organisation per deployment.
+
 ## Stack
 
-Astro 7 SSR, React 19 admin SPA, Hono 4, Better Auth, Drizzle on D1, StyleX, one Cloudflare Worker.
+Astro 7 SSR, React 19 admin SPA, Hono 4, Better Auth, Drizzle on D1, StyleX, one
+Cloudflare Worker. Tooling is oxlint, oxfmt and Vitest.
 
 ## License
 

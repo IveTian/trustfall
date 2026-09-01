@@ -12,16 +12,19 @@ export const compactSpace = stylex.createTheme(space, {
   7: '32px',
   8: '48px',
   page: '20px',
+  gutter: '16px',
   prose: '40rem',
 });
 
 export const compactText = stylex.createTheme(text, {
-  sizeCaption: '0.75rem',
-  sizeBody: '0.875rem',
-  sizeTitle: '1.0625rem',
-  sizeDisplay: '1.5rem',
-  lineCaption: '1.125rem',
-  lineBody: '1.25rem',
-  lineTitle: '1.5rem',
-  lineDisplay: '1.75rem',
+  sizeCaption: '12px',
+  sizeBodySmall: '13px',
+  sizeBody: '14px',
+  sizeTitle: '16px',
+  sizeDisplay: '20px',
+  lineCaption: '16px',
+  lineBodySmall: '18px',
+  lineBody: '20px',
+  lineTitle: '22px',
+  lineDisplay: '28px',
 });

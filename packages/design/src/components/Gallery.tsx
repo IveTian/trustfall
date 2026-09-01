@@ -3,6 +3,7 @@ import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustf
 import { Button } from './Button.tsx';
 import { Card } from './Card.tsx';
 import { Field, Input, Select, Textarea } from './Field.tsx';
+import { Icon } from './Icon.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { Text } from './Text.tsx';
@@ -23,7 +24,7 @@ export function DesignGallery() {
           <Text as="h2" tone="title">
             Component status
           </Text>
-          <Stack direction="horizontal" gap={2}>
+          <Stack direction="horizontal" gap={2} wrap>
             {COMPONENT_STATUSES.filter((status) => status !== 'STATUS_UNSPECIFIED').map(
               (status) => (
                 <StatusPill key={status} status={status as ComponentStatus} />
@@ -33,7 +34,7 @@ export function DesignGallery() {
           <Text as="h2" tone="title">
             Incident status
           </Text>
-          <Stack direction="horizontal" gap={2}>
+          <Stack direction="horizontal" gap={2} wrap>
             {INCIDENT_STATUSES.map((status) => (
               <StatusPill key={status} status={status} kind="incident" />
             ))}
@@ -41,7 +42,7 @@ export function DesignGallery() {
           <Text as="h2" tone="title">
             Impact
           </Text>
-          <Stack direction="horizontal" gap={2}>
+          <Stack direction="horizontal" gap={2} wrap>
             {INCIDENT_IMPACTS.map((impact) => (
               <StatusPill key={impact} status={impact} kind="impact" />
             ))}
@@ -54,16 +55,23 @@ export function DesignGallery() {
           <Text as="h2" tone="title">
             Controls
           </Text>
-          <Stack direction="horizontal" gap={2}>
+          <Stack direction="horizontal" gap={2} wrap>
             <Button>Save changes</Button>
             <Button variant="secondary">Cancel</Button>
             <Button variant="danger">Resolve incident</Button>
+            <Button variant="ghost">Sign out</Button>
           </Stack>
+          <Button size="lg" fullWidth endEnhancer={<Icon name="arrow-right-line" />}>
+            Continue
+          </Button>
           <Field label="Display name" htmlFor="gallery-name">
             <Input id="gallery-name" defaultValue="API" />
           </Field>
           <Field label="Update" htmlFor="gallery-update">
-            <Textarea id="gallery-update" defaultValue="We are investigating elevated error rates." />
+            <Textarea
+              id="gallery-update"
+              defaultValue="We are investigating elevated error rates."
+            />
           </Field>
           <Field label="Status" htmlFor="gallery-status">
             <Select id="gallery-status" defaultValue="OPERATIONAL">

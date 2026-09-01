@@ -1,9 +1,9 @@
-export type AppBindings = {
-  DB: D1Database;
-  ASSETS: Fetcher;
-  BETTER_AUTH_SECRET?: string;
-  BETTER_AUTH_URL?: string;
-};
+/**
+ * The Worker environment. Bindings come from `wrangler types` (generated into
+ * worker-configuration.d.ts from wrangler.jsonc); secrets and vars come from the
+ * root env.d.ts. Adding a binding means editing wrangler.jsonc, nothing else.
+ */
+export type AppBindings = Env;
 
 export type SessionPayload = {
   user: {

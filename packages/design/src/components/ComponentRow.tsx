@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentStatus } from '@trustfall/shared';
 import { color } from '../tokens/color.stylex.ts';
+import { mesh } from '../tokens/const.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { StatusPill } from './StatusPill.tsx';
 import { Text } from './Text.tsx';
@@ -10,7 +11,7 @@ const styles = stylex.create({
     alignItems: 'baseline',
     borderBlockEndColor: color.border,
     borderBlockEndStyle: 'solid',
-    borderBlockEndWidth: '1px',
+    borderBlockEndWidth: mesh.line,
     display: 'flex',
     gap: space[3],
     justifyContent: 'space-between',

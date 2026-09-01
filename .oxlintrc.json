@@ -1,0 +1,46 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/.pnpm-store/**",
+    "**/dist/**",
+    "**/.astro/**",
+    "**/.wrangler/**",
+    "apps/web/public/admin/**",
+    "worker-configuration.d.ts",
+    "migrations/**"
+  ],
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "vitest", "promise"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrors": "none" }
+    ],
+    "typescript/no-explicit-any": "error",
+
+    // Suggests swapping an ARIA role for the element that implies it. Wrong for
+    // this codebase: `<svg role="img">` with a `<title>` is the canonical
+    // accessible inline-SVG pattern and cannot become an `<img>` tag, and
+    // `<output>` for a toast is form-associated semantics we do not want.
+    "jsx-a11y/prefer-tag-over-role": "off",
+
+    // Four of the five hits are the admin pages' `useEffect(() => void refresh())`
+    // fetch pattern, which the TanStack Query migration removes. The fifth,
+    // ThemeToggle, reads the stored theme after mount on purpose. Back to
+    // "error" once the admin data layer lands.
+    "react/set-state-in-effect": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

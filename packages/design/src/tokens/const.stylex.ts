@@ -21,4 +21,13 @@ export const zIndex = stylex.defineConsts({
 export const control = stylex.defineConsts({
   focusWidth: '2px',
   focusOffset: '2px',
+  heightSm: '28px',
+  heightMd: '32px',
+  heightLg: '40px',
+  sidebarWidth: '240px',
+});
+
+export const mesh = stylex.defineConsts({
+  cell: '96px',
+  line: '1px',
 });

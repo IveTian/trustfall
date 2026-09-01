@@ -8,138 +8,149 @@ import {
   listComponentGroups,
   listComponents,
   paginate,
-  setComponentStatus,
   updateComponent,
   updateComponentGroup,
 } from '@trustfall/db';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import type { ComponentStatus } from '@trustfall/shared';
 import { db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
-import { ApiError, RpcStatus } from '../errors.ts';
+import { ApiError, ProblemType } from '../errors.ts';
+import { checkIfMatch, createdLocation, etagFor, ifMatchHeader, problems } from '../http.ts';
 import { presentComponent, presentGroup } from '../presenters.ts';
 import {
+  collectionSchema,
   componentGroupSchema,
   componentSchema,
   componentStatusSchema,
-  errorSchema,
-  parseResourceId,
-  resourceIdFromCustomMethod,
+  pageQuery,
 } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
-import { applyUpdateMask } from '../update-mask.ts';
 
-const idParam = z.object({
-  component: z.string(),
+const groupParam = z.object({
+  group_id: z.string().openapi({ param: { name: 'group_id', in: 'path' }, example: 'grp_4c81' }),
 });
 
-const groupIdParam = z.object({
-  componentGroup: z.string(),
+const componentParam = z.object({
+  component_id: z.string().openapi({
+    param: { name: 'component_id', in: 'path' },
+    example: 'cmp_1f0a',
+  }),
 });
 
-const listQuery = z.object({
-  pageSize: z.coerce.number().int().min(1).max(100).optional(),
-  pageToken: z.string().optional(),
-});
+const etagHeader = {
+  ETag: {
+    description: 'Pass back as `If-Match` on a write to reject a stale update.',
+    schema: { type: 'string' as const },
+  },
+};
 
+/**
+ * PATCH semantics for both collections: an omitted property is left unchanged,
+ * an explicit `null` clears a nullable one. There is no update mask — the body
+ * says everything the server needs to know.
+ */
 export function componentRoutes() {
   const app = new OpenAPIHono<AppEnv>();
 
   app.openapi(
     createRoute({
       method: 'get',
-      path: '/v1/componentGroups',
+      path: '/component-groups',
       tags: ['Component groups'],
+      summary: 'List component groups',
+      description: 'Ordered by `position` ascending. Offset-paged; the collection is small.',
       security: [],
-      request: { query: listQuery },
+      request: { query: pageQuery },
       responses: {
         200: {
-          description: 'Lists component groups.',
+          description: 'A page of component groups.',
           content: {
             'application/json': {
-              schema: z.object({
-                componentGroups: z.array(componentGroupSchema),
-                nextPageToken: z.string().optional(),
-              }),
+              schema: collectionSchema(componentGroupSchema, 'ComponentGroupPage'),
             },
           },
         },
+        400: problems.validationFailed,
       },
     }),
     async (c) => {
       const query = c.req.valid('query');
       const rows = await listComponentGroups(db());
-      const page = paginate(rows, query.pageSize ?? 100, query.pageToken);
-      return c.json(
-        { componentGroups: page.items.map(presentGroup), nextPageToken: page.nextPageToken },
-        200,
-      );
+      const page = paginate(rows, query.page_size, query.cursor);
+      return c.json({ items: page.items.map(presentGroup), next_cursor: page.nextCursor }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'post',
+      middleware: authMiddleware,
+      path: '/component-groups',
+      tags: ['Component groups'],
+      summary: 'Create a component group',
+      request: {
+        body: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                display_name: z.string().min(1),
+                description: z.string().optional(),
+                position: z.number().int().optional(),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: 'The created group.',
+          headers: {
+            Location: {
+              description: 'URI of the created group.',
+              schema: { type: 'string' as const },
+            },
+          },
+          content: { 'application/json': { schema: componentGroupSchema } },
+        },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        409: problems.conflict,
+      },
+    }),
+    async (c) => {
+      const body = c.req.valid('json');
+      const row = await createComponentGroup(db(), {
+        displayName: body.display_name,
+        description: body.description,
+        position: body.position,
+      });
+      return c.json(presentGroup(row), 201, { Location: createdLocation(c, row.id) });
     },
   );
 
   app.openapi(
     createRoute({
       method: 'get',
-      path: '/v1/components',
-      tags: ['Components'],
-      security: [],
-      request: { query: listQuery },
-      responses: {
-        200: {
-          description: 'Lists components.',
-          content: {
-            'application/json': {
-              schema: z.object({
-                components: z.array(componentSchema),
-                nextPageToken: z.string().optional(),
-              }),
-            },
-          },
-        },
-      },
-    }),
-    async (c) => {
-      const query = c.req.valid('query');
-      const rows = await listComponents(db());
-      const page = paginate(rows, query.pageSize ?? 100, query.pageToken);
-      return c.json(
-        { components: page.items.map(presentComponent), nextPageToken: page.nextPageToken },
-        200,
-      );
-    },
-  );
-
-  app.openapi(
-    createRoute({
-      method: 'post',
-      middleware: authMiddleware,
-      path: '/v1/componentGroups',
+      path: '/component-groups/{group_id}',
       tags: ['Component groups'],
-      request: {
-        body: {
-          content: {
-            'application/json': {
-              schema: z.object({
-                displayName: z.string().min(1),
-                description: z.string().optional(),
-                position: z.number().int().optional(),
-              }),
-            },
-          },
-        },
-      },
+      summary: 'Read a component group',
+      security: [],
+      request: { params: groupParam },
       responses: {
         200: {
-          description: 'Creates a component group.',
+          description: 'The group.',
+          headers: etagHeader,
           content: { 'application/json': { schema: componentGroupSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
+        404: problems.notFound,
       },
     }),
     async (c) => {
-      const body = c.req.valid('json');
-      const row = await createComponentGroup(db(), body);
-      return c.json(presentGroup(row), 200);
+      const row = await getComponentGroup(db(), c.req.valid('param').group_id);
+      if (!row) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component group not found.');
+      }
+      return c.json(presentGroup(row), 200, { ETag: etagFor(row.updateTime) });
     },
   );
 
@@ -147,16 +158,17 @@ export function componentRoutes() {
     createRoute({
       method: 'patch',
       middleware: authMiddleware,
-      path: '/v1/componentGroups/{componentGroup}',
+      path: '/component-groups/{group_id}',
       tags: ['Component groups'],
+      summary: 'Update a component group',
       request: {
-        params: groupIdParam,
-        query: z.object({ updateMask: z.string().optional() }),
+        params: groupParam,
+        headers: ifMatchHeader,
         body: {
           content: {
             'application/json': {
               schema: z.object({
-                displayName: z.string().min(1).optional(),
+                display_name: z.string().min(1).optional(),
                 description: z.string().nullable().optional(),
                 position: z.number().int().optional(),
               }),
@@ -166,25 +178,33 @@ export function componentRoutes() {
       },
       responses: {
         200: {
-          description: 'Updates a component group.',
+          description: 'The updated group.',
+          headers: etagHeader,
           content: { 'application/json': { schema: componentGroupSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const { componentGroup } = c.req.valid('param');
-      const body = applyUpdateMask(c.req.valid('query').updateMask, c.req.valid('json'));
-      const row = await updateComponentGroup(
-        db(),
-        parseResourceId(componentGroup, 'componentGroups'),
-        body,
-      );
-      if (!row) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Component group not found.');
+      const { group_id: groupId } = c.req.valid('param');
+      const body = c.req.valid('json');
+      const existing = await getComponentGroup(db(), groupId);
+      if (!existing) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component group not found.');
       }
-      return c.json(presentGroup(row), 200);
+      checkIfMatch(c, etagFor(existing.updateTime));
+      const row = await updateComponentGroup(db(), groupId, {
+        displayName: body.display_name,
+        description: body.description,
+        position: body.position,
+      });
+      if (!row) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component group not found.');
+      }
+      return c.json(presentGroup(row), 200, { ETag: etagFor(row.updateTime) });
     },
   );
 
@@ -192,27 +212,61 @@ export function componentRoutes() {
     createRoute({
       method: 'delete',
       middleware: authMiddleware,
-      path: '/v1/componentGroups/{componentGroup}',
+      path: '/component-groups/{group_id}',
       tags: ['Component groups'],
-      request: { params: groupIdParam },
+      summary: 'Delete a component group',
+      request: { params: groupParam, headers: ifMatchHeader },
       responses: {
-        200: {
-          description: 'Deletes a component group.',
-          content: { 'application/json': { schema: z.object({ name: z.string() }) } },
-        },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        204: { description: 'The group is gone.' },
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        409: problems.conflict,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const { componentGroup } = c.req.valid('param');
-      const id = parseResourceId(componentGroup, 'componentGroups');
-      const existing = await getComponentGroup(db(), id);
+      const { group_id: groupId } = c.req.valid('param');
+      const existing = await getComponentGroup(db(), groupId);
       if (!existing) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Component group not found.');
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component group not found.');
       }
-      await deleteComponentGroup(db(), id);
-      return c.json({ name: `componentGroups/${id}` }, 200);
+      checkIfMatch(c, etagFor(existing.updateTime));
+      await deleteComponentGroup(db(), groupId);
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/components',
+      tags: ['Components'],
+      summary: 'List components',
+      description:
+        'Ordered by `position` ascending, then `display_name`. Offset-paged; the collection is small.',
+      security: [],
+      request: {
+        query: pageQuery.extend({
+          group_id: z.string().optional().openapi({
+            description: 'Only components in this group. Omit for every component.',
+          }),
+        }),
+      },
+      responses: {
+        200: {
+          description: 'A page of components.',
+          content: {
+            'application/json': { schema: collectionSchema(componentSchema, 'ComponentPage') },
+          },
+        },
+        400: problems.validationFailed,
+      },
+    }),
+    async (c) => {
+      const query = c.req.valid('query');
+      const rows = await listComponents(db(), { groupId: query.group_id });
+      const page = paginate(rows, query.page_size, query.cursor);
+      return c.json({ items: page.items.map(presentComponent), next_cursor: page.nextCursor }, 200);
     },
   );
 
@@ -220,16 +274,17 @@ export function componentRoutes() {
     createRoute({
       method: 'post',
       middleware: authMiddleware,
-      path: '/v1/components',
+      path: '/components',
       tags: ['Components'],
+      summary: 'Create a component',
       request: {
         body: {
           content: {
             'application/json': {
               schema: z.object({
-                displayName: z.string().min(1),
+                display_name: z.string().min(1),
                 description: z.string().optional(),
-                group: z.string().nullable().optional(),
+                group_id: z.string().nullable().optional(),
                 status: componentStatusSchema.optional(),
                 position: z.number().int().optional(),
               }),
@@ -238,23 +293,57 @@ export function componentRoutes() {
         },
       },
       responses: {
-        200: {
-          description: 'Creates a component.',
+        201: {
+          description: 'The created component.',
+          headers: {
+            Location: {
+              description: 'URI of the created component.',
+              schema: { type: 'string' as const },
+            },
+          },
           content: { 'application/json': { schema: componentSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        409: problems.conflict,
       },
     }),
     async (c) => {
       const body = c.req.valid('json');
       const row = await createComponent(db(), {
-        displayName: body.displayName,
+        displayName: body.display_name,
         description: body.description,
-        groupId: body.group ? parseResourceId(body.group, 'componentGroups') : null,
+        groupId: body.group_id ?? null,
         status: body.status,
         position: body.position,
       });
-      return c.json(presentComponent(row), 200);
+      return c.json(presentComponent(row), 201, { Location: createdLocation(c, row.id) });
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/components/{component_id}',
+      tags: ['Components'],
+      summary: 'Read a component',
+      security: [],
+      request: { params: componentParam },
+      responses: {
+        200: {
+          description: 'The component.',
+          headers: etagHeader,
+          content: { 'application/json': { schema: componentSchema } },
+        },
+        404: problems.notFound,
+      },
+    }),
+    async (c) => {
+      const row = await getComponent(db(), c.req.valid('param').component_id);
+      if (!row) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component not found.');
+      }
+      return c.json(presentComponent(row), 200, { ETag: etagFor(row.updateTime) });
     },
   );
 
@@ -262,18 +351,21 @@ export function componentRoutes() {
     createRoute({
       method: 'patch',
       middleware: authMiddleware,
-      path: '/v1/components/{component}',
+      path: '/components/{component_id}',
       tags: ['Components'],
+      summary: 'Update a component',
+      description:
+        'Also how an operator declares a new status: send `{ "status": "MAJOR_OUTAGE" }`.',
       request: {
-        params: idParam,
-        query: z.object({ updateMask: z.string().optional() }),
+        params: componentParam,
+        headers: ifMatchHeader,
         body: {
           content: {
             'application/json': {
               schema: z.object({
-                displayName: z.string().min(1).optional(),
+                display_name: z.string().min(1).optional(),
                 description: z.string().nullable().optional(),
-                group: z.string().nullable().optional(),
+                group_id: z.string().nullable().optional(),
                 status: componentStatusSchema.optional(),
                 position: z.number().int().optional(),
               }),
@@ -283,27 +375,35 @@ export function componentRoutes() {
       },
       responses: {
         200: {
-          description: 'Updates a component.',
+          description: 'The updated component.',
+          headers: etagHeader,
           content: { 'application/json': { schema: componentSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const { component } = c.req.valid('param');
-      const body = applyUpdateMask(c.req.valid('query').updateMask, c.req.valid('json'));
-      const row = await updateComponent(db(), parseResourceId(component, 'components'), {
-        displayName: body.displayName,
+      const { component_id: componentId } = c.req.valid('param');
+      const body = c.req.valid('json');
+      const existing = await getComponent(db(), componentId);
+      if (!existing) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component not found.');
+      }
+      checkIfMatch(c, etagFor(existing.updateTime));
+      const row = await updateComponent(db(), componentId, {
+        displayName: body.display_name,
         description: body.description,
-        groupId: body.group === undefined ? undefined : body.group ? parseResourceId(body.group, 'componentGroups') : null,
+        groupId: body.group_id,
         status: body.status,
         position: body.position,
       });
       if (!row) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Component not found.');
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component not found.');
       }
-      return c.json(presentComponent(row), 200);
+      return c.json(presentComponent(row), 200, { ETag: etagFor(row.updateTime) });
     },
   );
 
@@ -311,61 +411,27 @@ export function componentRoutes() {
     createRoute({
       method: 'delete',
       middleware: authMiddleware,
-      path: '/v1/components/{component}',
+      path: '/components/{component_id}',
       tags: ['Components'],
-      request: { params: idParam },
+      summary: 'Delete a component',
+      request: { params: componentParam, headers: ifMatchHeader },
       responses: {
-        200: {
-          description: 'Deletes a component.',
-          content: { 'application/json': { schema: z.object({ name: z.string() }) } },
-        },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        204: { description: 'The component is gone.' },
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        409: problems.conflict,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const id = parseResourceId(c.req.valid('param').component, 'components');
-      const existing = await getComponent(db(), id);
+      const { component_id: componentId } = c.req.valid('param');
+      const existing = await getComponent(db(), componentId);
       if (!existing) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Component not found.');
+        throw new ApiError(ProblemType.NOT_FOUND, 'Component not found.');
       }
-      await deleteComponent(db(), id);
-      return c.json({ name: `components/${id}` }, 200);
-    },
-  );
-
-  app.openapi(
-    createRoute({
-      method: 'post',
-      middleware: authMiddleware,
-      path: '/v1/components/{component}:setStatus',
-      tags: ['Components'],
-      request: {
-        body: {
-          content: {
-            'application/json': {
-              schema: z.object({ status: componentStatusSchema }),
-            },
-          },
-        },
-      },
-      responses: {
-        200: {
-          description: 'Sets a component status.',
-          content: { 'application/json': { schema: componentSchema } },
-        },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
-      },
-    }),
-    async (c) => {
-      const id = resourceIdFromCustomMethod(new URL(c.req.url).pathname, 'components', 'setStatus');
-      const { status } = c.req.valid('json');
-      const row = await setComponentStatus(db(), id, status as ComponentStatus);
-      if (!row) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Component not found.');
-      }
-      return c.json(presentComponent(row), 200);
+      checkIfMatch(c, etagFor(existing.updateTime));
+      await deleteComponent(db(), componentId);
+      return c.body(null, 204);
     },
   );
 

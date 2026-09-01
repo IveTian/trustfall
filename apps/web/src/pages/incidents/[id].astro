@@ -1,7 +1,8 @@
 ---
 import { env } from 'cloudflare:workers';
-import { createDb, getIncident, getSetting } from '@trustfall/db';
-import { IncidentTimeline, SiteChrome, Stack, StatusPill, Text, ThemeToggle } from '@trustfall/design';
+import { createDb, getIncident, getSetting, isSiteInitialized } from '@trustfall/db';
+import { IncidentTimeline, SiteChrome, Stack, StatusPill, Text } from '@trustfall/design';
+import UninitializedNotice from '../../components/UninitializedNotice.astro';
 import Base from '../../layouts/Base.astro';
 
 const { id } = Astro.params;
@@ -10,25 +11,38 @@ if (!id) {
 }
 
 const db = createDb(env.DB);
-const incident = await getIncident(db, id);
-if (!incident) {
-  return new Response('Not found', { status: 404 });
-}
+const initialized = await isSiteInitialized(db);
 
-const siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
-Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+let incident: Awaited<ReturnType<typeof getIncident>> = undefined;
+let siteName = 'TrustFall';
+if (initialized) {
+  incident = await getIncident(db, id);
+  if (!incident) {
+    return new Response('Not found', { status: 404 });
+  }
+  siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
 ---
 
-<Base title={`${incident.title} · ${siteName}`}>
-  <SiteChrome siteName={siteName}>
-    <Stack gap={4}>
-      <ThemeToggle client:load />
-      <Stack direction="horizontal" gap={2}>
-        <StatusPill status={incident.status} kind="incident" />
-        <StatusPill status={incident.impact} kind="impact" />
-      </Stack>
-      <Text as="h1" tone="display">{incident.title}</Text>
-      <IncidentTimeline updates={incident.updates} />
-    </Stack>
-  </SiteChrome>
+<Base title={incident ? `${incident.title} · ${siteName}` : siteName}>
+  {
+    incident ? (
+      <SiteChrome siteName={siteName}>
+        <Stack gap={4}>
+          <Stack direction="horizontal" gap={2}>
+            <StatusPill status={incident.status} kind="incident" />
+            <StatusPill status={incident.impact} kind="impact" />
+          </Stack>
+          <Text as="h1" tone="display">{incident.title}</Text>
+          <IncidentTimeline updates={incident.updates} />
+        </Stack>
+      </SiteChrome>
+    ) : (
+      <UninitializedNotice />
+    )
+  }
 </Base>

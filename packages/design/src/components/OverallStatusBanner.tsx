@@ -9,14 +9,8 @@ import { Text } from './Text.tsx';
 
 const styles = stylex.create({
   banner: {
-    backgroundColor: color.surfaceRaised,
-    borderColor: color.border,
-    borderRadius: radius.lg,
-    borderStyle: 'solid',
-    borderWidth: '1px',
     display: 'grid',
-    gap: space[4],
-    padding: space[6],
+    gap: space[3],
   },
   rule: {
     backgroundColor: color.operational,

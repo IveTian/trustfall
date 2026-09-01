@@ -1,0 +1,138 @@
+/* Must stay in lockstep with tokens/color.stylex.ts and tokens/mesh.ts. */
+
+/*
+ * LightningCSS rewrites `light-dark()` in StyleX output to
+ * `var(--lightningcss-light, …) var(--lightningcss-dark, …)`.
+ * These two flags make that pair collapse to one color, and follow
+ * `data-theme` from theme-script.ts rather than only prefers-color-scheme.
+ */
+html {
+  --lightningcss-light: initial;
+  --lightningcss-dark: ;
+}
+
+html[data-theme='dark'] {
+  --lightningcss-light: ;
+  --lightningcss-dark: initial;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'] {
+    --lightningcss-light: ;
+    --lightningcss-dark: initial;
+  }
+}
+.tf-mesh-screen {
+  --tf-mesh-cell: 96px;
+  --tf-mesh-line: 1px;
+  --tf-mesh-cols: 5;
+  --tf-mesh-origin-x: 0px;
+  --tf-mesh-origin-y: 0px;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: light-dark(#efefef, #141414);
+}
+
+.tf-mesh-cluster {
+  position: relative;
+  isolation: isolate;
+  width: calc(var(--tf-mesh-cols) * var(--tf-mesh-cell));
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.tf-mesh-layer,
+.tf-mesh-bare {
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      to right,
+      light-dark(#dcdcdc, #333) var(--tf-mesh-line),
+      transparent var(--tf-mesh-line)
+    ),
+    linear-gradient(
+      to bottom,
+      light-dark(#dcdcdc, #333) var(--tf-mesh-line),
+      transparent var(--tf-mesh-line)
+    );
+}
+
+.tf-mesh-layer {
+  position: absolute;
+  z-index: 0;
+}
+
+.tf-mesh-bare {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+}
+
+.tf-mesh-panel {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow-y: auto;
+  background-color: light-dark(#fff, #1a1a1a);
+  border: var(--tf-mesh-line) solid light-dark(#dcdcdc, #333);
+}
+
+.tf-mesh-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 24px 32px calc(32px - var(--tf-mesh-line));
+}
+
+/*
+ * After mesh-runtime measures: same layout as lociform MeshScreen.
+ * The mesh is painted on the viewport with origin at the panel top-left;
+ * the panel is a whole number of cells, +1px so its border sits on the line.
+ */
+.tf-mesh-screen[data-tf-mesh-ready] {
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-image:
+    linear-gradient(
+      to right,
+      light-dark(#dcdcdc, #333) var(--tf-mesh-line),
+      transparent var(--tf-mesh-line)
+    ),
+    linear-gradient(
+      to bottom,
+      light-dark(#dcdcdc, #333) var(--tf-mesh-line),
+      transparent var(--tf-mesh-line)
+    );
+  background-size: var(--tf-mesh-cell) var(--tf-mesh-cell);
+  background-position: var(--tf-mesh-origin-x) var(--tf-mesh-origin-y);
+}
+
+.tf-mesh-screen[data-tf-mesh-ready] .tf-mesh-layer,
+.tf-mesh-screen[data-tf-mesh-ready] .tf-mesh-bare {
+  display: none;
+}
+
+.tf-mesh-screen[data-tf-mesh-ready] .tf-mesh-cluster {
+  width: var(--tf-mesh-panel-width);
+  max-width: none;
+  max-height: none;
+  margin-left: var(--tf-mesh-panel-left);
+  margin-top: var(--tf-mesh-panel-top);
+}
+
+.tf-mesh-screen[data-tf-mesh-ready] .tf-mesh-panel {
+  width: calc(var(--tf-mesh-panel-width) + var(--tf-mesh-line));
+  height: calc(var(--tf-mesh-panel-height) + var(--tf-mesh-line));
+  max-height: none;
+}

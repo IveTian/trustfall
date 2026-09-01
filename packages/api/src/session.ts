@@ -1,7 +1,7 @@
 import { createMiddleware } from 'hono/factory';
 import { getAuth } from './auth.ts';
 import type { AppEnv, SessionPayload } from './env.ts';
-import { ApiError, RpcStatus } from './errors.ts';
+import { ApiError, ProblemType } from './errors.ts';
 
 export const sessionMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const auth = await getAuth();
@@ -13,7 +13,7 @@ export const sessionMiddleware = createMiddleware<AppEnv>(async (c, next) => {
 export const requireSession = createMiddleware<AppEnv>(async (c, next) => {
   const session = c.get('session');
   if (!session) {
-    throw new ApiError(RpcStatus.UNAUTHENTICATED, 'Sign in to continue.');
+    throw new ApiError(ProblemType.UNAUTHENTICATED, 'Sign in to continue.');
   }
   await next();
 });

@@ -1,4 +1,4 @@
-import { Button, Field, Input, Stack, Text } from '@trustfall/design';
+import { Button, Field, Icon, Input, Stack, Text } from '@trustfall/design';
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { signIn } from '../lib/auth.ts';
@@ -26,21 +26,34 @@ export function LoginPage() {
   }
 
   return (
-    <Stack gap={4}>
-      <Text as="h1" tone="display">
+    <Stack gap={5} grow justify="between">
+      <Text as="h1" tone="title">
         Sign in
       </Text>
       <form onSubmit={onSubmit}>
-        <Stack gap={3}>
+        <Stack gap={4}>
           <Field label="Email" htmlFor="email">
-            <Input id="email" name="email" type="email" required />
+            <Input id="email" name="email" type="email" required autoComplete="username" />
           </Field>
           <Field label="Password" htmlFor="password">
-            <Input id="password" name="password" type="password" required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+            />
           </Field>
           {error ? <Text tone="caption">{error}</Text> : null}
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Signing in…' : 'Sign in'}
+          <Button
+            type="submit"
+            size="lg"
+            fullWidth
+            loading={pending}
+            loadingLabel="Signing in"
+            endEnhancer={<Icon name="arrow-right-line" />}
+          >
+            Sign in
           </Button>
         </Stack>
       </form>

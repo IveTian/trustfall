@@ -3,6 +3,14 @@ import type { ComponentStatus, IncidentImpact, IncidentStatus } from '@trustfall
 import { isActiveIncidentStatus, rollupOverallStatus } from '@trustfall/shared';
 import { createId, nowMs } from './ids.ts';
 import {
+  clampPageSize,
+  decodeKeyset,
+  decodeOffset,
+  encodeKeyset,
+  encodeOffset,
+  takePage,
+} from './pagination.ts';
+import {
   componentGroups,
   components,
   incidentComponents,
@@ -90,7 +98,10 @@ export async function listComponents(
   db: Database,
   filter?: { groupId?: string | null },
 ): Promise<ComponentRow[]> {
-  const query = db.select().from(components).orderBy(asc(components.position), asc(components.displayName));
+  const query = db
+    .select()
+    .from(components)
+    .orderBy(asc(components.position), asc(components.displayName));
   if (filter?.groupId === null) {
     return query.where(isNull(components.groupId)).all();
   }
@@ -211,37 +222,50 @@ async function attachIncidentRelations(
   }));
 }
 
+export type IncidentState = 'ACTIVE' | 'RESOLVED';
+
+/**
+ * Keyset paging, not offset paging: incidents are append-heavy, and an incident
+ * opened between two page fetches would shift every later row and make the
+ * reader skip one. The cursor is `(startTime, id)` of the last row on the page,
+ * which is also why the order carries the id as a tie breaker — two incidents
+ * opened in the same millisecond must still have one deterministic order.
+ *
+ * `state` omitted means every incident, newest first.
+ */
 export async function listIncidents(
   db: Database,
-  options?: { pageSize?: number; pageToken?: string; filter?: 'active' | 'resolved' | 'all' },
-): Promise<{ incidents: IncidentWithRelations[]; nextPageToken?: string }> {
-  const pageSize = Math.min(Math.max(options?.pageSize ?? 25, 1), 100);
-  const offset = decodePageToken(options?.pageToken);
-  const filter = options?.filter ?? 'all';
+  options?: { pageSize?: number; cursor?: string; state?: IncidentState },
+): Promise<{ incidents: IncidentWithRelations[]; nextCursor?: string }> {
+  const pageSize = clampPageSize(options?.pageSize);
+  const after = decodeKeyset(options?.cursor);
 
   const conditions = [];
-  if (filter === 'active') {
+  if (options?.state === 'ACTIVE') {
     conditions.push(sql`${incidents.status} != 'RESOLVED'`);
-  } else if (filter === 'resolved') {
+  } else if (options?.state === 'RESOLVED') {
     conditions.push(eq(incidents.status, 'RESOLVED'));
+  }
+  if (after) {
+    const [startTime, id] = after;
+    conditions.push(
+      sql`(${incidents.startTime} < ${startTime} or (${incidents.startTime} = ${startTime} and ${incidents.id} < ${id}))`,
+    );
   }
 
   const rows = await db
     .select()
     .from(incidents)
     .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(incidents.startTime))
+    .orderBy(desc(incidents.startTime), desc(incidents.id))
     .limit(pageSize + 1)
-    .offset(offset)
     .all();
 
-  const hasMore = rows.length > pageSize;
-  const page = hasMore ? rows.slice(0, pageSize) : rows;
-  const withRelations = await attachIncidentRelations(db, page);
+  const page = takePage(rows, pageSize, (last) => encodeKeyset(last.startTime, last.id));
 
   return {
-    incidents: withRelations,
-    nextPageToken: hasMore ? encodePageToken(offset + pageSize) : undefined,
+    incidents: await attachIncidentRelations(db, page.items),
+    nextCursor: page.nextCursor,
   };
 }
 
@@ -343,25 +367,34 @@ export async function deleteIncident(db: Database, id: string): Promise<boolean>
   return (result.meta.changes ?? 0) > 0;
 }
 
+/**
+ * Posting an update is how an incident changes state: the timeline entry and
+ * the incident's own status move together, and RESOLVED also stamps
+ * `resolveTime` and puts the affected components back to operational.
+ *
+ * Returns the created update alongside the incident so the caller can address
+ * it without guessing which timeline entry is the new one.
+ */
 export async function addIncidentUpdate(
   db: Database,
   incidentId: string,
   input: { status: IncidentStatus; body: string },
-): Promise<IncidentWithRelations | undefined> {
+): Promise<{ incident: IncidentWithRelations; update: IncidentUpdateRow } | undefined> {
   const existing = await getIncident(db, incidentId);
   if (!existing) {
     return undefined;
   }
   const now = nowMs();
   const resolved = input.status === 'RESOLVED';
+  const update: IncidentUpdateRow = {
+    id: createId('upd'),
+    incidentId,
+    status: input.status,
+    body: input.body,
+    createTime: now,
+  };
   await db.batch([
-    db.insert(incidentUpdates).values({
-      id: createId('upd'),
-      incidentId,
-      status: input.status,
-      body: input.body,
-      createTime: now,
-    }),
+    db.insert(incidentUpdates).values(update),
     db
       .update(incidents)
       .set({
@@ -376,7 +409,8 @@ export async function addIncidentUpdate(
     await restoreIncidentComponents(db, existing);
   }
 
-  return getIncident(db, incidentId);
+  const incident = await getIncident(db, incidentId);
+  return incident ? { incident, update } : undefined;
 }
 
 export async function resolveIncident(
@@ -384,10 +418,11 @@ export async function resolveIncident(
   incidentId: string,
   body?: string,
 ): Promise<IncidentWithRelations | undefined> {
-  return addIncidentUpdate(db, incidentId, {
+  const result = await addIncidentUpdate(db, incidentId, {
     status: 'RESOLVED',
     body: body ?? 'This incident has been resolved.',
   });
+  return result?.incident;
 }
 
 async function restoreIncidentComponents(db: Database, incident: IncidentWithRelations) {
@@ -404,7 +439,7 @@ export async function getSummary(db: Database) {
   const [groups, allComponents, active, siteName, siteDescription] = await Promise.all([
     listComponentGroups(db),
     listComponents(db),
-    listIncidents(db, { filter: 'active', pageSize: 50 }),
+    listIncidents(db, { state: 'ACTIVE', pageSize: 50 }),
     getSetting(db, 'siteName'),
     getSetting(db, 'siteDescription'),
   ]);
@@ -420,15 +455,25 @@ export async function getSummary(db: Database) {
       components: allComponents.filter((component) => component.groupId === group.id),
     })),
     ungroupedComponents: allComponents.filter((component) => component.groupId == null),
-    activeIncidents: active.incidents.filter((incident) =>
-      isActiveIncidentStatus(incident.status),
-    ),
+    activeIncidents: active.incidents.filter((incident) => isActiveIncidentStatus(incident.status)),
   };
 }
 
 export async function countUsers(db: Database): Promise<number> {
   const row = await db.get<{ count: number }>(sql`SELECT COUNT(*) as count FROM "user"`);
   return Number(row?.count ?? 0);
+}
+
+/**
+ * A site counts as initialized once the owner account exists. Before that the
+ * auth tables may not exist yet, so a failed query means "not initialized".
+ */
+export async function isSiteInitialized(db: Database): Promise<boolean> {
+  try {
+    return (await countUsers(db)) > 0;
+  } catch {
+    return false;
+  }
 }
 
 export async function searchComponents(db: Database, query: string): Promise<ComponentRow[]> {
@@ -440,34 +485,18 @@ export async function searchComponents(db: Database, query: string): Promise<Com
     .all();
 }
 
+/**
+ * Offset paging over an already-loaded list. Only for the small, rarely-written
+ * collections (component groups, components, one incident's updates) where the
+ * shifting-row problem that keyset paging solves does not arise.
+ */
 export function paginate<T>(
   rows: readonly T[],
   pageSize?: number,
-  pageToken?: string,
-): { items: T[]; nextPageToken?: string } {
-  const size = Math.min(Math.max(pageSize ?? 25, 1), 100);
-  const offset = decodePageToken(pageToken);
+  cursor?: string,
+): { items: T[]; nextCursor?: string } {
+  const size = clampPageSize(pageSize);
+  const offset = decodeOffset(cursor);
   const slice = rows.slice(offset, offset + size + 1);
-  const hasMore = slice.length > size;
-  const items = (hasMore ? slice.slice(0, size) : slice) as T[];
-  return {
-    items,
-    nextPageToken: hasMore ? encodePageToken(offset + size) : undefined,
-  };
-}
-
-function encodePageToken(offset: number): string {
-  return btoa(JSON.stringify({ o: offset }));
-}
-
-function decodePageToken(token: string | undefined): number {
-  if (!token) {
-    return 0;
-  }
-  try {
-    const parsed = JSON.parse(atob(token)) as { o?: number };
-    return typeof parsed.o === 'number' && parsed.o >= 0 ? parsed.o : 0;
-  } catch {
-    return 0;
-  }
+  return takePage(slice, size, () => encodeOffset(offset + size));
 }

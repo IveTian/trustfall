@@ -1,22 +1,50 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "trustfall",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  // The Cloudflare adapter only defaults `main`; pointing it here keeps Astro's
+  // fetch handler and adds scheduled/queue/Durable Object exports alongside it.
+  "main": "./apps/web/worker/index.ts",
   "compatibility_date": "2026-08-31",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./apps/web/dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/admin/*", "!/admin/assets/*"]
+    "run_worker_first": ["/admin/*", "!/admin/assets/*"],
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "trustfall",
-      "migrations_dir": "./migrations"
-    }
+      "migrations_dir": "./migrations",
+    },
   ],
+  // One trigger, used as a heartbeat. The free plan allows three and gives the
+  // scheduled handler a 10ms CPU budget, so pacing lives in the database rather
+  // than in cron expressions.
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+  // The free-plan delivery clock. Queues need a paid plan; this does not.
+  "durable_objects": {
+    "bindings": [{ "name": "DISPATCHER", "class_name": "Dispatcher" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Dispatcher"] }],
+  // Queues need Workers Paid. Binding them here would make the one-click deploy
+  // button fail to provision on a free account, so they stay commented out.
+  // Uncomment after `wrangler queues create trustfall-events` to get batching,
+  // concurrency and a dead-letter queue.
+  // "queues": {
+  //   "producers": [{ "binding": "EVENTS", "queue": "trustfall-events" }],
+  //   "consumers": [
+  //     {
+  //       "queue": "trustfall-events",
+  //       "max_batch_size": 10,
+  //       "max_retries": 5,
+  //       "dead_letter_queue": "trustfall-events-dlq"
+  //     }
+  //   ]
+  // },
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

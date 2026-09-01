@@ -4,25 +4,54 @@ import {
   deleteIncident,
   getIncident,
   listIncidents,
-  resolveIncident,
+  paginate,
   updateIncident,
 } from '@trustfall/db';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
-import { ApiError, RpcStatus } from '../errors.ts';
+import { ApiError, ProblemType } from '../errors.ts';
+import { checkIfMatch, createdLocation, etagFor, ifMatchHeader, problems } from '../http.ts';
 import { presentIncident, presentUpdate } from '../presenters.ts';
 import {
-  errorSchema,
+  collectionSchema,
   incidentImpactSchema,
   incidentSchema,
   incidentStatusSchema,
   incidentUpdateSchema,
-  parseResourceId,
-  resourceIdFromCustomMethod,
+  pageQuery,
 } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
-import { applyUpdateMask } from '../update-mask.ts';
+
+const incidentParam = z.object({
+  incident_id: z.string().openapi({
+    param: { name: 'incident_id', in: 'path' },
+    example: 'inc_a53d',
+  }),
+});
+
+const updateParam = incidentParam.extend({
+  update_id: z.string().openapi({ param: { name: 'update_id', in: 'path' }, example: 'upd_7b39' }),
+});
+
+const etagHeader = {
+  ETag: {
+    description: 'Pass back as `If-Match` on a write to reject a stale update.',
+    schema: { type: 'string' as const },
+  },
+};
+
+const locationHeader = (description: string) => ({
+  Location: { description, schema: { type: 'string' as const } },
+});
+
+async function loadIncident(id: string) {
+  const incident = await getIncident(db(), id);
+  if (!incident) {
+    throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');
+  }
+  return incident;
+}
 
 export function incidentRoutes() {
   const app = new OpenAPIHono<AppEnv>();
@@ -30,97 +59,38 @@ export function incidentRoutes() {
   app.openapi(
     createRoute({
       method: 'get',
-      path: '/v1/incidents',
+      path: '/incidents',
       tags: ['Incidents'],
+      summary: 'List incidents',
+      description:
+        'Newest first by `started_at`, with `id` as the tie breaker. Cursor-paged: incidents are opened while a reader pages through, and an offset would make it skip one.',
       security: [],
       request: {
-        query: z.object({
-          pageSize: z.coerce.number().int().min(1).max(100).optional(),
-          pageToken: z.string().optional(),
-          filter: z.enum(['active', 'resolved', 'all']).optional(),
+        query: pageQuery.extend({
+          state: z.enum(['ACTIVE', 'RESOLVED']).optional().openapi({
+            description: 'Omit for every incident. ACTIVE is everything not yet resolved.',
+          }),
         }),
       },
       responses: {
         200: {
-          description: 'Lists incidents.',
+          description: 'A page of incidents.',
           content: {
-            'application/json': {
-              schema: z.object({
-                incidents: z.array(incidentSchema),
-                nextPageToken: z.string().optional(),
-              }),
-            },
+            'application/json': { schema: collectionSchema(incidentSchema, 'IncidentPage') },
           },
         },
+        400: problems.validationFailed,
       },
     }),
     async (c) => {
       const query = c.req.valid('query');
-      const result = await listIncidents(db(), query);
+      const result = await listIncidents(db(), {
+        pageSize: query.page_size,
+        cursor: query.cursor,
+        state: query.state,
+      });
       return c.json(
-        {
-          incidents: result.incidents.map(presentIncident),
-          nextPageToken: result.nextPageToken,
-        },
-        200,
-      );
-    },
-  );
-
-  app.openapi(
-    createRoute({
-      method: 'get',
-      path: '/v1/incidents/{incident}',
-      tags: ['Incidents'],
-      security: [],
-      request: { params: z.object({ incident: z.string() }) },
-      responses: {
-        200: {
-          description: 'Gets an incident.',
-          content: { 'application/json': { schema: incidentSchema } },
-        },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
-      },
-    }),
-    async (c) => {
-      const incident = await getIncident(
-        db(),
-        parseResourceId(c.req.valid('param').incident, 'incidents'),
-      );
-      if (!incident) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
-      }
-      return c.json(presentIncident(incident), 200);
-    },
-  );
-
-  app.openapi(
-    createRoute({
-      method: 'get',
-      path: '/v1/incidents/{incident}/updates',
-      tags: ['Incidents'],
-      security: [],
-      request: { params: z.object({ incident: z.string() }) },
-      responses: {
-        200: {
-          description: 'Lists incident updates.',
-          content: {
-            'application/json': {
-              schema: z.object({ updates: z.array(incidentUpdateSchema) }),
-            },
-          },
-        },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
-      },
-    }),
-    async (c) => {
-      const id = parseResourceId(c.req.valid('param').incident, 'incidents');
-      const incident = await getIncident(db(), id);
-      if (!incident) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
-      }
-      return c.json(
-        { updates: incident.updates.map((update) => presentUpdate(update, id)) },
+        { items: result.incidents.map(presentIncident), next_cursor: result.nextCursor },
         200,
       );
     },
@@ -130,8 +100,11 @@ export function incidentRoutes() {
     createRoute({
       method: 'post',
       middleware: authMiddleware,
-      path: '/v1/incidents',
+      path: '/incidents',
       tags: ['Incidents'],
+      summary: 'Open an incident',
+      description:
+        'Creates the incident and its first timeline entry, and puts every affected component into a partial outage.',
       request: {
         body: {
           content: {
@@ -139,20 +112,25 @@ export function incidentRoutes() {
               schema: z.object({
                 title: z.string().min(1),
                 impact: incidentImpactSchema,
-                body: z.string().min(1),
-                status: incidentStatusSchema.optional(),
-                componentIds: z.array(z.string()).default([]),
+                body: z.string().min(1).openapi({ description: 'The first timeline entry.' }),
+                status: incidentStatusSchema.optional().openapi({
+                  description: 'Defaults to INVESTIGATING.',
+                }),
+                component_ids: z.array(z.string()).default([]),
               }),
             },
           },
         },
       },
       responses: {
-        200: {
-          description: 'Creates an incident.',
+        201: {
+          description: 'The opened incident.',
+          headers: locationHeader('URI of the created incident.'),
           content: { 'application/json': { schema: incidentSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        409: problems.conflict,
       },
     }),
     async (c) => {
@@ -162,9 +140,34 @@ export function incidentRoutes() {
         impact: body.impact,
         body: body.body,
         status: body.status,
-        componentIds: body.componentIds.map((id) => parseResourceId(id, 'components')),
+        componentIds: body.component_ids,
       });
-      return c.json(presentIncident(incident), 200);
+      return c.json(presentIncident(incident), 201, {
+        Location: createdLocation(c, incident.id),
+      });
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/incidents/{incident_id}',
+      tags: ['Incidents'],
+      summary: 'Read an incident',
+      security: [],
+      request: { params: incidentParam },
+      responses: {
+        200: {
+          description: 'The incident, with its timeline newest first.',
+          headers: etagHeader,
+          content: { 'application/json': { schema: incidentSchema } },
+        },
+        404: problems.notFound,
+      },
+    }),
+    async (c) => {
+      const incident = await loadIncident(c.req.valid('param').incident_id);
+      return c.json(presentIncident(incident), 200, { ETag: etagFor(incident.updateTime) });
     },
   );
 
@@ -172,11 +175,14 @@ export function incidentRoutes() {
     createRoute({
       method: 'patch',
       middleware: authMiddleware,
-      path: '/v1/incidents/{incident}',
+      path: '/incidents/{incident_id}',
       tags: ['Incidents'],
+      summary: 'Correct an incident',
+      description:
+        'Edits the framing only. Status moves through POST /incidents/{incident_id}/updates, because every transition owes readers an explanation. An omitted property is left unchanged.',
       request: {
-        params: z.object({ incident: z.string() }),
-        query: z.object({ updateMask: z.string().optional() }),
+        params: incidentParam,
+        headers: ifMatchHeader,
         body: {
           content: {
             'application/json': {
@@ -190,24 +196,29 @@ export function incidentRoutes() {
       },
       responses: {
         200: {
-          description: 'Updates an incident.',
+          description: 'The updated incident.',
+          headers: etagHeader,
           content: { 'application/json': { schema: incidentSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const body = applyUpdateMask(c.req.valid('query').updateMask, c.req.valid('json'));
-      const incident = await updateIncident(
-        db(),
-        parseResourceId(c.req.valid('param').incident, 'incidents'),
-        body,
-      );
+      const { incident_id: incidentId } = c.req.valid('param');
+      const existing = await loadIncident(incidentId);
+      checkIfMatch(c, etagFor(existing.updateTime));
+      const body = c.req.valid('json');
+      const incident = await updateIncident(db(), incidentId, {
+        title: body.title,
+        impact: body.impact,
+      });
       if (!incident) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
+        throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');
       }
-      return c.json(presentIncident(incident), 200);
+      return c.json(presentIncident(incident), 200, { ETag: etagFor(incident.updateTime) });
     },
   );
 
@@ -215,26 +226,54 @@ export function incidentRoutes() {
     createRoute({
       method: 'delete',
       middleware: authMiddleware,
-      path: '/v1/incidents/{incident}',
+      path: '/incidents/{incident_id}',
       tags: ['Incidents'],
-      request: { params: z.object({ incident: z.string() }) },
+      summary: 'Delete an incident',
+      description: 'For an incident opened by mistake. Resolving one is a timeline update.',
+      request: { params: incidentParam, headers: ifMatchHeader },
       responses: {
-        200: {
-          description: 'Deletes an incident.',
-          content: { 'application/json': { schema: z.object({ name: z.string() }) } },
-        },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        204: { description: 'The incident is gone.' },
+        401: problems.unauthenticated,
+        404: problems.notFound,
+        412: problems.preconditionFailed,
       },
     }),
     async (c) => {
-      const id = parseResourceId(c.req.valid('param').incident, 'incidents');
-      const existing = await getIncident(db(), id);
-      if (!existing) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
-      }
-      await deleteIncident(db(), id);
-      return c.json({ name: `incidents/${id}` }, 200);
+      const { incident_id: incidentId } = c.req.valid('param');
+      const existing = await loadIncident(incidentId);
+      checkIfMatch(c, etagFor(existing.updateTime));
+      await deleteIncident(db(), incidentId);
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/incidents/{incident_id}/updates',
+      tags: ['Incidents'],
+      summary: 'List an incident timeline',
+      description: 'Newest first.',
+      security: [],
+      request: { params: incidentParam, query: pageQuery },
+      responses: {
+        200: {
+          description: 'A page of timeline entries.',
+          content: {
+            'application/json': {
+              schema: collectionSchema(incidentUpdateSchema, 'IncidentUpdatePage'),
+            },
+          },
+        },
+        400: problems.validationFailed,
+        404: problems.notFound,
+      },
+    }),
+    async (c) => {
+      const incident = await loadIncident(c.req.valid('param').incident_id);
+      const query = c.req.valid('query');
+      const page = paginate(incident.updates, query.page_size, query.cursor);
+      return c.json({ items: page.items.map(presentUpdate), next_cursor: page.nextCursor }, 200);
     },
   );
 
@@ -242,10 +281,13 @@ export function incidentRoutes() {
     createRoute({
       method: 'post',
       middleware: authMiddleware,
-      path: '/v1/incidents/{incident}/updates',
+      path: '/incidents/{incident_id}/updates',
       tags: ['Incidents'],
+      summary: 'Post a timeline update',
+      description:
+        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational.',
       request: {
-        params: z.object({ incident: z.string() }),
+        params: incidentParam,
         body: {
           content: {
             'application/json': {
@@ -258,68 +300,52 @@ export function incidentRoutes() {
         },
       },
       responses: {
-        200: {
-          description: 'Posts an incident update.',
-          content: { 'application/json': { schema: incidentSchema } },
+        201: {
+          description: 'The posted update.',
+          headers: locationHeader('URI of the created update.'),
+          content: { 'application/json': { schema: incidentUpdateSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
+        404: problems.notFound,
       },
     }),
     async (c) => {
-      const incident = await addIncidentUpdate(
-        db(),
-        parseResourceId(c.req.valid('param').incident, 'incidents'),
-        c.req.valid('json'),
-      );
-      if (!incident) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
+      const { incident_id: incidentId } = c.req.valid('param');
+      const result = await addIncidentUpdate(db(), incidentId, c.req.valid('json'));
+      if (!result) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');
       }
-      return c.json(presentIncident(incident), 200);
+      return c.json(presentUpdate(result.update), 201, {
+        Location: createdLocation(c, result.update.id),
+      });
     },
   );
 
   app.openapi(
     createRoute({
-      method: 'post',
-      middleware: authMiddleware,
-      path: '/v1/incidents/{incident}:resolve',
+      method: 'get',
+      path: '/incidents/{incident_id}/updates/{update_id}',
       tags: ['Incidents'],
-      request: {
-        body: {
-          content: {
-            'application/json': {
-              schema: z.object({ body: z.string().optional() }),
-            },
-          },
-          required: false,
-        },
-      },
+      summary: 'Read a timeline update',
+      security: [],
+      request: { params: updateParam },
       responses: {
         200: {
-          description: 'Resolves an incident.',
-          content: { 'application/json': { schema: incidentSchema } },
+          description: 'The update.',
+          content: { 'application/json': { schema: incidentUpdateSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
-        404: { description: 'Not found.', content: { 'application/json': { schema: errorSchema } } },
+        404: problems.notFound,
       },
     }),
     async (c) => {
-      let body: { body?: string } = {};
-      try {
-        body = await c.req.json();
-      } catch {
-        body = {};
+      const { incident_id: incidentId, update_id: updateId } = c.req.valid('param');
+      const incident = await loadIncident(incidentId);
+      const update = incident.updates.find((row) => row.id === updateId);
+      if (!update) {
+        throw new ApiError(ProblemType.NOT_FOUND, 'Incident update not found.');
       }
-      const incident = await resolveIncident(
-        db(),
-        resourceIdFromCustomMethod(new URL(c.req.url).pathname, 'incidents', 'resolve'),
-        body.body,
-      );
-      if (!incident) {
-        throw new ApiError(RpcStatus.NOT_FOUND, 'Incident not found.');
-      }
-      return c.json(presentIncident(incident), 200);
+      return c.json(presentUpdate(update), 200);
     },
   );
 

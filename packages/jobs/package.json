@@ -1,0 +1,18 @@
+{
+  "name": "@trustfall/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./dispatcher": "./src/dispatcher.ts",
+    "./scheduled": "./src/scheduled.ts",
+    "./queue": "./src/queue.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trustfall/db": "workspace:*"
+  }
+}

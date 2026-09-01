@@ -8,17 +8,17 @@ export function SettingsPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    void api<{ siteName: string; siteDescription: string }>('/api/v1/settings').then((data) => {
-      setSiteName(data.siteName);
-      setSiteDescription(data.siteDescription);
+    void api<{ site_name: string; site_description: string }>('/api/settings').then((data) => {
+      setSiteName(data.site_name);
+      setSiteDescription(data.site_description);
     });
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await api('/api/v1/settings?updateMask=siteName,siteDescription', {
+    await api('/api/settings', {
       method: 'PATCH',
-      body: JSON.stringify({ siteName, siteDescription }),
+      body: JSON.stringify({ site_name: siteName, site_description: siteDescription }),
     });
     setToast('Saved settings.');
   }

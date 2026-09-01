@@ -12,6 +12,11 @@ export default defineConfig({
   adapter: cloudflare({
     imageService: 'compile',
     configPath: fileURLToPath(new URL('../../wrangler.jsonc', import.meta.url)),
+    // Dev runs with apps/web as the Vite root, so Miniflare would persist to
+    // apps/web/.wrangler/state — a different D1 file than `db:migrate:local`
+    // and `preview` write to. Pin it to the workspace root so all three share
+    // one local database.
+    persistState: { path: fileURLToPath(new URL('../../.wrangler/state', import.meta.url)) },
   }),
   integrations: [react()],
   vite: {

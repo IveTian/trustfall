@@ -1,5 +1,5 @@
 ---
-import { DesignGallery, SiteChrome, ThemeToggle } from '@trustfall/design';
+import { DesignGallery, SiteChrome } from '@trustfall/design';
 import Base from '../layouts/Base.astro';
 
 if (!import.meta.env.DEV) {
@@ -9,7 +9,6 @@ if (!import.meta.env.DEV) {
 
 <Base title="Design gallery · TrustFall">
   <SiteChrome siteName="TrustFall">
-    <ThemeToggle client:load />
     <DesignGallery />
   </SiteChrome>
 </Base>

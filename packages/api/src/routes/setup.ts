@@ -1,71 +1,83 @@
-import { countUsers, setSetting } from '@trustfall/db';
+import { isSiteInitialized, setSetting } from '@trustfall/db';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { getMigrations } from 'better-auth/db/migration';
 import { getAuth } from '../auth.ts';
 import { db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
-import { ApiError, RpcStatus } from '../errors.ts';
-import { errorSchema, setupSchema } from '../schemas.ts';
+import { ApiError, ProblemType } from '../errors.ts';
+import { problems } from '../http.ts';
+import { setupSchema } from '../schemas.ts';
 
+/**
+ * Setup is a singleton resource, and creating it is the one genuinely
+ * retry-sensitive call in this API: it creates the owner account. A repeat
+ * request cannot create a second owner — it is refused with 409 and
+ * `/problems/already-initialized`, which is also the answer a client should
+ * treat as success after a timeout.
+ */
 export function setupRoutes() {
   const app = new OpenAPIHono<AppEnv>();
 
   app.openapi(
     createRoute({
       method: 'get',
-      path: '/v1/setup',
+      path: '/setup',
       tags: ['Setup'],
+      summary: 'Check whether the site is initialized',
       security: [],
       responses: {
         200: {
-          description: 'Reports whether the owner account exists.',
+          description: 'Whether the owner account exists.',
           content: { 'application/json': { schema: setupSchema } },
         },
       },
     }),
-    async (c) => {
-      const initialized = await isInitialized();
-      return c.json({ initialized }, 200);
-    },
+    async (c) => c.json({ initialized: await isSiteInitialized(db()) }, 200),
   );
 
   app.openapi(
     createRoute({
       method: 'post',
-      path: '/v1/setup:initialize',
+      path: '/setup',
       tags: ['Setup'],
+      summary: 'Initialize the site',
+      description: 'Creates the owner account and names the site. Sign-up stays closed after this.',
       security: [],
       request: {
         body: {
           content: {
             'application/json': {
               schema: z.object({
-                email: z.string().email(),
+                email: z.email(),
                 password: z.string().min(8),
-                displayName: z.string().min(1),
-                siteName: z.string().min(1),
-                siteDescription: z.string().optional(),
+                display_name: z.string().min(1),
+                site_name: z.string().min(1),
+                site_description: z.string().optional(),
               }),
             },
           },
         },
       },
       responses: {
-        200: {
-          description: 'Creates the owner account.',
+        201: {
+          description: 'The site is initialized.',
+          headers: {
+            Location: {
+              description: 'URI of the setup resource.',
+              schema: { type: 'string' as const },
+            },
+          },
           content: { 'application/json': { schema: setupSchema } },
         },
-        400: {
-          description: 'Already initialized.',
-          content: { 'application/json': { schema: errorSchema } },
-        },
+        400: problems.validationFailed,
+        409: problems.conflict,
       },
     }),
     async (c) => {
-      if (await isInitialized()) {
+      if (await isSiteInitialized(db())) {
         throw new ApiError(
-          RpcStatus.FAILED_PRECONDITION,
-          'TrustFall is already initialized.',
+          ProblemType.ALREADY_INITIALIZED,
+          'TrustFall is already initialized. Sign in instead.',
         );
       }
 
@@ -84,24 +96,18 @@ export function setupRoutes() {
         body: {
           email: body.email,
           password: body.password,
-          name: body.displayName,
+          name: body.display_name,
           role: 'admin',
         },
       });
-      await setSetting(db(), 'siteName', body.siteName);
-      await setSetting(db(), 'siteDescription', body.siteDescription ?? '');
+      await setSetting(db(), 'siteName', body.site_name);
+      await setSetting(db(), 'siteDescription', body.site_description ?? '');
 
-      return c.json({ initialized: true }, 200);
+      return c.json({ initialized: true }, 201, {
+        Location: new URL(c.req.url).pathname,
+      });
     },
   );
 
   return app;
-}
-
-async function isInitialized(): Promise<boolean> {
-  try {
-    return (await countUsers(db())) > 0;
-  } catch {
-    return false;
-  }
 }

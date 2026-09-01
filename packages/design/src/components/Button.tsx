@@ -9,25 +9,23 @@ import { text } from '../tokens/text.stylex.ts';
 const styles = stylex.create({
   button: {
     alignItems: 'center',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderStyle: 'solid',
-    borderWidth: '1px',
+    borderWidth: 0,
+    boxSizing: 'border-box',
+    cursor: {
+      default: 'pointer',
+      ':disabled': 'not-allowed',
+    },
     display: 'inline-flex',
+    flexShrink: 0,
     fontFamily: text.familyUi,
-    fontSize: text.sizeBody,
-    fontWeight: text.weightBold,
+    fontWeight: text.weightMedium,
     gap: space[2],
     justifyContent: 'center',
-    lineHeight: text.lineBody,
-    paddingBlock: space[2],
-    paddingInline: space[4],
-    textDecoration: 'none',
-    transitionDuration: {
-      default: motion.base,
-      [breakpoints.reduceMotion]: '0ms',
+    opacity: {
+      ':disabled': 0.55,
     },
-    transitionProperty: 'background-color, border-color, color',
-    transitionTimingFunction: motion.ease,
     outlineColor: {
       ':focus-visible': color.focus,
     },
@@ -40,53 +38,147 @@ const styles = stylex.create({
     outlineWidth: {
       ':focus-visible': control.focusWidth,
     },
-    cursor: {
-      default: 'pointer',
-      ':disabled': 'not-allowed',
+    paddingBlock: 0,
+    textDecoration: 'none',
+    transitionDuration: {
+      default: motion.fast,
+      [breakpoints.reduceMotion]: '0ms',
     },
-    opacity: {
-      ':disabled': 0.55,
-    },
+    transitionProperty: 'background-color, color',
+    transitionTimingFunction: motion.ease,
+    whiteSpace: 'nowrap',
+  },
+  sm: {
+    fontSize: text.sizeCaption,
+    height: control.heightSm,
+    lineHeight: text.lineCaption,
+    paddingInline: space[2],
+  },
+  md: {
+    fontSize: text.sizeBodySmall,
+    height: control.heightMd,
+    lineHeight: text.lineBodySmall,
+    paddingInline: space[3],
+  },
+  lg: {
+    fontSize: text.sizeBody,
+    height: control.heightLg,
+    lineHeight: text.lineBody,
+    paddingInline: space[4],
   },
   primary: {
-    backgroundColor: color.accent,
-    borderColor: color.accent,
+    backgroundColor: {
+      default: color.accent,
+      ':hover': color.accentHover,
+      ':active': color.accentActive,
+    },
     color: color.textInverse,
   },
   secondary: {
-    backgroundColor: color.surfaceRaised,
-    borderColor: color.border,
+    backgroundColor: {
+      default: color.surfaceSunken,
+      ':hover': color.border,
+    },
     color: color.textPrimary,
   },
   danger: {
-    backgroundColor: color.majorOutage,
-    borderColor: color.majorOutage,
+    backgroundColor: {
+      default: color.partialOutage,
+      ':hover': color.majorOutage,
+    },
     color: color.textInverse,
   },
   ghost: {
     backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    color: color.accent,
-    paddingInline: space[2],
+    color: {
+      default: color.textMuted,
+      ':hover': color.textPrimary,
+    },
+    height: 'auto',
+    paddingInline: 0,
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  withEnd: {
+    justifyContent: 'space-between',
   },
   icon: {
-    padding: space[2],
+    height: control.heightMd,
+    paddingInline: space[2],
+    width: control.heightMd,
+  },
+  spinner: {
+    animationDuration: {
+      default: '0.7s',
+      [breakpoints.reduceMotion]: '0ms',
+    },
+    animationIterationCount: 'infinite',
+    animationName: stylex.keyframes({
+      from: { transform: 'rotate(0deg)' },
+      to: { transform: 'rotate(360deg)' },
+    }),
+    animationTimingFunction: 'linear',
+    borderColor: 'currentColor transparent transparent transparent',
+    borderRadius: radius.pill,
+    borderStyle: 'solid',
+    borderWidth: control.focusWidth,
+    boxSizing: 'border-box',
+    display: 'block',
+    height: '1em',
+    width: '1em',
   },
 });
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Size = 'sm' | 'md' | 'lg';
+
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: ReactNode;
+  variant?: Variant;
+  size?: Size;
+  fullWidth?: boolean;
+  loading?: boolean;
+  loadingLabel?: ReactNode;
+  startEnhancer?: ReactNode;
+  endEnhancer?: ReactNode;
+};
+
+function EnhancerSpinner() {
+  return <span aria-hidden {...stylex.props(styles.spinner)} />;
+}
 
 export function Button({
   children,
   variant = 'primary',
+  size = 'md',
+  fullWidth,
+  loading,
+  loadingLabel,
+  startEnhancer,
+  endEnhancer,
+  disabled,
+  type = 'button',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  children: ReactNode;
-  variant?: Variant;
-}) {
+}: ButtonProps) {
+  const spinnerInEnhancer = Boolean(loading && endEnhancer);
   return (
-    <button {...props} {...stylex.props(styles.button, styles[variant])}>
-      {children}
+    <button
+      {...props}
+      type={type}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...stylex.props(
+        styles.button,
+        styles[size],
+        styles[variant],
+        fullWidth && styles.fullWidth,
+        fullWidth && endEnhancer != null && styles.withEnd,
+      )}
+    >
+      {startEnhancer}
+      {spinnerInEnhancer && loadingLabel != null ? loadingLabel : children}
+      {spinnerInEnhancer ? <EnhancerSpinner /> : endEnhancer}
     </button>
   );
 }
@@ -95,17 +187,20 @@ export function IconButton({
   label,
   children,
   variant = 'ghost',
+  size = 'md',
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
   children: ReactNode;
   variant?: Variant;
+  size?: Size;
 }) {
   return (
     <button
       {...props}
+      type={props.type ?? 'button'}
       aria-label={label}
-      {...stylex.props(styles.button, styles[variant], styles.icon)}
+      {...stylex.props(styles.button, styles[variant], styles[size], styles.icon)}
     >
       {children}
     </button>

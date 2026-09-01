@@ -2,57 +2,55 @@ import { getSetting, setSetting } from '@trustfall/db';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
-import { errorSchema, settingsSchema } from '../schemas.ts';
+import { problems } from '../http.ts';
+import { settingsSchema } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
-import { applyUpdateMask } from '../update-mask.ts';
 
+async function readSettings() {
+  const [siteName, siteDescription] = await Promise.all([
+    getSetting(db(), 'siteName'),
+    getSetting(db(), 'siteDescription'),
+  ]);
+  return { site_name: siteName ?? 'TrustFall', site_description: siteDescription ?? '' };
+}
+
+/** A singleton: there is one site, so `/settings` is the resource itself. */
 export function settingsRoutes() {
   const app = new OpenAPIHono<AppEnv>();
 
   app.openapi(
     createRoute({
       method: 'get',
-      path: '/v1/settings',
+      path: '/settings',
       tags: ['Settings'],
+      summary: 'Read site settings',
       middleware: authMiddleware,
       responses: {
         200: {
-          description: 'Gets site settings.',
+          description: 'The site settings.',
           content: { 'application/json': { schema: settingsSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
+        401: problems.unauthenticated,
       },
     }),
-    async (c) => {
-      const [siteName, siteDescription] = await Promise.all([
-        getSetting(db(), 'siteName'),
-        getSetting(db(), 'siteDescription'),
-      ]);
-      return c.json(
-        {
-          name: 'settings' as const,
-          siteName: siteName ?? 'TrustFall',
-          siteDescription: siteDescription ?? '',
-        },
-        200,
-      );
-    },
+    async (c) => c.json(await readSettings(), 200),
   );
 
   app.openapi(
     createRoute({
       method: 'patch',
-      path: '/v1/settings',
+      path: '/settings',
       tags: ['Settings'],
+      summary: 'Update site settings',
+      description: 'An omitted property is left unchanged.',
       middleware: authMiddleware,
       request: {
-        query: z.object({ updateMask: z.string().optional() }),
         body: {
           content: {
             'application/json': {
               schema: z.object({
-                siteName: z.string().min(1).optional(),
-                siteDescription: z.string().optional(),
+                site_name: z.string().min(1).optional(),
+                site_description: z.string().optional(),
               }),
             },
           },
@@ -60,32 +58,22 @@ export function settingsRoutes() {
       },
       responses: {
         200: {
-          description: 'Updates site settings.',
+          description: 'The updated settings.',
           content: { 'application/json': { schema: settingsSchema } },
         },
-        401: { description: 'Unauthenticated.', content: { 'application/json': { schema: errorSchema } } },
+        400: problems.validationFailed,
+        401: problems.unauthenticated,
       },
     }),
     async (c) => {
-      const body = applyUpdateMask(c.req.valid('query').updateMask, c.req.valid('json'));
-      if (body.siteName) {
-        await setSetting(db(), 'siteName', body.siteName);
+      const body = c.req.valid('json');
+      if (body.site_name !== undefined) {
+        await setSetting(db(), 'siteName', body.site_name);
       }
-      if (body.siteDescription !== undefined) {
-        await setSetting(db(), 'siteDescription', body.siteDescription);
+      if (body.site_description !== undefined) {
+        await setSetting(db(), 'siteDescription', body.site_description);
       }
-      const [siteName, siteDescription] = await Promise.all([
-        getSetting(db(), 'siteName'),
-        getSetting(db(), 'siteDescription'),
-      ]);
-      return c.json(
-        {
-          name: 'settings' as const,
-          siteName: siteName ?? 'TrustFall',
-          siteDescription: siteDescription ?? '',
-        },
-        200,
-      );
+      return c.json(await readSettings(), 200);
     },
   );
 

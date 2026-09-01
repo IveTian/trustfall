@@ -42,9 +42,7 @@ export function StatusIcon({
       {icon === 'diamond' ? (
         <path fill="currentColor" d="M8 1.2 14.8 8 8 14.8 1.2 8 8 1.2Z" />
       ) : null}
-      {icon === 'triangle' ? (
-        <path fill="currentColor" d="M8 2.2 14.6 13.5H1.4L8 2.2Z" />
-      ) : null}
+      {icon === 'triangle' ? <path fill="currentColor" d="M8 2.2 14.6 13.5H1.4L8 2.2Z" /> : null}
       {icon === 'stop' ? (
         <path
           fill="currentColor"

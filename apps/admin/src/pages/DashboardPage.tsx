@@ -1,12 +1,20 @@
-import { Button, Card, Stack, StatusPill, Text, Toast, componentStatusPresentation } from '@trustfall/design';
+import {
+  Button,
+  Card,
+  Stack,
+  StatusPill,
+  Text,
+  Toast,
+  componentStatusPresentation,
+} from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
 import { COMPONENT_STATUSES } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api.ts';
+import { api, type Page } from '../lib/api.ts';
 
 type Component = {
-  name: string;
-  displayName: string;
+  id: string;
+  display_name: string;
   status: ComponentStatus;
 };
 
@@ -15,20 +23,21 @@ export function DashboardPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   async function refresh() {
-    const data = await api<{ components: Component[] }>('/api/v1/components');
-    setComponents(data.components);
+    const page = await api<Page<Component>>('/api/components');
+    setComponents(page.items);
   }
 
   useEffect(() => {
     void refresh();
   }, []);
 
-  async function setStatus(name: string, status: ComponentStatus) {
-    await api(`/api/v1/${name}:setStatus`, {
-      method: 'POST',
+  // Declaring a status is an edit to the component, not a separate operation.
+  async function setStatus(component: Component, status: ComponentStatus) {
+    await api(`/api/components/${component.id}`, {
+      method: 'PATCH',
       body: JSON.stringify({ status }),
     });
-    setToast(`Updated ${name.split('/')[1]}`);
+    setToast(`Updated ${component.display_name}`);
     await refresh();
   }
 
@@ -43,11 +52,11 @@ export function DashboardPage() {
       ) : (
         <Stack gap={3}>
           {components.map((component) => (
-            <Card key={component.name}>
+            <Card key={component.id}>
               <Stack gap={3}>
                 <Stack direction="horizontal" gap={2}>
                   <Text as="h2" tone="title">
-                    {component.displayName}
+                    {component.display_name}
                   </Text>
                   <StatusPill status={component.status} />
                 </Stack>
@@ -58,7 +67,7 @@ export function DashboardPage() {
                         key={status}
                         type="button"
                         variant={component.status === status ? 'primary' : 'secondary'}
-                        onClick={() => setStatus(component.name, status)}
+                        onClick={() => setStatus(component, status)}
                       >
                         {componentStatusPresentation[status].label}
                       </Button>

@@ -1,10 +1,11 @@
+import { startMeshRuntime } from '../../../packages/design/src/mesh-runtime.ts';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
-import '@fontsource/atkinson-hyperlegible/400.css';
-import '@fontsource/atkinson-hyperlegible/700.css';
-import '@fontsource/ibm-plex-mono/400.css';
 import './styles/global.css';
+import 'virtual:stylex:runtime';
+
+startMeshRuntime();
 
 const root = document.getElementById('root');
 if (!root) {

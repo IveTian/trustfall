@@ -1,6 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { control } from '../tokens/const.stylex.ts';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
+import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
@@ -10,33 +15,37 @@ import { Text } from './Text.tsx';
 
 const styles = stylex.create({
   control: {
-    backgroundColor: color.surface,
-    borderRadius: radius.md,
+    backgroundColor: color.surfaceSunken,
+    // Focus reads as an inner ring: the border turns accent and an inset
+    // shadow doubles its weight, so nothing is painted outside the field.
+    borderColor: {
+      default: color.surfaceSunken,
+      ':hover': color.border,
+      ':focus': color.accent,
+    },
+    borderRadius: radius.sm,
     borderStyle: 'solid',
-    borderWidth: '1px',
+    borderWidth: mesh.line,
+    boxShadow: {
+      default: 'none',
+      ':focus': `inset 0 0 0 ${mesh.line} ${color.accent}`,
+    },
+    boxSizing: 'border-box',
     color: color.textPrimary,
     fontFamily: text.familyUi,
     fontSize: text.sizeBody,
     lineHeight: text.lineBody,
+    minHeight: control.heightLg,
+    outlineStyle: 'none',
     paddingBlock: space[2],
     paddingInline: space[3],
+    transitionDuration: {
+      default: motion.fast,
+      [breakpoints.reduceMotion]: '0ms',
+    },
+    transitionProperty: 'border-color, box-shadow',
+    transitionTimingFunction: motion.ease,
     width: '100%',
-    borderColor: {
-      default: color.border,
-      ':focus-visible': color.accent,
-    },
-    outlineColor: {
-      ':focus-visible': color.focus,
-    },
-    outlineOffset: {
-      ':focus-visible': control.focusOffset,
-    },
-    outlineStyle: {
-      ':focus-visible': 'solid',
-    },
-    outlineWidth: {
-      ':focus-visible': control.focusWidth,
-    },
   },
   area: {
     minHeight: space[8],
@@ -57,9 +66,11 @@ export function Field({
 }) {
   return (
     <Stack gap={1} as="div">
-      <Text as="legend" tone="caption">
-        <label htmlFor={htmlFor}>{label}</label>
-      </Text>
+      <label htmlFor={htmlFor}>
+        <Text as="span" tone="caption">
+          {label}
+        </Text>
+      </label>
       {children}
       {hint ? <Text tone="caption">{hint}</Text> : null}
     </Stack>

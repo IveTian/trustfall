@@ -1,15 +1,6 @@
-import * as stylex from '@stylexjs/stylex';
 import { useEffect, useState } from 'react';
 import { applyTheme, readTheme, type ThemePreference } from '../theme-script.ts';
-import { space } from '../tokens/space.stylex.ts';
 import { Button } from './Button.tsx';
-import { Stack } from './Stack.tsx';
-
-const styles = stylex.create({
-  group: {
-    gap: space[1],
-  },
-});
 
 const OPTIONS: Array<{ id: ThemePreference; label: string }> = [
   { id: 'system', label: 'System' },
@@ -24,24 +15,25 @@ export function ThemeToggle() {
     setTheme(readTheme());
   }, []);
 
+  const current = OPTIONS.find((option) => option.id === theme) ?? {
+    id: 'system' as const,
+    label: 'System',
+  };
+  const next =
+    OPTIONS[(OPTIONS.findIndex((option) => option.id === theme) + 1) % OPTIONS.length] ?? current;
+
   return (
-    <Stack direction="horizontal" gap={1} as="div">
-      <span {...stylex.props(styles.group)}>
-        {OPTIONS.map((option) => (
-          <Button
-            key={option.id}
-            type="button"
-            variant={theme === option.id ? 'secondary' : 'ghost'}
-            aria-pressed={theme === option.id}
-            onClick={() => {
-              setTheme(option.id);
-              applyTheme(option.id);
-            }}
-          >
-            {option.label}
-          </Button>
-        ))}
-      </span>
-    </Stack>
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      aria-label={`Theme: ${current.label}. Click to change.`}
+      onClick={() => {
+        setTheme(next.id);
+        applyTheme(next.id);
+      }}
+    >
+      {current.label}
+    </Button>
   );
 }

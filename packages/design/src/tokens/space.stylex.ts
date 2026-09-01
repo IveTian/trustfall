@@ -11,5 +11,6 @@ export const space = stylex.defineVars({
   7: '48px',
   8: '64px',
   page: '32px',
+  gutter: '28px',
   prose: '40rem',
 });

@@ -1,13 +1,8 @@
-import * as stylex from '@stylexjs/stylex';
-import { compactSpace, compactText } from '@trustfall/design';
-import { color } from '@trustfall/design/tokens/color.stylex.ts';
-import { space } from '@trustfall/design/tokens/space.stylex.ts';
-import { text } from '@trustfall/design/tokens/text.stylex.ts';
-import { useEffect, useState } from 'react';
+import { MeshScreen } from '@trustfall/design';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router';
 import { AppShell } from './components/AppShell.tsx';
-import { api } from './lib/api.ts';
 import { useSession } from './lib/auth.ts';
+import { SetupProvider, useSetup } from './lib/setup.tsx';
 import { ComponentsPage } from './pages/ComponentsPage.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { IncidentDetailPage } from './pages/IncidentDetailPage.tsx';
@@ -16,51 +11,35 @@ import { LoginPage } from './pages/LoginPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 import { SetupPage } from './pages/SetupPage.tsx';
 
-const styles = stylex.create({
-  gate: {
-    backgroundColor: color.surface,
-    color: color.textPrimary,
-    fontFamily: text.familyUi,
-    marginInline: 'auto',
-    maxWidth: space.prose,
-    minHeight: '100%',
-    padding: space.page,
-  },
-});
-
 function Gate() {
   const { data, isPending } = useSession();
   const location = useLocation();
-  const [initialized, setInitialized] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    void api<{ initialized: boolean }>('/api/v1/setup')
-      .then((result) => setInitialized(result.initialized))
-      .catch(() => setInitialized(false));
-  }, []);
+  const { initialized } = useSetup();
 
   if (isPending || initialized == null) {
-    return <p>Loading…</p>;
+    return <MeshScreen />;
   }
 
-  if (!initialized && location.pathname !== '/setup') {
-    return <Navigate to="/setup" replace />;
-  }
-  if (initialized && location.pathname === '/setup') {
+  // A live session proves the owner account exists, so it outranks the setup
+  // answer: a stale `initialized: false` must never bounce a signed-in user
+  // back to the setup form.
+  if (data) {
+    if (location.pathname === '/login' || location.pathname === '/setup') {
+      return <Navigate to="/" replace />;
+    }
+  } else if (!initialized) {
+    if (location.pathname !== '/setup') {
+      return <Navigate to="/setup" replace />;
+    }
+  } else if (location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
-  }
-  if (!data && location.pathname !== '/login' && location.pathname !== '/setup') {
-    return <Navigate to="/login" replace />;
-  }
-  if (data && (location.pathname === '/login' || location.pathname === '/setup')) {
-    return <Navigate to="/" replace />;
   }
 
   if (location.pathname === '/login' || location.pathname === '/setup') {
     return (
-      <div {...stylex.props(compactSpace, compactText, styles.gate)}>
+      <MeshScreen>
         <Outlet />
-      </div>
+      </MeshScreen>
     );
   }
 
@@ -90,5 +69,9 @@ const router = createBrowserRouter(
 );
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <SetupProvider>
+      <RouterProvider router={router} />
+    </SetupProvider>
+  );
 }

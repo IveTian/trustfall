@@ -1,62 +1,66 @@
-import * as stylex from '@stylexjs/stylex';
-import { Button, compactSpace, compactText, Link, Stack, Text, ThemeToggle } from '@trustfall/design';
-import { color } from '@trustfall/design/tokens/color.stylex.ts';
-import { space } from '@trustfall/design/tokens/space.stylex.ts';
-import { text } from '@trustfall/design/tokens/text.stylex.ts';
+import {
+  AppShell as Shell,
+  Button,
+  SidebarNavItem,
+  SidebarNavSection,
+  Stack,
+  Text,
+  ThemeToggle,
+} from '@trustfall/design';
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { signOut } from '../lib/auth.ts';
 
-const styles = stylex.create({
-  shell: {
-    backgroundColor: color.surface,
-    color: color.textPrimary,
-    display: 'grid',
-    fontFamily: text.familyUi,
-    gridTemplateColumns: '14rem 1fr',
-    minHeight: '100%',
-  },
-  side: {
-    padding: space.page,
-  },
-  main: {
-    padding: space.page,
-  },
-  navLink: {
-    textDecoration: 'none',
-  },
-});
-
 export function AppShell({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   return (
-    <div {...stylex.props(compactSpace, compactText, styles.shell)}>
-      <aside {...stylex.props(styles.side)}>
-        <Stack gap={4}>
-          <Text as="h1" tone="title">
-            TrustFall
-          </Text>
-          <Stack gap={2} as="nav">
-            <NavLink to="/" {...stylex.props(styles.navLink)}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/components" {...stylex.props(styles.navLink)}>
-              Components
-            </NavLink>
-            <NavLink to="/incidents" {...stylex.props(styles.navLink)}>
-              Incidents
-            </NavLink>
-            <NavLink to="/settings" {...stylex.props(styles.navLink)}>
-              Settings
-            </NavLink>
-            <Link href="/">View status page</Link>
+    <Shell
+      sidebar={
+        <Stack gap={5} grow justify="between">
+          <Stack gap={4}>
+            <Text as="h1" tone="title">
+              TrustFall
+            </Text>
+            <SidebarNavSection>
+              <SidebarNavItem
+                icon="dashboard-line"
+                label="Dashboard"
+                active={location.pathname === '/'}
+                onClick={() => navigate('/')}
+              />
+              <SidebarNavItem
+                icon="stack-line"
+                label="Components"
+                active={location.pathname.startsWith('/components')}
+                onClick={() => navigate('/components')}
+              />
+              <SidebarNavItem
+                icon="alert-line"
+                label="Incidents"
+                active={location.pathname.startsWith('/incidents')}
+                onClick={() => navigate('/incidents')}
+              />
+              <SidebarNavItem
+                icon="settings-line"
+                label="Settings"
+                active={location.pathname.startsWith('/settings')}
+                onClick={() => navigate('/settings')}
+              />
+            </SidebarNavSection>
           </Stack>
-          <ThemeToggle />
-          <Button type="button" variant="ghost" onClick={() => void signOut()}>
-            Sign out
-          </Button>
+          <Stack gap={3}>
+            <SidebarNavItem icon="external-link-line" label="View status page" href="/" />
+            <ThemeToggle />
+            <Button type="button" variant="ghost" size="sm" onClick={() => void signOut()}>
+              Sign out
+            </Button>
+          </Stack>
         </Stack>
-      </aside>
-      <main {...stylex.props(styles.main)}>{children}</main>
-    </div>
+      }
+    >
+      {children}
+    </Shell>
   );
 }

@@ -6,11 +6,14 @@ import { text } from '../tokens/text.stylex.ts';
 
 const styles = stylex.create({
   link: {
-    color: color.accent,
+    color: {
+      default: color.textMuted,
+      ':hover': color.textPrimary,
+    },
     fontFamily: text.familyUi,
-    fontSize: text.sizeBody,
-    textDecorationLine: 'underline',
-    textUnderlineOffset: '0.15em',
+    fontSize: text.sizeBodySmall,
+    lineHeight: text.lineBodySmall,
+    textDecorationLine: 'none',
     outlineColor: {
       ':focus-visible': color.focus,
     },

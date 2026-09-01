@@ -9,11 +9,11 @@ import type { StatusTone } from '../status.ts';
 const styles = stylex.create({
   badge: {
     alignItems: 'center',
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     display: 'inline-flex',
     fontFamily: text.familyUi,
     fontSize: text.sizeCaption,
-    fontWeight: text.weightBold,
+    fontWeight: text.weightMedium,
     gap: space[1],
     lineHeight: text.lineCaption,
     paddingBlock: space[1],
@@ -40,7 +40,7 @@ const styles = stylex.create({
     color: color.maintenance,
   },
   neutral: {
-    backgroundColor: color.accentMuted,
+    backgroundColor: color.surfaceSunken,
     color: color.textPrimary,
   },
 });

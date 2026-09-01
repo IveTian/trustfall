@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { control } from '../tokens/const.stylex.ts';
+import { control, mesh } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
@@ -17,14 +17,15 @@ const styles = stylex.create({
   tab: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderStyle: 'solid',
-    borderWidth: '1px',
+    borderWidth: mesh.line,
     color: color.textMuted,
     cursor: 'pointer',
     fontFamily: text.familyUi,
-    fontSize: text.sizeBody,
-    paddingBlock: space[2],
+    fontSize: text.sizeBodySmall,
+    lineHeight: text.lineBodySmall,
+    paddingBlock: space[1],
     paddingInline: space[3],
     outlineColor: {
       ':focus-visible': color.focus,
@@ -40,7 +41,7 @@ const styles = stylex.create({
     },
   },
   selected: {
-    backgroundColor: color.accentMuted,
+    backgroundColor: color.surfaceSunken,
     color: color.textPrimary,
   },
 });
@@ -73,13 +74,7 @@ export function Tabs({
   );
 }
 
-export function TabPanel({
-  children,
-  labelledBy,
-}: {
-  children: ReactNode;
-  labelledBy: string;
-}) {
+export function TabPanel({ children, labelledBy }: { children: ReactNode; labelledBy: string }) {
   return (
     <div role="tabpanel" aria-labelledby={labelledBy}>
       {children}

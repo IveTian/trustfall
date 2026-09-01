@@ -8,12 +8,7 @@ export const COMPONENT_STATUSES = [
 
 export type ComponentStatus = (typeof COMPONENT_STATUSES)[number];
 
-export const INCIDENT_STATUSES = [
-  'INVESTIGATING',
-  'IDENTIFIED',
-  'MONITORING',
-  'RESOLVED',
-] as const;
+export const INCIDENT_STATUSES = ['INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'] as const;
 
 export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
 

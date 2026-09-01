@@ -1,15 +1,25 @@
-import { Button, Card, Field, Input, Select, Stack, StatusPill, Text, Textarea } from '@trustfall/design';
+import {
+  Button,
+  Card,
+  Field,
+  Input,
+  Select,
+  Stack,
+  StatusPill,
+  Text,
+  Textarea,
+} from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
 import { type FormEvent, useEffect, useState } from 'react';
-import { api } from '../lib/api.ts';
+import { api, type Page } from '../lib/api.ts';
 
-type Group = { name: string; displayName: string };
+type Group = { id: string; display_name: string };
 type Component = {
-  name: string;
-  displayName: string;
+  id: string;
+  display_name: string;
   description: string | null;
   status: ComponentStatus;
-  group: string | null;
+  group_id: string | null;
 };
 
 export function ComponentsPage() {
@@ -17,12 +27,12 @@ export function ComponentsPage() {
   const [components, setComponents] = useState<Component[]>([]);
 
   async function refresh() {
-    const [groupData, componentData] = await Promise.all([
-      api<{ componentGroups: Group[] }>('/api/v1/componentGroups'),
-      api<{ components: Component[] }>('/api/v1/components'),
+    const [groupPage, componentPage] = await Promise.all([
+      api<Page<Group>>('/api/component-groups'),
+      api<Page<Component>>('/api/components'),
     ]);
-    setGroups(groupData.componentGroups);
-    setComponents(componentData.components);
+    setGroups(groupPage.items);
+    setComponents(componentPage.items);
   }
 
   useEffect(() => {
@@ -32,9 +42,9 @@ export function ComponentsPage() {
   async function createGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await api('/api/v1/componentGroups', {
+    await api('/api/component-groups', {
       method: 'POST',
-      body: JSON.stringify({ displayName: form.get('displayName') }),
+      body: JSON.stringify({ display_name: form.get('display_name') }),
     });
     event.currentTarget.reset();
     await refresh();
@@ -43,20 +53,20 @@ export function ComponentsPage() {
   async function createComponent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await api('/api/v1/components', {
+    await api('/api/components', {
       method: 'POST',
       body: JSON.stringify({
-        displayName: form.get('displayName'),
+        display_name: form.get('display_name'),
         description: form.get('description') || undefined,
-        group: form.get('group') || null,
+        group_id: form.get('group_id') || null,
       }),
     });
     event.currentTarget.reset();
     await refresh();
   }
 
-  async function remove(path: string) {
-    await api(`/api/v1/${path}`, { method: 'DELETE' });
+  async function removeComponent(componentId: string) {
+    await api(`/api/components/${componentId}`, { method: 'DELETE' });
     await refresh();
   }
 
@@ -72,7 +82,7 @@ export function ComponentsPage() {
               Add a group
             </Text>
             <Field label="Display name" htmlFor="group-name">
-              <Input id="group-name" name="displayName" required />
+              <Input id="group-name" name="display_name" required />
             </Field>
             <Button type="submit">Add group</Button>
           </Stack>
@@ -85,17 +95,17 @@ export function ComponentsPage() {
               Add a component
             </Text>
             <Field label="Display name" htmlFor="component-name">
-              <Input id="component-name" name="displayName" required />
+              <Input id="component-name" name="display_name" required />
             </Field>
             <Field label="Description" htmlFor="component-description">
               <Textarea id="component-description" name="description" />
             </Field>
             <Field label="Group" htmlFor="component-group">
-              <Select id="component-group" name="group" defaultValue="">
+              <Select id="component-group" name="group_id" defaultValue="">
                 <option value="">Ungrouped</option>
                 {groups.map((group) => (
-                  <option key={group.name} value={group.name}>
-                    {group.displayName}
+                  <option key={group.id} value={group.id}>
+                    {group.display_name}
                   </option>
                 ))}
               </Select>
@@ -106,11 +116,11 @@ export function ComponentsPage() {
       </Card>
       <Stack gap={3}>
         {components.map((component) => (
-          <Card key={component.name}>
+          <Card key={component.id}>
             <Stack direction="horizontal" gap={3}>
-              <Text tone="title">{component.displayName}</Text>
+              <Text tone="title">{component.display_name}</Text>
               <StatusPill status={component.status} />
-              <Button type="button" variant="ghost" onClick={() => remove(component.name)}>
+              <Button type="button" variant="ghost" onClick={() => removeComponent(component.id)}>
                 Delete
               </Button>
             </Stack>

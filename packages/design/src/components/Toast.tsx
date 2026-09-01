@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { zIndex } from '../tokens/const.stylex.ts';
+import { mesh, zIndex } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { shadow } from '../tokens/shadow.stylex.ts';
@@ -12,10 +12,10 @@ const styles = stylex.create({
     borderColor: color.border,
     borderRadius: radius.md,
     borderStyle: 'solid',
-    borderWidth: '1px',
+    borderWidth: mesh.line,
     boxShadow: shadow.overlay,
+    insetBlockStart: space[4],
     insetInlineEnd: space[4],
-    insetBlockEnd: space[4],
     maxWidth: '24rem',
     padding: space[3],
     position: 'fixed',
