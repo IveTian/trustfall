@@ -1,4 +1,13 @@
-import { Button, Field, Input, Stack, Text, Textarea, Toast } from '@trustfall/design';
+import {
+  Button,
+  Field,
+  Input,
+  PageBody,
+  PageHeader,
+  Stack,
+  Textarea,
+  Toast,
+} from '@trustfall/design';
 import { type FormEvent, useEffect, useState } from 'react';
 import { api } from '../lib/api.ts';
 
@@ -24,30 +33,34 @@ export function SettingsPage() {
   }
 
   return (
-    <Stack gap={4}>
-      <Text as="h1" tone="display">
-        Settings
-      </Text>
-      <form onSubmit={onSubmit}>
-        <Stack gap={3}>
-          <Field label="Site name" htmlFor="siteName">
-            <Input
-              id="siteName"
-              value={siteName}
-              onChange={(event) => setSiteName(event.target.value)}
-            />
-          </Field>
-          <Field label="Description" htmlFor="siteDescription">
-            <Textarea
-              id="siteDescription"
-              value={siteDescription}
-              onChange={(event) => setSiteDescription(event.target.value)}
-            />
-          </Field>
-          <Button type="submit">Save changes</Button>
+    <>
+      <PageHeader icon="settings-fill" trail={['Status', 'Settings']} />
+      <PageBody>
+        <Stack gap={4}>
+          <form onSubmit={onSubmit}>
+            <Stack gap={3}>
+              <Field label="Site name" htmlFor="siteName">
+                <Input
+                  id="siteName"
+                  value={siteName}
+                  onChange={(event) => setSiteName(event.target.value)}
+                />
+              </Field>
+              <Field label="Description" htmlFor="siteDescription">
+                <Textarea
+                  id="siteDescription"
+                  value={siteDescription}
+                  onChange={(event) => setSiteDescription(event.target.value)}
+                />
+              </Field>
+              <Stack direction="horizontal" gap={2}>
+                <Button type="submit">Save changes</Button>
+              </Stack>
+            </Stack>
+          </form>
+          <Toast message={toast} />
         </Stack>
-      </form>
-      <Toast message={toast} />
-    </Stack>
+      </PageBody>
+    </>
   );
 }

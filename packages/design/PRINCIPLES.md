@@ -10,7 +10,9 @@ Tokens are the only source of style values. A component must not introduce a raw
 
 A status has exactly one canonical mapping to color, icon shape, and label, declared in `src/status.ts`. The public page and the admin must never invent their own mapping.
 
-Standalone screens (status page, sign-in, setup) use `MeshScreen`. The admin console uses `AppShell`. Apps do not invent a third page chrome.
+Standalone screens (status page, sign-in, setup) use `MeshScreen`. The admin console uses `AppShell`, and every console screen composes the same two pieces inside it: a `PageHeader` carrying the mark, the breadcrumb and that page's actions, then a `PageBody`. Apps do not invent a third page chrome.
+
+A control that opens a popup is a design-system component — `Menu`, `StatusSelect`, `ProfileMenu`. The console does not fall back to a native `<select>` or `alert()`, whose popups the theme cannot reach.
 
 ## Human
 

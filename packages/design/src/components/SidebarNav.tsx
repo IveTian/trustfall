@@ -1,8 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
-import { control } from '../tokens/const.stylex.ts';
+import { control, mesh } from '../tokens/const.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
+import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
 import { Icon } from './Icon.tsx';
@@ -11,21 +12,24 @@ const styles = stylex.create({
   row: {
     alignItems: 'center',
     backgroundColor: 'transparent',
-    borderRadius: radius.sm,
-    borderWidth: 0,
+    // The hairline is always drawn so the active pill does not nudge the row.
+    borderColor: 'transparent',
+    borderRadius: radius.md,
+    borderStyle: 'solid',
+    borderWidth: mesh.line,
     boxSizing: 'border-box',
-    color: color.textPrimary,
+    color: color.navText,
     cursor: 'pointer',
     display: 'flex',
     fontFamily: text.familyUi,
     fontSize: text.sizeBodySmall,
-    fontWeight: text.weightRegular,
+    fontWeight: text.weightMedium,
     gap: space[2],
     lineHeight: text.lineBodySmall,
     marginInline: `calc(${space[2]} * -1)`,
     maxWidth: `calc(100% + ${space[4]})`,
     minWidth: 0,
-    paddingBlock: space[1],
+    paddingBlock: space[2],
     paddingInline: space[2],
     textAlign: 'start',
     textDecoration: 'none',
@@ -46,22 +50,34 @@ const styles = stylex.create({
   rowHover: {
     backgroundColor: {
       default: 'transparent',
-      ':hover': color.surfaceSubtle,
+      // The rail is lighter than the rest of the canvas, so its hover fill has
+      // to come from below it, not from the white end of the scale.
+      ':hover': color.shellHover,
     },
   },
   rowActive: {
+    // On the canvas rail, the current item is the one lifted surface: white,
+    // hairlined, medium weight.
     backgroundColor: {
-      default: color.surfaceSunken,
-      ':hover': color.surfaceSunken,
+      default: color.surfaceRaised,
+      ':hover': color.surfaceRaised,
     },
+    borderColor: color.border,
+    boxShadow: shadow.subtle,
+    color: color.navTextActive,
+  },
+  iconActive: {
+    color: color.accent,
   },
   icon: {
     alignItems: 'center',
-    color: color.textMuted,
+    color: color.navText,
     display: 'flex',
     flexShrink: 0,
     justifyContent: 'center',
-    width: space[5],
+    // Box the icon at its own 16px so the gap the row declares is the gap you
+    // see; a wider box would pad it out to 12.
+    width: space[4],
   },
   label: {
     flexBasis: '0%',
@@ -87,7 +103,7 @@ export function SidebarNavItem({ icon, label, active = false, onClick, href }: N
   const body = (
     <>
       {icon ? (
-        <span {...stylex.props(styles.icon)}>
+        <span {...stylex.props(styles.icon, active && styles.iconActive)}>
           <Icon name={icon} size={16} />
         </span>
       ) : null}
@@ -127,10 +143,12 @@ const sectionStyles = stylex.create({
     minWidth: 0,
   },
   heading: {
-    color: color.textMuted,
+    color: color.navText,
     fontFamily: text.familyUi,
     fontSize: text.sizeCaption,
+    fontWeight: text.weightMedium,
     lineHeight: text.lineCaption,
     margin: 0,
+    paddingInline: space[2],
   },
 });

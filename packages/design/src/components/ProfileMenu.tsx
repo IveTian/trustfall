@@ -18,9 +18,9 @@ import { text } from '../tokens/text.stylex.ts';
 import { Icon } from './Icon.tsx';
 
 const THEME_OPTIONS: Array<{ id: ThemePreference; label: string; icon: string }> = [
-  { id: 'system', label: 'System', icon: 'computer-line' },
-  { id: 'light', label: 'Light', icon: 'sun-line' },
-  { id: 'dark', label: 'Dark', icon: 'moon-line' },
+  { id: 'system', label: 'System', icon: 'computer-fill' },
+  { id: 'light', label: 'Light', icon: 'sun-fill' },
+  { id: 'dark', label: 'Dark', icon: 'moon-fill' },
 ];
 
 export type ProfileMenuItem = {
@@ -30,7 +30,14 @@ export type ProfileMenuItem = {
   onSelect: () => void;
 };
 
-type MenuAnchor = { inlineStart: string; blockEnd: string; minWidth: string };
+type MenuAnchor = {
+  inlineStart: string;
+  blockStart: string;
+  blockEnd: string;
+  maxBlock: string;
+  minWidth: string;
+  dropsDown: boolean;
+};
 type SubmenuAnchor = { inlineStart: string; blockStart: string };
 
 function isRtl(element: HTMLElement): boolean {
@@ -40,13 +47,22 @@ function isRtl(element: HTMLElement): boolean {
 /**
  * Both panels are `position: fixed` so the sidebar's own `overflow: auto`
  * cannot clip them; that costs a measurement against the viewport.
+ *
+ * The panel hangs off whichever side of the trigger has the room — down from an
+ * account row at the head of the rail, up from one at its foot — and never
+ * grows past the space it chose.
  */
 function measureMenu(trigger: HTMLElement): MenuAnchor {
   const rect = trigger.getBoundingClientRect();
+  const below = window.innerHeight - rect.bottom;
+  const dropsDown = below >= rect.top;
   return {
     inlineStart: `${isRtl(trigger) ? window.innerWidth - rect.right : rect.left}px`,
-    blockEnd: `${window.innerHeight - rect.top}px`,
+    blockStart: dropsDown ? `${rect.bottom}px` : 'auto',
+    blockEnd: dropsDown ? 'auto' : `${window.innerHeight - rect.top}px`,
+    maxBlock: `calc(${dropsDown ? below : rect.top}px - ${space[5]})`,
     minWidth: `${rect.width}px`,
+    dropsDown,
   };
 }
 
@@ -359,7 +375,7 @@ export function ProfileMenu({
           {email ? <span {...stylex.props(styles.email)}>{email}</span> : null}
         </span>
         <span {...stylex.props(styles.trailingIcon)}>
-          <Icon name="expand-up-down-line" size={16} />
+          <Icon name="expand-up-down-fill" size={16} />
         </span>
       </button>
 
@@ -384,7 +400,14 @@ export function ProfileMenu({
           onPointerMove={onPanelPointerMove}
           {...stylex.props(
             styles.panel,
-            styles.menuAt(anchor.inlineStart, anchor.blockEnd, anchor.minWidth),
+            anchor.dropsDown && styles.panelDown,
+            styles.menuAt(
+              anchor.inlineStart,
+              anchor.blockStart,
+              anchor.blockEnd,
+              anchor.maxBlock,
+              anchor.minWidth,
+            ),
           )}
         >
           <div {...stylex.props(styles.header)}>
@@ -410,12 +433,12 @@ export function ProfileMenu({
             {...stylex.props(styles.row, submenuOpen && styles.rowOpen)}
           >
             <span {...stylex.props(styles.rowIcon)}>
-              <Icon name="contrast-2-line" size={16} />
+              <Icon name="contrast-2-fill" size={16} />
             </span>
             <span {...stylex.props(styles.rowLabel)}>Appearance</span>
             <span {...stylex.props(styles.rowValue)}>{current.label}</span>
             <span {...stylex.props(styles.rowIcon, styles.rowIconForward)}>
-              <Icon name="arrow-right-s-line" size={16} />
+              <Icon name="arrow-right-s-fill" size={16} />
             </span>
           </button>
 
@@ -482,7 +505,7 @@ export function ProfileMenu({
               </span>
               <span {...stylex.props(styles.rowLabel)}>{option.label}</span>
               <span {...stylex.props(styles.rowIcon, styles.rowIconAccent)}>
-                {option.id === theme ? <Icon name="check-line" size={16} /> : null}
+                {option.id === theme ? <Icon name="check-fill" size={16} /> : null}
               </span>
             </button>
           ))}
@@ -501,7 +524,7 @@ const styles = stylex.create({
     alignItems: 'center',
     backgroundColor: {
       default: 'transparent',
-      ':hover': color.surfaceSubtle,
+      ':hover': color.shellHover,
     },
     borderRadius: radius.sm,
     borderWidth: 0,
@@ -525,7 +548,7 @@ const styles = stylex.create({
     outlineWidth: {
       ':focus-visible': control.focusWidth,
     },
-    paddingBlock: space[1],
+    paddingBlock: space[2],
     paddingInline: space[2],
     textAlign: 'start',
     transitionDuration: {
@@ -559,7 +582,7 @@ const styles = stylex.create({
     display: 'flex',
     fontFamily: text.familyUi,
     fontSize: text.sizeCaption,
-    fontWeight: text.weightBold,
+    fontWeight: text.weightMedium,
     justifyContent: 'center',
     lineHeight: text.lineCaption,
   },
@@ -581,6 +604,7 @@ const styles = stylex.create({
   email: {
     color: color.textMuted,
     fontSize: text.sizeCaption,
+    fontWeight: text.weightMedium,
     lineHeight: text.lineCaption,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -618,10 +642,24 @@ const styles = stylex.create({
     position: 'fixed',
     zIndex: zIndex.menu,
   },
-  menuAt: (inlineStart: string, blockEnd: string, minWidth: string) => ({
+  panelDown: {
+    animationName: stylex.keyframes({
+      from: { opacity: 0, transform: `translateY(calc(${space[1]} * -1))` },
+      to: { opacity: 1, transform: 'translateY(0)' },
+    }),
+  },
+  menuAt: (
+    inlineStart: string,
+    blockStart: string,
+    blockEnd: string,
+    maxBlock: string,
+    minWidth: string,
+  ) => ({
     insetBlockEnd: blockEnd,
+    insetBlockStart: blockStart,
     insetInlineStart: inlineStart,
-    marginBlockEnd: space[2],
+    marginBlock: space[2],
+    maxBlockSize: maxBlock,
     minInlineSize: minWidth,
   }),
   submenu: {

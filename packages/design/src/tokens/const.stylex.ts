@@ -27,6 +27,9 @@ export const control = stylex.defineConsts({
   heightLg: '40px',
   sidebarWidth: '240px',
   menuMaxWidth: '280px',
+  headerHeight: '52px',
+  markSize: '28px',
+  contentWidth: '1040px',
 });
 
 export const mesh = stylex.defineConsts({

@@ -1,0 +1,419 @@
+import * as stylex from '@stylexjs/stylex';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { color } from '../tokens/color.stylex.ts';
+import { breakpoints, control, mesh, motion, zIndex } from '../tokens/const.stylex.ts';
+import { radius } from '../tokens/radius.stylex.ts';
+import { shadow } from '../tokens/shadow.stylex.ts';
+import { space } from '../tokens/space.stylex.ts';
+import { text } from '../tokens/text.stylex.ts';
+import { Icon } from './Icon.tsx';
+
+export type MenuItem = {
+  id: string;
+  label: string;
+  /** Leading visual. A status glyph, an icon — anything 16px square. */
+  icon?: ReactNode;
+  /** Present makes the item a radio: the menu is a choice, not a list of verbs. */
+  selected?: boolean;
+  onSelect: () => void;
+};
+
+type Anchor = { blockStart: string; inlineStart: string; inlineEnd: string; minWidth: string };
+
+function isRtl(element: HTMLElement): boolean {
+  return getComputedStyle(element).direction === 'rtl';
+}
+
+/**
+ * The panel is `position: fixed` so a scrolling row or a panel with
+ * `overflow: hidden` cannot clip it; that costs a measurement against the
+ * viewport, repeated while the menu is open.
+ */
+function measure(trigger: HTMLElement, align: 'start' | 'end'): Anchor {
+  const rect = trigger.getBoundingClientRect();
+  const rtl = isRtl(trigger);
+  const startInset = rtl ? window.innerWidth - rect.right : rect.left;
+  const endInset = rtl ? rect.left : window.innerWidth - rect.right;
+  return {
+    blockStart: `${rect.bottom}px`,
+    inlineStart: align === 'start' ? `${startInset}px` : 'auto',
+    inlineEnd: align === 'end' ? `${endInset}px` : 'auto',
+    minWidth: `${rect.width}px`,
+  };
+}
+
+/**
+ * A menu button and the panel it owns. The trigger looks like a secondary
+ * button because that is what it is: one control, on the end edge of a row,
+ * holding the current value.
+ *
+ * Opens on click or ArrowDown/ArrowUp; arrows walk the items, Escape returns
+ * focus to the trigger, Tab and an outside press close it. This exists so the
+ * console never falls back to a native `<select>`, whose popup the theme
+ * cannot reach.
+ */
+export function Menu({
+  label,
+  children,
+  items,
+  align = 'end',
+  disabled = false,
+}: {
+  /** Accessible name for the trigger, e.g. "Status for Checkout API". */
+  label: string;
+  /** Trigger content: the current value. */
+  children: ReactNode;
+  items: MenuItem[];
+  align?: 'start' | 'end';
+  disabled?: boolean;
+}) {
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const focusOnOpen = useRef<'first' | 'last' | null>(null);
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
+
+  // Reposition while open: the panel is fixed, the row under it is not.
+  useEffect(() => {
+    const trigger = triggerRef.current;
+    if (!open || !trigger) {
+      return;
+    }
+    const place = () => setAnchor(measure(trigger, align));
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, align]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
+
+  // Keyboard activation lands on an item; a mouse click leaves focus alone.
+  useEffect(() => {
+    if (!open || focusOnOpen.current === null) {
+      return;
+    }
+    const where = focusOnOpen.current;
+    focusOnOpen.current = null;
+    focusItemAt(where === 'first' ? 0 : -1);
+  }, [open]);
+
+  function itemNodes(): HTMLElement[] {
+    return Array.from(panelRef.current?.querySelectorAll<HTMLElement>('[data-menu-item]') ?? []);
+  }
+
+  function focusItemAt(index: number) {
+    const nodes = itemNodes();
+    if (nodes.length === 0) {
+      return;
+    }
+    nodes[((index % nodes.length) + nodes.length) % nodes.length]?.focus();
+  }
+
+  function openMenu(from: 'first' | 'last' | null) {
+    const trigger = triggerRef.current;
+    if (!trigger || disabled) {
+      return;
+    }
+    focusOnOpen.current = from;
+    setAnchor(measure(trigger, align));
+    setOpen(true);
+  }
+
+  function close(restoreFocus: boolean) {
+    setOpen(false);
+    if (restoreFocus) {
+      triggerRef.current?.focus();
+    }
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!open) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openMenu(event.key === 'ArrowDown' ? 'first' : 'last');
+      }
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key === 'Tab') {
+      close(false);
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+      return;
+    }
+    event.preventDefault();
+    const nodes = itemNodes();
+    const index = nodes.indexOf(document.activeElement as HTMLElement);
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    focusItemAt(index === -1 ? (step === 1 ? 0 : -1) : index + step);
+  }
+
+  return (
+    // The handler sits on the wrapper so Escape works from the trigger and from
+    // inside the panel alike.
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
+    <div ref={rootRef} onKeyDown={onKeyDown} {...stylex.props(styles.root)}>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={(event) => {
+          if (open) {
+            close(false);
+          } else {
+            openMenu(event.detail === 0 ? 'first' : null);
+          }
+        }}
+        {...stylex.props(styles.trigger, open && styles.triggerOpen)}
+      >
+        <span {...stylex.props(styles.triggerLabel)}>{children}</span>
+        <span {...stylex.props(styles.triggerIcon)}>
+          <Icon name="arrow-down-s-fill" size={16} />
+        </span>
+      </button>
+
+      {open && anchor ? (
+        <div
+          ref={panelRef}
+          id={menuId}
+          role="menu"
+          aria-label={label}
+          {...stylex.props(
+            styles.panel,
+            styles.panelAt(
+              anchor.blockStart,
+              anchor.inlineStart,
+              anchor.inlineEnd,
+              anchor.minWidth,
+            ),
+          )}
+        >
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role={item.selected === undefined ? 'menuitem' : 'menuitemradio'}
+              aria-checked={item.selected}
+              data-menu-item
+              tabIndex={-1}
+              onClick={() => {
+                close(true);
+                item.onSelect();
+              }}
+              {...stylex.props(styles.row)}
+            >
+              {item.icon ? <span {...stylex.props(styles.rowIcon)}>{item.icon}</span> : null}
+              <span {...stylex.props(styles.rowLabel)}>{item.label}</span>
+              {item.selected === undefined ? null : (
+                <span {...stylex.props(styles.rowCheck)}>
+                  {item.selected ? <Icon name="check-fill" size={16} /> : null}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const styles = stylex.create({
+  root: {
+    minWidth: 0,
+    position: 'relative',
+  },
+  trigger: {
+    alignItems: 'center',
+    backgroundColor: {
+      default: color.surfaceRaised,
+      ':hover': color.surfaceSubtle,
+      ':disabled': color.surfaceSubtle,
+    },
+    borderColor: {
+      default: color.border,
+      ':hover': color.borderStrong,
+    },
+    borderRadius: radius.md,
+    borderStyle: 'solid',
+    borderWidth: mesh.line,
+    boxShadow: shadow.subtle,
+    boxSizing: 'border-box',
+    color: color.textPrimary,
+    cursor: {
+      default: 'pointer',
+      ':disabled': 'not-allowed',
+    },
+    display: 'inline-flex',
+    fontFamily: text.familyUi,
+    fontSize: text.sizeBodySmall,
+    fontWeight: text.weightMedium,
+    gap: space[2],
+    justifyContent: 'space-between',
+    lineHeight: text.lineBodySmall,
+    minHeight: control.heightMd,
+    opacity: {
+      ':disabled': 0.55,
+    },
+    outlineColor: {
+      ':focus-visible': color.focus,
+    },
+    outlineOffset: {
+      ':focus-visible': control.focusOffset,
+    },
+    outlineStyle: {
+      ':focus-visible': 'solid',
+    },
+    outlineWidth: {
+      ':focus-visible': control.focusWidth,
+    },
+    paddingBlock: space[1],
+    paddingInline: space[2],
+    textAlign: 'start',
+    transitionDuration: {
+      default: motion.fast,
+      [breakpoints.reduceMotion]: '0ms',
+    },
+    transitionProperty: 'background-color, border-color',
+    transitionTimingFunction: motion.ease,
+  },
+  triggerOpen: {
+    backgroundColor: {
+      default: color.surfaceSubtle,
+      ':hover': color.surfaceSubtle,
+    },
+    borderColor: color.borderStrong,
+  },
+  triggerLabel: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    gap: space[2],
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  triggerIcon: {
+    alignItems: 'center',
+    color: color.textMuted,
+    display: 'inline-flex',
+    flexShrink: 0,
+  },
+  panel: {
+    animationDuration: {
+      default: motion.fast,
+      [breakpoints.reduceMotion]: '0ms',
+    },
+    animationName: stylex.keyframes({
+      from: { opacity: 0, transform: `translateY(calc(${space[1]} * -1))` },
+      to: { opacity: 1, transform: 'translateY(0)' },
+    }),
+    animationTimingFunction: motion.ease,
+    backgroundColor: color.surfaceRaised,
+    borderColor: color.border,
+    borderRadius: radius.md,
+    borderStyle: 'solid',
+    borderWidth: mesh.line,
+    boxShadow: shadow.overlay,
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    fontFamily: text.familyUi,
+    maxInlineSize: control.menuMaxWidth,
+    overflowY: 'auto',
+    padding: space[1],
+    position: 'fixed',
+    zIndex: zIndex.menu,
+  },
+  panelAt: (blockStart: string, inlineStart: string, inlineEnd: string, minWidth: string) => ({
+    insetBlockStart: blockStart,
+    insetInlineEnd: inlineEnd,
+    insetInlineStart: inlineStart,
+    marginBlockStart: space[1],
+    maxBlockSize: `calc(100dvh - ${blockStart} - ${space[5]})`,
+    minInlineSize: minWidth,
+  }),
+  row: {
+    alignItems: 'center',
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': color.surfaceSubtle,
+    },
+    borderRadius: radius.sm,
+    borderWidth: 0,
+    boxSizing: 'border-box',
+    color: color.textPrimary,
+    cursor: 'pointer',
+    display: 'flex',
+    flexShrink: 0,
+    fontFamily: text.familyUi,
+    fontSize: text.sizeBodySmall,
+    fontWeight: text.weightRegular,
+    gap: space[2],
+    lineHeight: text.lineBodySmall,
+    minWidth: 0,
+    outlineColor: {
+      ':focus-visible': color.focus,
+    },
+    outlineOffset: {
+      ':focus-visible': control.focusOffset,
+    },
+    outlineStyle: {
+      ':focus-visible': 'solid',
+    },
+    outlineWidth: {
+      ':focus-visible': control.focusWidth,
+    },
+    paddingBlock: space[2],
+    paddingInline: space[2],
+    textAlign: 'start',
+    width: '100%',
+  },
+  rowIcon: {
+    alignItems: 'center',
+    color: color.textMuted,
+    display: 'flex',
+    flexShrink: 0,
+    justifyContent: 'center',
+    width: space[4],
+  },
+  rowLabel: {
+    flexGrow: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  rowCheck: {
+    alignItems: 'center',
+    color: color.accent,
+    display: 'flex',
+    flexShrink: 0,
+    justifyContent: 'center',
+    width: space[4],
+  },
+});

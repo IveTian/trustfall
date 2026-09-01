@@ -51,7 +51,7 @@ export function LoginPage() {
             fullWidth
             loading={pending}
             loadingLabel="Signing in"
-            endEnhancer={<Icon name="arrow-right-line" />}
+            endEnhancer={<Icon name="arrow-right-fill" />}
           >
             Sign in
           </Button>

@@ -1,17 +1,21 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { breakpoints, control, motion } from '../tokens/const.stylex.ts';
+import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
+import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
 
 const styles = stylex.create({
   button: {
     alignItems: 'center',
-    borderRadius: radius.sm,
+    // Every variant carries the hairline so a bordered secondary and a solid
+    // primary sit on the same baseline and measure the same height.
+    borderColor: 'transparent',
+    borderRadius: radius.md,
     borderStyle: 'solid',
-    borderWidth: 0,
+    borderWidth: mesh.line,
     boxSizing: 'border-box',
     cursor: {
       default: 'pointer',
@@ -44,7 +48,7 @@ const styles = stylex.create({
       default: motion.fast,
       [breakpoints.reduceMotion]: '0ms',
     },
-    transitionProperty: 'background-color, color',
+    transitionProperty: 'background-color, border-color, box-shadow, color',
     transitionTimingFunction: motion.ease,
     whiteSpace: 'nowrap',
   },
@@ -68,17 +72,22 @@ const styles = stylex.create({
   },
   primary: {
     backgroundColor: {
-      default: color.accent,
-      ':hover': color.accentHover,
-      ':active': color.accentActive,
+      default: color.solid,
+      ':hover': color.solidHover,
+      ':active': color.solidActive,
     },
     color: color.textInverse,
   },
   secondary: {
     backgroundColor: {
-      default: color.surfaceSunken,
-      ':hover': color.border,
+      default: color.surfaceRaised,
+      ':hover': color.surfaceSubtle,
     },
+    borderColor: {
+      default: color.border,
+      ':hover': color.borderStrong,
+    },
+    boxShadow: shadow.subtle,
     color: color.textPrimary,
   },
   danger: {
@@ -90,6 +99,7 @@ const styles = stylex.create({
   },
   ghost: {
     backgroundColor: 'transparent',
+    boxShadow: 'none',
     color: {
       default: color.textMuted,
       ':hover': color.textPrimary,
