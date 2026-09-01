@@ -18,7 +18,15 @@ export type MenuItem = {
   onSelect: () => void;
 };
 
-type Anchor = { blockStart: string; inlineStart: string; inlineEnd: string; minWidth: string };
+type Anchor = {
+  blockStart: string;
+  blockEnd: string;
+  inlineStart: string;
+  inlineEnd: string;
+  maxBlock: string;
+  minWidth: string;
+  dropsDown: boolean;
+};
 
 function isRtl(element: HTMLElement): boolean {
   return getComputedStyle(element).direction === 'rtl';
@@ -28,17 +36,26 @@ function isRtl(element: HTMLElement): boolean {
  * The panel is `position: fixed` so a scrolling row or a panel with
  * `overflow: hidden` cannot clip it; that costs a measurement against the
  * viewport, repeated while the menu is open.
+ *
+ * The panel hangs off whichever side of the trigger has the room — down from a
+ * row with space below, up from one at the foot of the viewport — and never
+ * grows past the space it chose.
  */
 function measure(trigger: HTMLElement, align: 'start' | 'end'): Anchor {
   const rect = trigger.getBoundingClientRect();
   const rtl = isRtl(trigger);
   const startInset = rtl ? window.innerWidth - rect.right : rect.left;
   const endInset = rtl ? rect.left : window.innerWidth - rect.right;
+  const below = window.innerHeight - rect.bottom;
+  const dropsDown = below >= rect.top;
   return {
-    blockStart: `${rect.bottom}px`,
+    blockStart: dropsDown ? `${rect.bottom}px` : 'auto',
+    blockEnd: dropsDown ? 'auto' : `${window.innerHeight - rect.top}px`,
     inlineStart: align === 'start' ? `${startInset}px` : 'auto',
     inlineEnd: align === 'end' ? `${endInset}px` : 'auto',
+    maxBlock: `calc(${dropsDown ? below : rect.top}px - ${space[5]})`,
     minWidth: `${rect.width}px`,
+    dropsDown,
   };
 }
 
@@ -205,10 +222,13 @@ export function Menu({
           aria-label={label}
           {...stylex.props(
             styles.panel,
+            anchor.dropsDown && styles.panelDown,
             styles.panelAt(
               anchor.blockStart,
+              anchor.blockEnd,
               anchor.inlineStart,
               anchor.inlineEnd,
+              anchor.maxBlock,
               anchor.minWidth,
             ),
           )}
@@ -329,7 +349,7 @@ const styles = stylex.create({
       [breakpoints.reduceMotion]: '0ms',
     },
     animationName: stylex.keyframes({
-      from: { opacity: 0, transform: `translateY(calc(${space[1]} * -1))` },
+      from: { opacity: 0, transform: `translateY(${space[1]})` },
       to: { opacity: 1, transform: 'translateY(0)' },
     }),
     animationTimingFunction: motion.ease,
@@ -349,12 +369,26 @@ const styles = stylex.create({
     position: 'fixed',
     zIndex: zIndex.menu,
   },
-  panelAt: (blockStart: string, inlineStart: string, inlineEnd: string, minWidth: string) => ({
+  panelDown: {
+    animationName: stylex.keyframes({
+      from: { opacity: 0, transform: `translateY(calc(${space[1]} * -1))` },
+      to: { opacity: 1, transform: 'translateY(0)' },
+    }),
+  },
+  panelAt: (
+    blockStart: string,
+    blockEnd: string,
+    inlineStart: string,
+    inlineEnd: string,
+    maxBlock: string,
+    minWidth: string,
+  ) => ({
+    insetBlockEnd: blockEnd,
     insetBlockStart: blockStart,
     insetInlineEnd: inlineEnd,
     insetInlineStart: inlineStart,
-    marginBlockStart: space[1],
-    maxBlockSize: `calc(100dvh - ${blockStart} - ${space[5]})`,
+    marginBlock: space[1],
+    maxBlockSize: maxBlock,
     minInlineSize: minWidth,
   }),
   row: {
