@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "name": "Quiet Console",
+    "description": "Operator console DNA: a warm-neutral canvas with a single floating white work panel, a chrome-free sidebar, near-black solid CTAs, and 14px system-UI density. Ornament is absent; hierarchy comes from surface layering and weight, not color.",
+    "source_references": [
+      "CleanShot 2026-09-01 at 22.51.10@2x.png — on-call console, Schedules empty state (sidebar + panel + header bar + centered empty state)"
+    ],
+    "created_at": "2026-09-01"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "monochromatic",
+      "primary": {
+        "hex": "#1C1C1C",
+        "role": "Solid CTA fill and primary type; the only high-contrast mass on the screen"
+      },
+      "secondary": {
+        "hex": "#FFFFFF",
+        "role": "Work panel, secondary button, active nav pill — surfaces that lift off the canvas"
+      },
+      "accent": {
+        "hex": "#EE5533",
+        "role": "Product mark chip only; never applied to controls or text"
+      },
+      "neutral": {
+        "scale": [
+          "#FFFFFF",
+          "#FAFAF9",
+          "#F4F4F2",
+          "#EFEFEE",
+          "#E4E4E1",
+          "#C9C9C5",
+          "#8E8E8A",
+          "#6B6B68",
+          "#3A3A38",
+          "#1C1C1C"
+        ],
+        "usage": "Canvas at step 3, panel at step 0, hairlines at step 4, muted type at step 7, primary type at step 9. Nine of ten pixels are one of these."
+      },
+      "semantic": {
+        "success": "#12A150",
+        "warning": "#D48806",
+        "error": "#E11900",
+        "info": "#2E6BE6"
+      },
+      "surface": {
+        "background": "#F1F1EF",
+        "card": "#FFFFFF",
+        "elevated": "#FFFFFF"
+      },
+      "contrast_strategy": "dark-on-light dominant with layered neutrals — the panel is separated from the canvas by a hairline plus a 1px shadow, not by a color change large enough to notice"
+    },
+    "typography": {
+      "type_scale": {
+        "display": {
+          "size": "30px",
+          "weight": "600",
+          "line_height": "36px",
+          "tracking": "-0.02em"
+        },
+        "heading_1": {
+          "size": "24px",
+          "weight": "600",
+          "line_height": "32px",
+          "tracking": "-0.02em"
+        },
+        "heading_2": {
+          "size": "20px",
+          "weight": "600",
+          "line_height": "28px",
+          "tracking": "-0.01em"
+        },
+        "heading_3": { "size": "16px", "weight": "600", "line_height": "24px", "tracking": "0" },
+        "body": { "size": "16px", "weight": "400", "line_height": "24px", "tracking": "0" },
+        "body_small": { "size": "14px", "weight": "400", "line_height": "20px", "tracking": "0" },
+        "caption": { "size": "12px", "weight": "400", "line_height": "16px", "tracking": "0" },
+        "overline": { "size": "12px", "weight": "500", "line_height": "16px", "tracking": "0.02em" }
+      },
+      "font_families": {
+        "heading": "Inter, system-ui, sans-serif",
+        "body": "Inter, system-ui, sans-serif",
+        "mono": "ui-monospace, SFMono-Regular, Menlo, monospace"
+      },
+      "font_style_notes": "One neutral grotesque throughout. Chrome runs at 14px/20 regular; only the empty-state headline is allowed to be large, and it is the single typographic event on the screen. Medium (500) marks the current nav item and the last breadcrumb segment; 600 is reserved for headings."
+    },
+    "spacing": {
+      "base_unit": "4px",
+      "scale": ["4px", "8px", "12px", "16px", "24px", "32px", "48px", "64px"],
+      "content_density": "compact chrome, spacious content",
+      "section_rhythm": "8px gutter between shell and panel, 12–16px inside the sidebar, 24–32px between content blocks, and a full empty column of air around any empty state"
+    },
+    "layout": {
+      "grid_system": "two-column app shell: fixed sidebar rail on the canvas, fluid work panel",
+      "max_content_width": "1040px",
+      "columns": "1 content column inside the panel; centered when the content is an empty state",
+      "gutter": "24px",
+      "breakpoints": ["640px", "880px"],
+      "alignment_tendency": "strict start-alignment for lists and chrome, centered for empty states"
+    },
+    "shape": {
+      "border_radius": { "small": "6px", "medium": "8px", "large": "12px", "pill": "999px" },
+      "border_usage": "subtle 1px on every lifted surface — panel, secondary button, list container; fills alone are never asked to carry an edge",
+      "divider_style": "1px hairline the same value as the border, full-bleed inside list containers"
+    },
+    "elevation": {
+      "shadow_style": "soft diffused, near-invisible",
+      "levels": {
+        "low": "0 1px 2px rgb(0 0 0 / 0.05)",
+        "medium": "0 4px 12px rgb(0 0 0 / 0.10)",
+        "high": "0 12px 28px rgb(0 0 0 / 0.14)"
+      },
+      "depth_cues": "overlapping layers first, hairlines second, shadow last — the panel reads as raised because the canvas surrounds it on all four sides, not because it casts light"
+    },
+    "iconography": {
+      "style": "outline",
+      "stroke_weight": "1.5px",
+      "size_scale": ["16px", "20px"],
+      "preferred_set": "Remix Icon / Lucide-class line icons, drawn in the muted neutral, never in accent"
+    },
+    "motion": {
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "duration_scale": { "micro": "120ms", "normal": "200ms", "macro": "280ms" },
+      "entrance_pattern": "4px rise with a fade for menus and toasts",
+      "exit_pattern": "immediate — nothing lingers on the way out",
+      "philosophy": "minimal functional: motion confirms that a surface belongs to the control that opened it, and does nothing else"
+    },
+    "components": {
+      "button_style": "8px radius, 32px tall. Primary is a near-black solid with inverse type; secondary is white with a 1px border and a 1px shadow; split buttons hang a chevron off the primary's inline end",
+      "input_style": "quiet sunken fill, 8px radius, border only on hover and focus",
+      "card_style": "white, 1px border, 8px radius, no shadow when it already sits on a white panel",
+      "navigation_pattern": "left rail on the canvas with no panel of its own; sections separated by air; the current item is a white pill with a hairline",
+      "modal_style": "centered dialog, 12px radius, scrim, overlay shadow",
+      "list_style": "bordered container with full-bleed hairline rows; each row is name plus description on the start edge and one control on the end edge",
+      "component_notes": "Every screen wears the same 52px panel header: a rounded product-mark chip, a breadcrumb trail whose last segment is the page, and the page's actions pinned to the end edge. Content scrolls beneath it."
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": ["calm", "precise", "professional", "unhurried"],
+      "visual_metaphor": "a sheet of paper laid on a matte desk",
+      "era_influence": "2020s Linear/Vercel-lineage operator tooling",
+      "genre": "corporate SaaS console",
+      "personality_traits": ["meticulous", "understated", "trustworthy"],
+      "adjectives": ["quiet", "layered", "legible", "dense-but-airy", "monochrome"]
+    },
+    "visual_language": {
+      "complexity": "minimal",
+      "ornamentation": "none",
+      "whitespace_usage": "generous inside content, tight in chrome",
+      "visual_weight_distribution": "weight collects at the panel header and the single dark CTA; everything else is deliberately light",
+      "focal_strategy": "single hero element per screen — usually the empty state or the primary action",
+      "contrast_level": "low overall, high at the point of action",
+      "texture_usage": "none; flat neutral fills only"
+    },
+    "composition": {
+      "hierarchy_method": "surface layering and weight contrast, not scale or color",
+      "balance_type": "asymmetric — rail plus panel, actions pushed to the end edge",
+      "flow_direction": "start-edge rail to panel header to content, top to bottom",
+      "grouping_strategy": "hairline containers; related rows share one border, unrelated blocks share only air",
+      "negative_space_role": "space is the primary separator, and the empty state exists to prove it"
+    },
+    "imagery": {
+      "photo_treatment": "none",
+      "illustration_style": "miniature UI fragments rendered in the product's own components as empty-state art",
+      "graphic_elements": "rounded product-mark chip, status color bars, hairline grids",
+      "pattern_usage": "none",
+      "image_shape": "rounded rectangles matching control radius"
+    },
+    "interaction_feel": {
+      "feedback_style": "immediate and quiet — a fill change, a toast, no celebration",
+      "hover_behavior": "one step of surface lightening; nothing moves",
+      "transition_personality": "fade-subtle",
+      "loading_style": "skeleton rows that match the row they replace",
+      "microinteraction_density": "low"
+    },
+    "brand_voice_in_ui": {
+      "tone": "plain and operational",
+      "formality": "neutral professional",
+      "cta_style": "direct imperative in sentence case",
+      "empty_state_approach": "name what is missing, say what it will do for you, offer exactly one primary way to start",
+      "error_tone": "factual, no apology theatre"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "none",
+      "performance_tier": "lightweight",
+      "fallback_strategy": "nothing to fall back from; the design is CSS-only by construction",
+      "primary_technology": "CSS only"
+    },
+    "background_effects": {
+      "type": "none",
+      "description": "Flat neutral canvas. The only 'background' event is the panel's hairline against it.",
+      "technology": "CSS background-color",
+      "params": {
+        "color_palette": ["#F1F1EF", "#FFFFFF"],
+        "speed": "static",
+        "density": "n/a",
+        "opacity": "1",
+        "blend_mode": "normal"
+      }
+    },
+    "particle_systems": {
+      "enabled": false,
+      "type": "none",
+      "description": "Absent.",
+      "technology": "none",
+      "params": {
+        "count": "0",
+        "shape": "n/a",
+        "size_range": "n/a",
+        "movement_pattern": "n/a",
+        "color_behavior": "n/a",
+        "interaction": "none",
+        "spawn_area": "n/a"
+      }
+    },
+    "3d_elements": {
+      "enabled": false,
+      "type": "none",
+      "description": "Absent.",
+      "technology": "none",
+      "params": {
+        "renderer": "n/a",
+        "lighting": "n/a",
+        "camera": "n/a",
+        "materials": "n/a",
+        "geometry": "n/a",
+        "post_processing": [],
+        "interaction_model": "n/a"
+      }
+    },
+    "shader_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "Absent.",
+      "technology": "none",
+      "params": {
+        "uniforms": [],
+        "vertex_manipulation": "n/a",
+        "fragment_output": "n/a",
+        "noise_type": "n/a",
+        "distortion": "n/a"
+      }
+    },
+    "scroll_effects": {
+      "parallax": { "enabled": false, "layers": "0", "depth_range": "n/a", "speed_curve": "n/a" },
+      "scroll_triggered_animations": {
+        "enabled": false,
+        "trigger_points": "n/a",
+        "animation_type": "none",
+        "scrub_behavior": "n/a"
+      },
+      "scroll_morphing": {
+        "enabled": true,
+        "description": "The only scroll behavior is structural: the panel header is sticky and content scrolls under it, so the breadcrumb and actions never leave."
+      }
+    },
+    "text_effects": {
+      "type": "none",
+      "description": "Type is set, not animated.",
+      "technology": "none",
+      "params": {
+        "split_strategy": "n/a",
+        "animation_per_unit": "n/a",
+        "stagger": "n/a",
+        "effect_style": "n/a"
+      }
+    },
+    "cursor_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "System cursor throughout.",
+      "params": {
+        "shape": "n/a",
+        "size": "n/a",
+        "blend_mode": "n/a",
+        "trail": "none",
+        "interaction_zone": "n/a"
+      }
+    },
+    "image_effects": {
+      "type": "none",
+      "description": "No photography; empty-state art is live DOM, not an image.",
+      "technology": "none",
+      "params": {
+        "filter_pipeline": "none",
+        "hover_transform": "none",
+        "reveal_animation": "none",
+        "distortion_type": "none"
+      }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": false,
+      "style": "none",
+      "params": {
+        "blur_radius": "0",
+        "transparency": "opaque",
+        "border_treatment": "solid 1px hairline",
+        "shadow_type": "single soft drop",
+        "light_source_angle": "top"
+      }
+    },
+    "canvas_drawings": {
+      "enabled": false,
+      "type": "none",
+      "description": "Absent.",
+      "technology": "none",
+      "params": {
+        "draw_method": "n/a",
+        "animation_loop": "n/a",
+        "color_scheme": "n/a",
+        "responsiveness": "n/a",
+        "interaction": "none"
+      }
+    },
+    "svg_animations": {
+      "enabled": false,
+      "type": "none",
+      "description": "Status glyphs are static SVG paths.",
+      "params": {
+        "animation_method": "none",
+        "path_morphing": "none",
+        "stroke_animation": "none",
+        "filter_effects": "none"
+      }
+    },
+    "composite_notes": "The reference is deliberately effect-free, and that is the finding, not a gap in the analysis. Its entire sense of depth comes from three stacked facts: a canvas that surrounds the work panel on all four sides, a 1px hairline, and a shadow small enough that you only miss it when it is gone. Anything added on top — gradients, glass, motion beyond a 120ms fade — would read as a different product. The one place the design spends: a near-black solid CTA, which works only because nothing else on the screen is dark."
+  }
+}

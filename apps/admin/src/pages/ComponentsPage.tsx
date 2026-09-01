@@ -3,6 +3,8 @@ import {
   Card,
   Field,
   Input,
+  PageBody,
+  PageHeader,
   Select,
   Stack,
   StatusPill,
@@ -71,62 +73,72 @@ export function ComponentsPage() {
   }
 
   return (
-    <Stack gap={5}>
-      <Text as="h1" tone="display">
-        Components
-      </Text>
-      <Card>
-        <form onSubmit={createGroup}>
-          <Stack gap={3}>
-            <Text as="h2" tone="title">
-              Add a group
-            </Text>
-            <Field label="Display name" htmlFor="group-name">
-              <Input id="group-name" name="display_name" required />
-            </Field>
-            <Button type="submit">Add group</Button>
-          </Stack>
-        </form>
-      </Card>
-      <Card>
-        <form onSubmit={createComponent}>
-          <Stack gap={3}>
-            <Text as="h2" tone="title">
-              Add a component
-            </Text>
-            <Field label="Display name" htmlFor="component-name">
-              <Input id="component-name" name="display_name" required />
-            </Field>
-            <Field label="Description" htmlFor="component-description">
-              <Textarea id="component-description" name="description" />
-            </Field>
-            <Field label="Group" htmlFor="component-group">
-              <Select id="component-group" name="group_id" defaultValue="">
-                <option value="">Ungrouped</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.display_name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Button type="submit">Add component</Button>
-          </Stack>
-        </form>
-      </Card>
-      <Stack gap={3}>
-        {components.map((component) => (
-          <Card key={component.id}>
-            <Stack direction="horizontal" gap={3}>
-              <Text tone="title">{component.display_name}</Text>
-              <StatusPill status={component.status} />
-              <Button type="button" variant="ghost" onClick={() => removeComponent(component.id)}>
-                Delete
-              </Button>
-            </Stack>
+    <>
+      <PageHeader icon="stack-fill" trail={['Status', 'Components']} />
+      <PageBody>
+        <Stack gap={5}>
+          <Card>
+            <form onSubmit={createGroup}>
+              <Stack gap={3}>
+                <Text as="h2" tone="title">
+                  Add a group
+                </Text>
+                <Field label="Display name" htmlFor="group-name">
+                  <Input id="group-name" name="display_name" required />
+                </Field>
+                <Stack direction="horizontal" gap={2}>
+                  <Button type="submit">Add group</Button>
+                </Stack>
+              </Stack>
+            </form>
           </Card>
-        ))}
-      </Stack>
-    </Stack>
+          <Card>
+            <form onSubmit={createComponent}>
+              <Stack gap={3}>
+                <Text as="h2" tone="title">
+                  Add a component
+                </Text>
+                <Field label="Display name" htmlFor="component-name">
+                  <Input id="component-name" name="display_name" required />
+                </Field>
+                <Field label="Description" htmlFor="component-description">
+                  <Textarea id="component-description" name="description" />
+                </Field>
+                <Field label="Group" htmlFor="component-group">
+                  <Select id="component-group" name="group_id" defaultValue="">
+                    <option value="">Ungrouped</option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.display_name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Stack direction="horizontal" gap={2}>
+                  <Button type="submit">Add component</Button>
+                </Stack>
+              </Stack>
+            </form>
+          </Card>
+          <Stack gap={3}>
+            {components.map((component) => (
+              <Card key={component.id}>
+                <Stack direction="horizontal" gap={3}>
+                  <Text tone="title">{component.display_name}</Text>
+                  <StatusPill status={component.status} />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => removeComponent(component.id)}
+                  >
+                    Delete
+                  </Button>
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        </Stack>
+      </PageBody>
+    </>
   );
 }

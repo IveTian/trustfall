@@ -39,6 +39,13 @@ const styles = stylex.create({
     letterSpacing: text.trackingDisplay,
     lineHeight: text.lineDisplay,
   },
+  headline: {
+    color: color.textPrimary,
+    fontSize: text.sizeHeadline,
+    fontWeight: text.weightBold,
+    letterSpacing: text.trackingDisplay,
+    lineHeight: text.lineHeadline,
+  },
   mono: {
     color: color.textMuted,
     fontFamily: text.familyMono,
@@ -48,7 +55,7 @@ const styles = stylex.create({
   },
 });
 
-type Tone = 'body' | 'muted' | 'caption' | 'title' | 'display' | 'mono';
+type Tone = 'body' | 'muted' | 'caption' | 'title' | 'display' | 'headline' | 'mono';
 
 export function Text({
   children,

@@ -12,8 +12,10 @@ const styles = stylex.create({
 
 /**
  * Remix Icon (https://remixicon.com). `name` is the icon name without the
- * "ri-" prefix, e.g. "arrow-right-line", "close-line". Draws in currentColor;
- * without `size` it follows the surrounding font size.
+ * "ri-" prefix. The console draws the filled set — "dashboard-fill",
+ * "close-fill" — so one icon language runs through the rail, the header, and
+ * the menus. Draws in currentColor; without `size` it follows the surrounding
+ * font size.
  */
 export function Icon({ name, size }: { name: string; size?: number }) {
   const { className, style } = stylex.props(

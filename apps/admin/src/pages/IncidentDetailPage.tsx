@@ -1,6 +1,8 @@
 import {
   Button,
   Field,
+  PageBody,
+  PageHeader,
   Select,
   Stack,
   Text,
@@ -69,42 +71,53 @@ export function IncidentDetailPage() {
   }
 
   if (!incident) {
-    return <Text tone="muted">Loading incident…</Text>;
+    return (
+      <>
+        <PageHeader icon="alert-fill" trail={['Status', 'Incidents']} />
+        <PageBody>
+          <Text tone="muted">Loading incident…</Text>
+        </PageBody>
+      </>
+    );
   }
 
   return (
-    <Stack gap={4}>
-      <Text as="h1" tone="display">
-        {incident.title}
-      </Text>
-      <IncidentTimeline
-        updates={incident.updates.map((update) => ({
-          id: update.id,
-          status: update.status,
-          body: update.body,
-          createTime: Date.parse(update.created_at),
-        }))}
-      />
-      <form onSubmit={onUpdate}>
-        <Stack gap={3}>
-          <Field label="Status" htmlFor="status">
-            <Select id="status" name="status" defaultValue={incident.status}>
-              {INCIDENT_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {incidentStatusPresentation[status].label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Update" htmlFor="body">
-            <Textarea id="body" name="body" required />
-          </Field>
-          <Button type="submit">Post update</Button>
-          <Button type="button" variant="danger" onClick={resolve}>
-            Resolve incident
-          </Button>
+    <>
+      <PageHeader icon="alert-fill" trail={['Status', 'Incidents', incident.title]} />
+      <PageBody>
+        <Stack gap={4}>
+          <IncidentTimeline
+            updates={incident.updates.map((update) => ({
+              id: update.id,
+              status: update.status,
+              body: update.body,
+              createTime: Date.parse(update.created_at),
+            }))}
+          />
+          <form onSubmit={onUpdate}>
+            <Stack gap={3}>
+              <Field label="Status" htmlFor="status">
+                <Select id="status" name="status" defaultValue={incident.status}>
+                  {INCIDENT_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {incidentStatusPresentation[status].label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Update" htmlFor="body">
+                <Textarea id="body" name="body" required />
+              </Field>
+              <Stack direction="horizontal" gap={2}>
+                <Button type="submit">Post update</Button>
+                <Button type="button" variant="danger" onClick={resolve}>
+                  Resolve incident
+                </Button>
+              </Stack>
+            </Stack>
+          </form>
         </Stack>
-      </form>
-    </Stack>
+      </PageBody>
+    </>
   );
 }

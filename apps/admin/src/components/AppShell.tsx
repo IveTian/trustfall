@@ -4,7 +4,6 @@ import {
   SidebarNavItem,
   SidebarNavSection,
   Stack,
-  Text,
 } from '@trustfall/design';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
@@ -21,32 +20,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       sidebar={
         <Stack gap={5} grow justify="between">
           <Stack gap={4}>
-            <Text as="h1" tone="title">
-              TrustFall
-            </Text>
-            <SidebarNavSection>
-              <SidebarNavItem
-                icon="dashboard-line"
-                label="Dashboard"
-                active={location.pathname === '/'}
-                onClick={() => navigate('/')}
-              />
-              <SidebarNavItem
-                icon="stack-line"
-                label="Components"
-                active={location.pathname.startsWith('/components')}
-                onClick={() => navigate('/components')}
-              />
-              <SidebarNavItem
-                icon="alert-line"
-                label="Incidents"
-                active={location.pathname.startsWith('/incidents')}
-                onClick={() => navigate('/incidents')}
-              />
-            </SidebarNavSection>
-          </Stack>
-          <Stack gap={3}>
-            <SidebarNavItem icon="external-link-line" label="View status page" href="/" />
             <ProfileMenu
               name={user?.name || 'Account'}
               email={user?.email}
@@ -54,18 +27,41 @@ export function AppShell({ children }: { children: ReactNode }) {
               items={[
                 {
                   id: 'settings',
-                  icon: 'settings-line',
+                  icon: 'settings-fill',
                   label: 'Settings',
                   onSelect: () => navigate('/settings'),
                 },
                 {
                   id: 'sign-out',
-                  icon: 'logout-box-r-line',
+                  icon: 'logout-box-r-fill',
                   label: 'Sign out',
                   onSelect: () => void signOut(),
                 },
               ]}
             />
+            <SidebarNavSection>
+              <SidebarNavItem
+                icon="dashboard-fill"
+                label="Dashboard"
+                active={location.pathname === '/'}
+                onClick={() => navigate('/')}
+              />
+              <SidebarNavItem
+                icon="stack-fill"
+                label="Components"
+                active={location.pathname.startsWith('/components')}
+                onClick={() => navigate('/components')}
+              />
+              <SidebarNavItem
+                icon="alert-fill"
+                label="Incidents"
+                active={location.pathname.startsWith('/incidents')}
+                onClick={() => navigate('/incidents')}
+              />
+            </SidebarNavSection>
+          </Stack>
+          <Stack gap={3}>
+            <SidebarNavItem icon="external-link-fill" label="View status page" href="/" />
           </Stack>
         </Stack>
       }

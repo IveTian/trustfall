@@ -89,7 +89,7 @@ export function SetupPage() {
             fullWidth
             loading={pending}
             loadingLabel="Creating owner"
-            endEnhancer={<Icon name="arrow-right-line" />}
+            endEnhancer={<Icon name="arrow-right-fill" />}
           >
             Create owner account
           </Button>

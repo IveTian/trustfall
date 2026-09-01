@@ -1,24 +1,41 @@
 import {
+  Badge,
   Button,
-  Card,
-  Stack,
-  StatusPill,
-  Text,
+  EmptyState,
+  Icon,
+  PageBody,
+  PageHeader,
+  Panel,
+  PanelHeader,
+  PanelList,
+  PanelRow,
+  StatusSelect,
   Toast,
-  componentStatusPresentation,
 } from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
-import { COMPONENT_STATUSES } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { api, type Page } from '../lib/api.ts';
 
 type Component = {
   id: string;
   display_name: string;
+  description: string | null;
   status: ComponentStatus;
 };
 
+/** What the operator needs to know before reading a single row. */
+function summarize(components: Component[]): string {
+  const noun = components.length === 1 ? 'component' : 'components';
+  const off = components.filter(
+    (component) => component.status !== 'OPERATIONAL' && component.status !== 'STATUS_UNSPECIFIED',
+  );
+  const state = off.length === 0 ? 'all operational' : `${off.length} not operational`;
+  return `${components.length} ${noun} · ${state}`;
+}
+
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [components, setComponents] = useState<Component[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -42,44 +59,63 @@ export function DashboardPage() {
   }
 
   return (
-    <Stack gap={4}>
-      <Text as="h1" tone="display">
-        Dashboard
-      </Text>
-      <Text tone="muted">Change a component’s status without opening an incident.</Text>
-      {components.length === 0 ? (
-        <Text tone="muted">Add a component to start publishing status.</Text>
-      ) : (
-        <Stack gap={3}>
-          {components.map((component) => (
-            <Card key={component.id}>
-              <Stack gap={3}>
-                <Stack direction="horizontal" gap={2}>
-                  <Text as="h2" tone="title">
-                    {component.display_name}
-                  </Text>
-                  <StatusPill status={component.status} />
-                </Stack>
-                <Stack direction="horizontal" gap={2}>
-                  {COMPONENT_STATUSES.filter((status) => status !== 'STATUS_UNSPECIFIED').map(
-                    (status) => (
-                      <Button
-                        key={status}
-                        type="button"
-                        variant={component.status === status ? 'primary' : 'secondary'}
-                        onClick={() => setStatus(component, status)}
-                      >
-                        {componentStatusPresentation[status].label}
-                      </Button>
-                    ),
-                  )}
-                </Stack>
-              </Stack>
-            </Card>
-          ))}
-        </Stack>
-      )}
+    <>
+      <PageHeader
+        icon="dashboard-fill"
+        trail={['Status', 'Dashboard']}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => navigate('/components')}>
+              Manage components
+            </Button>
+            <Button startEnhancer={<Icon name="add-fill" />} onClick={() => navigate('/incidents')}>
+              Open an incident
+            </Button>
+          </>
+        }
+      />
+      <PageBody>
+        {components.length === 0 ? (
+          <EmptyState
+            icon="stack-fill"
+            title="No components yet"
+            description="Publish the services people check on. Every component you add lands here with a status you can change in one move."
+            actions={
+              <Button
+                startEnhancer={<Icon name="add-fill" />}
+                onClick={() => navigate('/components')}
+              >
+                Add a component
+              </Button>
+            }
+          />
+        ) : (
+          <Panel>
+            <PanelHeader
+              title="Components"
+              caption="Change a component’s status without opening an incident."
+              actions={<Badge>{summarize(components)}</Badge>}
+            />
+            <PanelList>
+              {components.map((component) => (
+                <PanelRow
+                  key={component.id}
+                  title={component.display_name}
+                  description={component.description}
+                  end={
+                    <StatusSelect
+                      status={component.status}
+                      componentName={component.display_name}
+                      onChange={(status) => void setStatus(component, status)}
+                    />
+                  }
+                />
+              ))}
+            </PanelList>
+          </Panel>
+        )}
+      </PageBody>
       <Toast message={toast} />
-    </Stack>
+    </>
   );
 }

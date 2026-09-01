@@ -175,7 +175,7 @@ export function Dialog({
                 onClick={onClose}
                 {...stylex.props(styles.close)}
               >
-                <Icon name="close-line" size={16} />
+                <Icon name="close-fill" size={16} />
               </button>
             ) : null}
           </div>
