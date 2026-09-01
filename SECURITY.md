@@ -33,11 +33,11 @@ Include, as far as you have it:
 
 What to expect:
 
-| Stage                                    | Target      |
-| ---------------------------------------- | ----------- |
-| First response acknowledging the report   | 7 days      |
-| Assessment, severity, and a plan          | 14 days     |
-| Fix on `master` for a confirmed issue     | 90 days     |
+| Stage                                   | Target  |
+| --------------------------------------- | ------- |
+| First response acknowledging the report | 7 days  |
+| Assessment, severity, and a plan        | 14 days |
+| Fix on `master` for a confirmed issue   | 90 days |
 
 This is a small project maintained in spare time. If a deadline slips you will
 be told, not ignored.

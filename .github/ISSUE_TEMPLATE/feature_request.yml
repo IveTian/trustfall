@@ -1,6 +1,6 @@
 name: Feature request
 description: Propose something TrustFall should do and does not
-labels: ["enhancement"]
+labels: ['enhancement']
 body:
   - type: markdown
     attributes:
