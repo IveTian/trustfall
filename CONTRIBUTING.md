@@ -53,7 +53,7 @@ pnpm db:migrate:local
 pnpm dev
 ```
 
-The public page is at `http://localhost:4321` during `pnpm dev`. A production-shaped Worker is `pnpm preview` at `http://localhost:8787`. The admin app in production is served from `/admin/`. During UI work you can also run `pnpm --filter @trustfall/admin dev` (proxies `/api` to the Astro server).
+`pnpm dev` runs both dev servers: the public page at `http://localhost:4321` and the admin at `http://localhost:5173/admin/` (Vite, hot reload, `/api` proxied to the Astro server). Do admin UI work at `5173`: `4321/admin` serves the last built bundle from `apps/web/public/admin/`, which only changes on `pnpm --filter @trustfall/admin build`. A production-shaped Worker is `pnpm preview` at `http://localhost:8787`. The admin app in production is served from `/admin/`.
 
 ## Pull requests
 

@@ -33,11 +33,19 @@ pnpm db:migrate:local
 pnpm dev
 ```
 
+`pnpm dev` starts both servers in parallel: Astro for the public page and Vite for the admin.
+
 - Status page: `http://localhost:4321` (Astro may pick the next port if 4321 is taken)
+- Admin: `http://localhost:5173/admin/` — hot reload, with `/api` proxied to the Astro server
 - Production-shaped Worker locally: `pnpm preview` then `http://localhost:8787`
-- Admin (dev, optional): `pnpm --filter @trustfall/admin dev` then `http://localhost:5173/admin/`
 - API docs: `/api/docs`
 - Design gallery (dev only): `/design`
+
+`http://localhost:4321/admin` serves the last `pnpm --filter @trustfall/admin build` output from
+`apps/web/public/admin/`, not live source. Work on the admin at `5173`, or rebuild to refresh `4321`.
+
+Astro's dev server runs as a background daemon, so Ctrl+C only stops the admin's Vite. Stop Astro
+with `pnpm --filter @trustfall/web exec astro dev stop` (`status` and `logs` work the same way).
 
 `wrangler.jsonc` at the repo root is the source of bindings for the Astro Cloudflare adapter. After `astro build`, Wrangler deploys the generated `apps/web/dist/server` Worker (`entry.mjs`), which is why `preview` and `deploy` pass `--config apps/web/dist/server/wrangler.json`.
 

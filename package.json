@@ -7,7 +7,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "dev": "pnpm cf-typegen && pnpm --filter @trustfall/web dev",
+    "dev": "pnpm cf-typegen && pnpm --parallel --filter @trustfall/web --filter @trustfall/admin dev",
     "build": "pnpm cf-typegen && pnpm --filter @trustfall/admin build && pnpm --filter @trustfall/web build",
     "preview": "pnpm build && wrangler dev --config apps/web/dist/server/wrangler.json --persist-to .wrangler/state",
     "deploy": "pnpm build && wrangler d1 migrations apply DB --remote && wrangler deploy --config apps/web/dist/server/wrangler.json",
