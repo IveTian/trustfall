@@ -3,6 +3,10 @@
 TrustFall is a status page whose component states are asserted by people, not
 by monitoring. It does not probe services.
 
+By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Found a
+vulnerability? Do not open an issue — [SECURITY.md](SECURITY.md) has the private
+reporting channel.
+
 ## Principles
 
 Read [packages/design/PRINCIPLES.md](packages/design/PRINCIPLES.md) before changing UI. Components are not done until [packages/design/CHECKLIST.md](packages/design/CHECKLIST.md) is true.
