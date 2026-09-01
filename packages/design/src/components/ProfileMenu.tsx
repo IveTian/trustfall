@@ -1,5 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
+import { aimsAtSubmenu, SAFE_TRIANGLE_GRACE_MS, type Point } from '../safe-triangle.ts';
 import { applyTheme, readTheme, type ThemePreference } from '../theme-script.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { breakpoints, control, mesh, motion, zIndex } from '../tokens/const.stylex.ts';
@@ -76,7 +84,9 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
 /**
  * Account picker for the foot of the sidebar: identity, an Appearance submenu,
  * and the account actions the app passes in. Opens on click, closes on Escape,
- * outside click, or Tab; arrow keys walk the items and open the submenu.
+ * outside click, or Tab; arrow keys walk the items and open the submenu. The
+ * submenu follows the pointer's aim, not the row under it — see
+ * `safe-triangle.ts`.
  */
 export function ProfileMenu({
   name,
@@ -98,6 +108,10 @@ export function ProfileMenu({
   const appearanceRef = useRef<HTMLButtonElement>(null);
   const focusOnOpen = useRef(false);
   const focusSubmenuOnOpen = useRef(false);
+  // Safe-triangle state: where the pointer last sat on the Appearance row, and
+  // the deferred close that is waiting to see whether it arrives.
+  const aimOriginRef = useRef<Point | null>(null);
+  const aimTimerRef = useRef<number | null>(null);
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<MenuAnchor | null>(null);
   const [submenuAnchor, setSubmenuAnchor] = useState<SubmenuAnchor | null>(null);
@@ -126,12 +140,23 @@ export function ProfileMenu({
     };
   }, [open]);
 
+  // A pending close must not outlive the component.
+  useEffect(
+    () => () => {
+      if (aimTimerRef.current !== null) {
+        window.clearTimeout(aimTimerRef.current);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!open) {
       return;
     }
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
+        cancelDeferredClose();
         setOpen(false);
         setSubmenuOpen(false);
       }
@@ -182,6 +207,7 @@ export function ProfileMenu({
   }
 
   function close(restoreFocus: boolean) {
+    cancelDeferredClose();
     setOpen(false);
     setSubmenuOpen(false);
     if (restoreFocus) {
@@ -201,11 +227,60 @@ export function ProfileMenu({
   }
 
   function closeSubmenu() {
+    cancelDeferredClose();
     const hadFocus = submenuRef.current?.contains(document.activeElement) ?? false;
     setSubmenuOpen(false);
     if (hadFocus) {
       appearanceRef.current?.focus();
     }
+  }
+
+  function cancelDeferredClose() {
+    if (aimTimerRef.current !== null) {
+      window.clearTimeout(aimTimerRef.current);
+      aimTimerRef.current = null;
+    }
+  }
+
+  /**
+   * Re-armed by every move that stays inside the triangle, so it only ever
+   * fires for a pointer that stopped there: travel keeps the submenu, parking
+   * over another row hands it back.
+   */
+  function deferCloseWhileAiming() {
+    cancelDeferredClose();
+    aimTimerRef.current = window.setTimeout(() => {
+      aimTimerRef.current = null;
+      closeSubmenu();
+    }, SAFE_TRIANGLE_GRACE_MS);
+  }
+
+  /**
+   * One handler for the whole panel: rows, header, separators and the panel's
+   * own padding all report the same thing — where the pointer is and whether it
+   * is still headed for the submenu.
+   */
+  function onPanelPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const point: Point = { x: event.clientX, y: event.clientY };
+    if (appearanceRef.current?.contains(event.target as Node)) {
+      aimOriginRef.current = point;
+      cancelDeferredClose();
+      return;
+    }
+    if (!submenuOpen) {
+      return;
+    }
+    const origin = aimOriginRef.current;
+    const submenu = submenuRef.current;
+    if (
+      origin &&
+      submenu &&
+      aimsAtSubmenu(origin, point, submenu.getBoundingClientRect(), isRtl(event.currentTarget))
+    ) {
+      deferCloseWhileAiming();
+      return;
+    }
+    closeSubmenu();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -294,18 +369,19 @@ export function ProfileMenu({
           id={menuId}
           role="menu"
           aria-label="Account"
-          // `pointerover` bubbles, so one handler covers every row, the header,
-          // the separators, and the panel's own padding: anything that is not
-          // the Appearance row dismisses the submenu.
+          // Hovering the Appearance row opens the submenu and fixes the apex of
+          // the triangle; leaving the row does not necessarily close anything,
+          // which is `onPointerMove`'s call.
           onPointerOver={(event) => {
             if (appearanceRef.current?.contains(event.target as Node)) {
+              aimOriginRef.current = { x: event.clientX, y: event.clientY };
+              cancelDeferredClose();
               if (!submenuOpen) {
                 openSubmenu(false);
               }
-            } else if (submenuOpen) {
-              closeSubmenu();
             }
           }}
+          onPointerMove={onPanelPointerMove}
           {...stylex.props(
             styles.panel,
             styles.menuAt(anchor.inlineStart, anchor.blockEnd, anchor.minWidth),
@@ -378,6 +454,9 @@ export function ProfileMenu({
           id={submenuId}
           role="menu"
           aria-label="Appearance"
+          // The pointer made it: whatever close was waiting on the triangle is
+          // moot, and this panel keeps the submenu open on its own.
+          onPointerEnter={cancelDeferredClose}
           {...stylex.props(
             styles.panel,
             styles.submenu,

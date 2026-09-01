@@ -4,6 +4,7 @@ A component is complete when every item is true.
 
 - Keyboard: every interactive control is reachable and operable with the keyboard.
 - Focus: a visible focus ring is present and uses the `accent` token, not a browser default the theme would hide.
+- Hover intent: a submenu that opens on hover survives the diagonal toward it. Aim decides — the safe triangle in `src/safe-triangle.ts` — not the row the pointer happens to cross.
 - Status: if the component represents a status, it uses `status.ts` for color, icon, and label. Color is never the only signal.
 - Dark mode: the component is readable under `color-scheme: light`, `dark`, and `light dark`.
 - Reduced motion: any motion collapses under `prefers-reduced-motion`.
