@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/IveTian/trustfall/security/advisories/new
+    about: Never in a public issue. This form is private to the maintainers.
+  - name: Deploying, configuring, or running TrustFall
+    url: https://github.com/IveTian/trustfall#readme
+    about: One-click deploy, local development, background work modes, and the auth secret are all in the README.
+  - name: Contributing a change
+    url: https://github.com/IveTian/trustfall/blob/master/CONTRIBUTING.md
+    about: Toolchain, API conventions, migration rules, and what a pull request needs.

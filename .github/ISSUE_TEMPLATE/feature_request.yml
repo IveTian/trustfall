@@ -1,0 +1,96 @@
+name: Feature request
+description: Propose something TrustFall should do and does not
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TrustFall is a status page where **people** assert component state. It
+        never probes your services, and it is one organisation per deployment.
+
+        Already planned, so an issue is only useful if you are adding a
+        constraint or a use case: configurable severities and statuses, incident
+        roles, custom fields, a curated timeline, actions and follow-ups,
+        post-incident reviews, maintenance windows, subscribers, uptime history,
+        RBAC, API keys, outbound webhooks.
+
+        Explicit non-goals, which will be closed: on-call scheduling and
+        escalation, alert ingestion and routing, a workflow engine, a service
+        catalog, multi-tenancy, and anything that decides on its own that a
+        component is down.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched open and closed issues and did not find this
+          required: true
+        - label: I read [Where this is going](https://github.com/IveTian/trustfall#where-this-is-going) and this is neither already planned as described nor an explicit non-goal
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: |
+        What you were trying to do, and what stopped you. Write it as an
+        operator's day, not as a feature name.
+      placeholder: |
+        During an incident I need to ... but TrustFall only lets me ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you want to happen
+      description: The behaviour, and where it lives — public page, admin, API, or background work.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Public status page
+        - Admin app (/admin)
+        - API (Hono, /api)
+        - Background work (cron, Dispatcher, queue)
+        - Design system (packages/design)
+        - Deploy, config, or tooling
+        - Somewhere else / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried or considered
+      description: Workarounds you are using today, and why they are not enough.
+
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Fit
+      options:
+        - label: This does not require TrustFall to probe, poll, or monitor any service — every state change still comes from an operator or from a window an operator scheduled
+          required: true
+        - label: This works with one organisation per deployment
+          required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I am willing to open a pull request for this
+
+  - type: checkboxes
+    id: conduct
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/IveTian/trustfall/blob/master/CODE_OF_CONDUCT.md)
+          required: true

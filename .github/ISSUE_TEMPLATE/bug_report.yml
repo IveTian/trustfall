@@ -1,0 +1,111 @@
+name: Bug report
+description: Something in TrustFall behaves differently from how it is documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found a security problem instead? Do not file it here — report it
+        privately through [a draft security advisory](https://github.com/IveTian/trustfall/security/advisories/new).
+        See [SECURITY.md](https://github.com/IveTian/trustfall/blob/master/SECURITY.md).
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched open and closed issues and did not find this
+          required: true
+        - label: I am on a recent `master`, or I say below which commit I am on
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where it happens
+      options:
+        - Public status page
+        - Admin app (/admin)
+        - API (Hono, /api)
+        - Background work (cron, Dispatcher, queue)
+        - Design system (packages/design)
+        - Database migrations (D1)
+        - Deploy or build tooling
+        - Somewhere else / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: How it is running
+      options:
+        - Local dev (`pnpm dev`)
+        - Local production-shaped Worker (`pnpm preview`)
+        - Deployed with the one-click Cloudflare button
+        - Deployed with `pnpm deploy` / `wrangler deploy`
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit
+      description: Output of `git rev-parse --short HEAD`, or the commit your deployment was built from.
+      placeholder: f4c4afe
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw. Exact text of any error, please.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: |
+        From a clean state. If it is an API bug, a `curl` command is worth ten
+        sentences.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and errors
+      description: |
+        Browser console, `wrangler tail`, or terminal output. Pasted here it is
+        formatted as code automatically — no backticks needed. Redact secrets and
+        session cookies first.
+      render: shell
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      description: Only for a UI bug.
+      placeholder: Safari 26, macOS 27
+
+  - type: checkboxes
+    id: conduct
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/IveTian/trustfall/blob/master/CODE_OF_CONDUCT.md)
+          required: true
