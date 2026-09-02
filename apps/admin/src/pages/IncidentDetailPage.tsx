@@ -1,9 +1,14 @@
 import {
+  AffectedComponentsChart,
+  type ChartComponent,
   DiffBlock,
   type DiffLine,
   Icon,
+  IncidentTimeline,
   Menu,
+  RelativeTime,
   RichTextBody,
+  StatusPill,
   impactStatusLabels,
   type ImpactStatus,
   Button,
@@ -19,8 +24,7 @@ import {
   Toast,
   incidentStatusPresentation,
 } from '@trustfall/design';
-import { IncidentTimeline } from '@trustfall/design';
-import type { IncidentStatus } from '@trustfall/shared';
+import type { ComponentStatus, IncidentStatus } from '@trustfall/shared';
 import { INCIDENT_STATUSES } from '@trustfall/shared';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -34,15 +38,83 @@ import {
 } from '../components/AffectedComponentsField.tsx';
 import { useToast } from '../lib/toast.ts';
 
+type Affected = { component_id: string; display_name: string; status: ComponentStatus };
+
 type Incident = {
   id: string;
   title: string;
   status: IncidentStatus;
   impact: 'MINOR' | 'MAJOR' | 'CRITICAL';
   started_at: string;
-  updates: Array<{ id: string; status: IncidentStatus; body: string; created_at: string }>;
-  affected_components: Array<{ component_id: string; display_name: string; status: string }>;
+  resolved_at: string | null;
+  updates: Array<{
+    id: string;
+    status: IncidentStatus;
+    body: string;
+    created_at: string;
+    affected_components: Affected[];
+  }>;
+  affected_components: Affected[];
 };
+
+const absoluteTime = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
+/**
+ * Every component the incident has ever named, in the dashboard's order:
+ * ungrouped first, then group by group. A component deleted since it was
+ * named keeps the name its snapshot recorded and lands at the end.
+ */
+function chartComponents(
+  incident: Incident,
+  components: AffectedComponent[],
+  groups: AffectedGroup[],
+): ChartComponent[] {
+  const named = new Map<string, Affected>();
+  for (const update of incident.updates) {
+    for (const affected of update.affected_components) {
+      named.set(affected.component_id, affected);
+    }
+  }
+  for (const affected of incident.affected_components) {
+    named.set(affected.component_id, affected);
+  }
+  const current = new Map(
+    incident.affected_components.map((affected) => [affected.component_id, affected.status]),
+  );
+  const statusOf = (id: string): ComponentStatus => current.get(id) ?? 'OPERATIONAL';
+
+  const ordered: ChartComponent[] = [];
+  const seen = new Set<string>();
+  const place = (component: AffectedComponent, group: string | null) => {
+    if (!named.has(component.id)) {
+      return;
+    }
+    seen.add(component.id);
+    ordered.push({
+      id: component.id,
+      displayName: component.display_name,
+      status: statusOf(component.id),
+      group,
+    });
+  };
+  for (const component of membersOf(components, groups, null)) {
+    place(component, null);
+  }
+  for (const group of [...groups].sort(byPosition)) {
+    for (const component of membersOf(components, groups, group.id)) {
+      place(component, group.display_name);
+    }
+  }
+  for (const [id, affected] of named) {
+    if (!seen.has(id)) {
+      ordered.push({ id, displayName: affected.display_name, status: statusOf(id), group: null });
+    }
+  }
+  return ordered;
+}
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams();
@@ -65,6 +137,8 @@ export function IncidentDetailPage() {
   const [step, setStep] = useState<'edit' | 'review'>('edit');
   const [draft, setDraft] = useState<{ status: string; body: string } | null>(null);
   const [toast, showToast] = useToast();
+  // When the incident was last loaded: the open chart's "now" edge.
+  const [loadedAt, setLoadedAt] = useState(() => Date.now());
 
   const backTrail = { label: 'Incidents', onSelect: () => navigate('/incidents') };
 
@@ -81,6 +155,7 @@ export function IncidentDetailPage() {
       setIncident(loaded);
       setComponents(componentPage.items);
       setGroups(groupPage.items);
+      setLoadedAt(Date.now());
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load the incident.');
@@ -286,6 +361,18 @@ export function IncidentDetailPage() {
   }
 
   const resolved = incident.status === 'RESOLVED';
+  const affected = chartComponents(incident, components, groups);
+  const timelineUpdates = incident.updates.map((update) => ({
+    id: update.id,
+    status: update.status,
+    body: update.body,
+    createTime: Date.parse(update.created_at),
+    components: update.affected_components.map((item) => ({
+      componentId: item.component_id,
+      displayName: item.display_name,
+      status: item.status,
+    })),
+  }));
 
   return (
     <>
@@ -320,15 +407,62 @@ export function IncidentDetailPage() {
         }
       />
       <PageBody>
-        <Stack gap={4}>
-          <IncidentTimeline
-            updates={incident.updates.map((update) => ({
-              id: update.id,
-              status: update.status,
-              body: update.body,
-              createTime: Date.parse(update.created_at),
-            }))}
-          />
+        <Stack gap={6}>
+          <Stack gap={3}>
+            <Text as="h2" tone="display">
+              {incident.title}
+            </Text>
+            <Stack direction="horizontal" gap={2} wrap>
+              <StatusPill status={incident.status} kind="incident" />
+              <StatusPill status={incident.impact} kind="impact" />
+            </Stack>
+            <Text tone="caption">
+              Started {absoluteTime.format(new Date(incident.started_at))} ·{' '}
+              <RelativeTime value={incident.started_at} />
+              {incident.resolved_at ? (
+                <> · Resolved {absoluteTime.format(new Date(incident.resolved_at))}</>
+              ) : null}
+            </Text>
+          </Stack>
+
+          <Stack gap={4}>
+            <Text as="h2" tone="label">
+              Updates
+            </Text>
+            <IncidentTimeline updates={timelineUpdates} />
+          </Stack>
+
+          <Stack gap={4}>
+            <Stack direction="horizontal" justify="between" gap={3}>
+              <Text as="h2" tone="label">
+                Affected components
+              </Text>
+              {resolved ? null : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  startEnhancer={<Icon name="pencil-line" size={16} />}
+                  onClick={openUpdate}
+                >
+                  Edit
+                </Button>
+              )}
+            </Stack>
+            {affected.length === 0 ? (
+              <Text tone="muted">
+                No components were affected.
+                {resolved ? '' : ' Edit to declare the ones this incident touches.'}
+              </Text>
+            ) : (
+              <AffectedComponentsChart
+                components={affected}
+                updates={timelineUpdates}
+                startTime={Date.parse(incident.started_at)}
+                endTime={incident.resolved_at ? Date.parse(incident.resolved_at) : null}
+                now={loadedAt}
+              />
+            )}
+          </Stack>
 
           <Dialog
             open={updating}

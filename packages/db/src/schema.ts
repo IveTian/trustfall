@@ -56,6 +56,25 @@ export const incidentUpdates = sqliteTable('incident_updates', {
   createTime: integer('create_time', { mode: 'number' }).notNull(),
 });
 
+/**
+ * The affected set as it stood once an update landed: one row per component
+ * the incident touched at that moment, with the status the update left it in.
+ * A resolving update records everything at OPERATIONAL.
+ */
+export const incidentUpdateComponents = sqliteTable(
+  'incident_update_components',
+  {
+    updateId: text('update_id')
+      .notNull()
+      .references(() => incidentUpdates.id, { onDelete: 'cascade' }),
+    componentId: text('component_id')
+      .notNull()
+      .references(() => components.id, { onDelete: 'cascade' }),
+    status: text('status').$type<ComponentStatus>().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.updateId, table.componentId] })],
+);
+
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

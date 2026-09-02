@@ -9,6 +9,7 @@ export { compactSpace, compactText } from './themes.ts';
 export {
   componentStatusPresentation,
   incidentImpactPresentation,
+  incidentStatusGlyph,
   incidentStatusPresentation,
   overallStatusCopy,
 } from './status.ts';
@@ -54,7 +55,12 @@ export { ComponentGroupSection } from './components/ComponentGroupSection.tsx';
 export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';
-export { IncidentTimeline } from './components/IncidentTimeline.tsx';
+export { IncidentTimeline, timeZoneLabel } from './components/IncidentTimeline.tsx';
+export type { TimelineUpdate, TimelineAffectedComponent } from './components/IncidentTimeline.tsx';
+export { AffectedComponentsChart } from './components/AffectedComponentsChart.tsx';
+export type { ChartComponent } from './components/AffectedComponentsChart.tsx';
+export { componentSegments } from './affected-segments.ts';
+export type { ChartUpdate, Segment } from './affected-segments.ts';
 export { RelativeTime } from './components/RelativeTime.tsx';
 export { ThemeToggle } from './components/ThemeToggle.tsx';
 export { DesignGallery } from './components/Gallery.tsx';

@@ -68,16 +68,6 @@ export const componentGroupSchema = z
   })
   .openapi('ComponentGroup');
 
-export const incidentUpdateSchema = z
-  .object({
-    id: z.string().openapi({ example: 'upd_7b39' }),
-    incident_id: z.string(),
-    status: incidentStatusSchema,
-    body: z.string(),
-    created_at: timestamp('When the update was posted.'),
-  })
-  .openapi('IncidentUpdate');
-
 export const affectedComponentSchema = z
   .object({
     component_id: z.string(),
@@ -85,6 +75,20 @@ export const affectedComponentSchema = z
     status: componentStatusSchema,
   })
   .openapi('AffectedComponent');
+
+export const incidentUpdateSchema = z
+  .object({
+    id: z.string().openapi({ example: 'upd_7b39' }),
+    incident_id: z.string(),
+    status: incidentStatusSchema,
+    body: z.string(),
+    created_at: timestamp('When the update was posted.'),
+    affected_components: z.array(affectedComponentSchema).openapi({
+      description:
+        'The affected set as this update left it. A RESOLVED update lists every component at OPERATIONAL.',
+    }),
+  })
+  .openapi('IncidentUpdate');
 
 export const incidentSchema = z
   .object({

@@ -17,6 +17,8 @@ import { SectionNav, SectionNavItem } from './SectionNav.tsx';
 import { componentStatusPresentation } from '../status.ts';
 import { StatusIcon } from './StatusIcon.tsx';
 import { TreeChevron, TreeEmpty, TreeList, TreeNest, TreeRow } from './TreeList.tsx';
+import { AffectedComponentsChart } from './AffectedComponentsChart.tsx';
+import { IncidentTimeline } from './IncidentTimeline.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { StatusSelect } from './StatusSelect.tsx';
@@ -128,6 +130,40 @@ function StatusRow({ name, description }: { name: string; description: string })
     />
   );
 }
+
+const SAMPLE_START = Date.UTC(2026, 8, 2, 11, 38);
+
+const SAMPLE_UPDATES = [
+  {
+    id: 'upd_3',
+    status: 'RESOLVED' as const,
+    body: 'The fix has held for thirty minutes. This incident is resolved.',
+    createTime: SAMPLE_START + 50 * 60 * 1000,
+    components: [
+      { componentId: 'api', displayName: 'Public API', status: 'OPERATIONAL' as const },
+      { componentId: 'cdn', displayName: 'China CDN', status: 'OPERATIONAL' as const },
+    ],
+  },
+  {
+    id: 'upd_2',
+    status: 'IDENTIFIED' as const,
+    body: 'A bad deploy to the edge tier. Rolling back now.',
+    createTime: SAMPLE_START + 12 * 60 * 1000,
+    components: [
+      { componentId: 'api', displayName: 'Public API', status: 'DEGRADED_PERFORMANCE' as const },
+      { componentId: 'cdn', displayName: 'China CDN', status: 'MAJOR_OUTAGE' as const },
+    ],
+  },
+  {
+    id: 'upd_1',
+    status: 'INVESTIGATING' as const,
+    body: 'We are seeing elevated error rates and are looking into it.',
+    createTime: SAMPLE_START,
+    components: [
+      { componentId: 'cdn', displayName: 'China CDN', status: 'PARTIAL_OUTAGE' as const },
+    ],
+  },
+];
 
 export function DesignGallery() {
   return (
@@ -369,6 +405,27 @@ export function DesignGallery() {
             { kind: 'removed', text: 'China CDN: Partial outage' },
             { kind: 'added', text: 'China CDN: Full outage' },
           ]}
+        />
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Incident timeline
+        </Text>
+        <Text tone="muted">
+          The incident&apos;s story newest first, and how each component fared while it ran. The
+          chart draws the affected set every update left behind.
+        </Text>
+        <IncidentTimeline updates={SAMPLE_UPDATES} />
+        <AffectedComponentsChart
+          components={[
+            { id: 'api', displayName: 'Public API', status: 'OPERATIONAL' },
+            { id: 'cdn', displayName: 'China CDN', status: 'OPERATIONAL', group: 'China' },
+          ]}
+          updates={SAMPLE_UPDATES}
+          startTime={SAMPLE_START}
+          endTime={SAMPLE_START + 50 * 60 * 1000}
+          now={SAMPLE_START + 50 * 60 * 1000}
         />
       </Stack>
 
