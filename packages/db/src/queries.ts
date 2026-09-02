@@ -362,7 +362,17 @@ export async function updateIncident(
   return getIncident(db, id);
 }
 
+/**
+ * Removes a mistaken incident. CASCADE clears the timeline and affected-set
+ * rows; the live component statuses it wrote are restored to operational so
+ * the status page does not keep an unexplained outage.
+ */
 export async function deleteIncident(db: Database, id: string): Promise<boolean> {
+  const existing = await getIncident(db, id);
+  if (!existing) {
+    return false;
+  }
+  await restoreIncidentComponents(db, existing);
   const result = await db.delete(incidents).where(eq(incidents.id, id));
   return (result.meta.changes ?? 0) > 0;
 }
@@ -415,9 +425,7 @@ export async function addIncidentUpdate(
       .where(eq(incidents.id, incidentId)),
   ]);
 
-  if (resolved) {
-    await restoreIncidentComponents(db, existing);
-  } else if (input.componentStatuses) {
+  if (input.componentStatuses) {
     for (const [componentId, status] of Object.entries(input.componentStatuses)) {
       await db
         .delete(incidentComponents)
@@ -435,6 +443,12 @@ export async function addIncidentUpdate(
         .set({ status, updateTime: now })
         .where(eq(components.id, componentId));
     }
+  }
+
+  if (resolved) {
+    const current =
+      (input.componentStatuses ? await getIncident(db, incidentId) : existing) ?? existing;
+    await restoreIncidentComponents(db, current);
   }
 
   const incident = await getIncident(db, incidentId);

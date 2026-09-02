@@ -447,8 +447,8 @@ export function IncidentDetailPage() {
             }
           >
             <Text>
-              The incident and its whole timeline disappear from the status page immediately. This
-              cannot be undone.
+              The incident and its whole timeline disappear from the status page immediately, and
+              affected components return to operational. This cannot be undone.
             </Text>
           </Dialog>
 
