@@ -27,13 +27,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               items={[
                 {
                   id: 'settings',
-                  icon: 'settings-fill',
+                  icon: 'settings-line',
                   label: 'Settings',
                   onSelect: () => navigate('/settings'),
                 },
                 {
                   id: 'sign-out',
-                  icon: 'logout-box-r-fill',
+                  icon: 'logout-box-r-line',
                   label: 'Sign out',
                   onSelect: () => void signOut(),
                 },

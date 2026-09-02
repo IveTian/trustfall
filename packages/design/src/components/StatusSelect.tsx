@@ -17,18 +17,23 @@ export function StatusSelect({
   componentName,
   onChange,
   disabled = false,
+  compact = false,
 }: {
   status: ComponentStatus;
   /** Names the control for assistive technology: "Status for Checkout API". */
   componentName: string;
   onChange: (status: ComponentStatus) => void;
   disabled?: boolean;
+  /** Icon-only trigger for dense rows; the label lives in the tooltip title. */
+  compact?: boolean;
 }) {
   const current = componentStatusPresentation[status];
   return (
     <Menu
       label={`Status for ${componentName}`}
       disabled={disabled}
+      variant={compact ? 'bare' : 'button'}
+      align={compact ? 'start' : 'end'}
       items={SELECTABLE.map((option) => {
         const presentation = componentStatusPresentation[option];
         return {
@@ -47,7 +52,7 @@ export function StatusSelect({
       })}
     >
       <StatusIcon icon={current.icon} tone={current.tone} title={current.label} />
-      {current.label}
+      {compact ? null : current.label}
     </Menu>
   );
 }

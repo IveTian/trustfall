@@ -1,5 +1,6 @@
 import type { IncidentStatus } from '@trustfall/shared';
 import { RelativeTime } from './RelativeTime.tsx';
+import { RichTextBody } from './RichTextBody.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { Text } from './Text.tsx';
@@ -20,7 +21,7 @@ export function IncidentTimeline({
                 <RelativeTime value={update.createTime} />
               </Text>
             </Stack>
-            <Text tone="body">{update.body}</Text>
+            <RichTextBody markdown={update.body} />
           </Stack>
         </li>
       ))}

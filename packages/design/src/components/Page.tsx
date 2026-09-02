@@ -38,7 +38,7 @@ export function PageHeader({
           <span key={segment} {...stylex.props(styles.segment)}>
             {index > 0 ? (
               <span {...stylex.props(styles.separator)}>
-                <Icon name="arrow-right-s-fill" size={16} />
+                <Icon name="arrow-right-s-line" size={16} />
               </span>
             ) : null}
             {index === last ? (
@@ -54,9 +54,13 @@ export function PageHeader({
   );
 }
 
-/** The scrolling column under the header: page gutters and one max measure. */
-export function PageBody({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.body)}>{children}</div>;
+/**
+ * The scrolling column under the header: page gutters and one max measure.
+ * `wide` is for screens that earn more room — a multi-column dashboard — and
+ * widens the measure without touching the reading pages.
+ */
+export function PageBody({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+  return <div {...stylex.props(styles.body, wide && styles.bodyWide)}>{children}</div>;
 }
 
 const styles = stylex.create({
@@ -145,5 +149,8 @@ const styles = stylex.create({
     paddingBlock: space[5],
     paddingInline: space.gutter,
     width: '100%',
+  },
+  bodyWide: {
+    maxWidth: control.contentWidthWide,
   },
 });

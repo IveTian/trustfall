@@ -10,12 +10,12 @@ import { Text } from './Text.tsx';
 
 const styles = stylex.create({
   control: {
-    backgroundColor: color.surfaceSunken,
+    backgroundColor: color.surfaceRaised,
     // Focus reads as an inner ring: the border turns accent and an inset
     // shadow doubles its weight, so nothing is painted outside the field.
     borderColor: {
-      default: color.surfaceSunken,
-      ':hover': color.border,
+      default: color.border,
+      ':hover': color.borderStrong,
       ':focus': color.accent,
     },
     borderRadius: radius.sm,

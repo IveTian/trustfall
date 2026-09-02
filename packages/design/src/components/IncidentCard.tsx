@@ -2,6 +2,7 @@ import type { IncidentImpact, IncidentStatus } from '@trustfall/shared';
 import { Card } from './Card.tsx';
 import { Link } from './Link.tsx';
 import { RelativeTime } from './RelativeTime.tsx';
+import { RichTextBody } from './RichTextBody.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { Text } from './Text.tsx';
@@ -37,7 +38,7 @@ export function IncidentCard({ incident }: { incident: PublicIncident }) {
         <Text as="h2" tone="title">
           {incident.href ? <Link href={incident.href}>{incident.title}</Link> : incident.title}
         </Text>
-        {latest ? <Text tone="body">{latest.body}</Text> : null}
+        {latest ? <RichTextBody markdown={latest.body} /> : null}
         <Text tone="mono">
           Started <RelativeTime value={incident.startTime} />
         </Text>

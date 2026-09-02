@@ -1,23 +1,120 @@
 import type { ComponentStatus } from '@trustfall/shared';
 import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustfall/shared';
 import { useState } from 'react';
-import { Button } from './Button.tsx';
+import { Button, IconButton } from './Button.tsx';
 import { Card } from './Card.tsx';
 import { Checkbox } from './Checkbox.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { Field, Input, Textarea } from './Field.tsx';
 import { Select } from './Select.tsx';
 import { Icon } from './Icon.tsx';
+import { PageColumns } from './PageColumns.tsx';
+import { RichTextBody } from './RichTextBody.tsx';
+import { RichTextEditor } from './RichTextEditor.tsx';
 import { Panel, PanelHeader, PanelList, PanelRow } from './Panel.tsx';
+import { SectionNav, SectionNavItem } from './SectionNav.tsx';
+import { componentStatusPresentation } from '../status.ts';
+import { StatusIcon } from './StatusIcon.tsx';
+import { TreeChevron, TreeEmpty, TreeList, TreeNest, TreeRow } from './TreeList.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { StatusSelect } from './StatusSelect.tsx';
 import { Text } from './Text.tsx';
 
+const SAMPLE_MARKDOWN = [
+  'We are seeing **elevated error rates** on the *EU* cluster — roughly `2%` of requests.',
+  '',
+  '- API responses may be slow',
+  '- Webhooks are delayed',
+  '',
+  '> Mitigation is underway; the next update lands within 30 minutes.',
+  '',
+  'Details in the [status runbook](https://example.com/runbook).',
+].join('\n');
+
 const SAMPLE_ROWS = [
   { id: 'web', name: 'Web application', description: 'Dashboard, sign-in, and the status page.' },
   { id: 'api', name: 'Public API', description: 'REST endpoints under api.example.com.' },
 ];
+
+/** The dashboard sandwich, wired to local state so the gallery is live. */
+function SandwichDemo() {
+  const [section, setSection] = useState('now');
+  const [expanded, setExpanded] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ComponentStatus>('OPERATIONAL');
+  const worst = componentStatusPresentation.DEGRADED_PERFORMANCE;
+  return (
+    <PageColumns
+      nav={
+        <SectionNav>
+          <SectionNavItem
+            icon="flashlight-line"
+            active={section === 'now'}
+            onClick={() => setSection('now')}
+          >
+            Happening now
+          </SectionNavItem>
+          <SectionNavItem
+            icon="history-line"
+            active={section === 'past'}
+            onClick={() => setSection('past')}
+          >
+            Past events
+          </SectionNavItem>
+          <SectionNavItem
+            icon="hammer-line"
+            active={section === 'maintenance'}
+            onClick={() => setSection('maintenance')}
+          >
+            Maintenance
+          </SectionNavItem>
+        </SectionNav>
+      }
+      aside={
+        <Stack gap={3}>
+          <Text as="h2" tone="label">
+            Components
+          </Text>
+          <TreeList>
+            <TreeRow
+              title="Public API"
+              start={
+                <StatusSelect
+                  compact
+                  status={apiStatus}
+                  componentName="Public API"
+                  onChange={setApiStatus}
+                />
+              }
+            />
+            <TreeRow
+              title="CN region"
+              start={<StatusIcon icon={worst.icon} tone={worst.tone} title={worst.label} />}
+              onClick={() => setExpanded((prev) => !prev)}
+              expanded={expanded}
+              end={<TreeChevron open={expanded} />}
+              nest={
+                <TreeNest open={expanded}>
+                  <TreeRow
+                    title="API CN"
+                    start={<StatusIcon icon={worst.icon} tone={worst.tone} title={worst.label} />}
+                  />
+                </TreeNest>
+              }
+            />
+          </TreeList>
+        </Stack>
+      }
+    >
+      <EmptyState
+        icon="flashlight-line"
+        title="New incidents will appear here"
+        description="When something breaks, open an incident and its timeline lands on this screen."
+        actions={<Button startEnhancer={<Icon name="add-fill" />}>Open an incident</Button>}
+      />
+    </PageColumns>
+  );
+}
 
 /** The console's status control, wired to local state so the gallery is live. */
 function StatusRow({ name, description }: { name: string; description: string }) {
@@ -127,6 +224,132 @@ export function DesignGallery() {
             ))}
           </PanelList>
         </Panel>
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Dashboard sandwich
+        </Text>
+        <Text tone="muted">
+          Section nav on the start edge, the reading column in the middle, the component rail on the
+          end edge. Groups fold closed; the compact status control is the icon itself.
+        </Text>
+        <SandwichDemo />
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Orderable tree
+        </Text>
+        <Text tone="muted">
+          The components console: draggable rows, a group as a folder row with its members nested
+          inset, actions as quiet icons on the end edge.
+        </Text>
+        <TreeList>
+          <TreeRow
+            title="Web application"
+            description="Dashboard, sign-in, and the status page."
+            handle
+            end={
+              <>
+                <StatusPill status="OPERATIONAL" />
+                <IconButton label="Delete Web application">
+                  <Icon name="delete-bin-line" size={16} />
+                </IconButton>
+              </>
+            }
+          />
+          <TreeRow
+            title="Public API"
+            description="REST endpoints under api.example.com."
+            handle
+            end={
+              <>
+                <StatusPill status="DEGRADED_PERFORMANCE" />
+                <IconButton label="Delete Public API">
+                  <Icon name="delete-bin-line" size={16} />
+                </IconButton>
+              </>
+            }
+          />
+          <TreeRow
+            title="CN region"
+            icon="folder-line"
+            handle
+            end={
+              <>
+                <IconButton label="Rename CN region">
+                  <Icon name="pencil-line" size={16} />
+                </IconButton>
+                <IconButton label="Delete CN region">
+                  <Icon name="delete-bin-line" size={16} />
+                </IconButton>
+              </>
+            }
+            nest={
+              <TreeNest>
+                <TreeRow
+                  title="API CN"
+                  handle
+                  end={
+                    <>
+                      <StatusPill status="OPERATIONAL" />
+                      <IconButton label="Delete API CN">
+                        <Icon name="delete-bin-line" size={16} />
+                      </IconButton>
+                    </>
+                  }
+                />
+                <TreeRow
+                  title="China CDN"
+                  handle
+                  end={
+                    <>
+                      <StatusPill status="MAJOR_OUTAGE" />
+                      <IconButton label="Delete China CDN">
+                        <Icon name="delete-bin-line" size={16} />
+                      </IconButton>
+                    </>
+                  }
+                />
+              </TreeNest>
+            }
+          />
+          <TreeRow
+            title="EU region"
+            icon="folder-line"
+            handle
+            end={
+              <>
+                <IconButton label="Rename EU region">
+                  <Icon name="pencil-line" size={16} />
+                </IconButton>
+                <IconButton label="Delete EU region">
+                  <Icon name="delete-bin-line" size={16} />
+                </IconButton>
+              </>
+            }
+            nest={
+              <TreeNest>
+                <TreeEmpty>No components in this group yet.</TreeEmpty>
+              </TreeNest>
+            }
+          />
+        </TreeList>
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Rich text
+        </Text>
+        <Text tone="muted">
+          The incident message editor and the rendered body it produces. Eight tools, markdown
+          underneath, nothing a status update does not need.
+        </Text>
+        <RichTextEditor name="gallery-message" defaultValue={SAMPLE_MARKDOWN} />
+        <Card>
+          <RichTextBody markdown={SAMPLE_MARKDOWN} />
+        </Card>
       </Stack>
 
       <Stack gap={3}>

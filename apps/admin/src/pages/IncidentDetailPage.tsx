@@ -8,7 +8,7 @@ import {
   Skeleton,
   Stack,
   Text,
-  Textarea,
+  RichTextEditor,
   Toast,
   incidentStatusPresentation,
 } from '@trustfall/design';
@@ -80,6 +80,12 @@ export function IncidentDetailPage() {
     // the form now — after the awaits below it is gone.
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    // The rich text editor reports through a hidden field, out of reach of
+    // native `required` — emptiness is checked here instead.
+    if (!String(form.get('body') ?? '').trim()) {
+      setFormError('Message is required.');
+      return;
+    }
     const posted = await postUpdate({
       status: String(form.get('status')),
       body: String(form.get('body')),
@@ -110,7 +116,7 @@ export function IncidentDetailPage() {
   if (loadError != null) {
     return (
       <>
-        <PageHeader icon="alert-fill" trail={['Status', 'Incidents']} />
+        <PageHeader icon="alert-fill" trail={['Incidents']} />
         <PageBody>
           <Stack gap={3} align="start">
             <Text tone="muted">{loadError}</Text>
@@ -126,7 +132,7 @@ export function IncidentDetailPage() {
   if (!incident) {
     return (
       <>
-        <PageHeader icon="alert-fill" trail={['Status', 'Incidents']} />
+        <PageHeader icon="alert-fill" trail={['Incidents']} />
         <PageBody>
           <Stack gap={3}>
             <Skeleton label="Loading incident" />
@@ -141,7 +147,7 @@ export function IncidentDetailPage() {
 
   return (
     <>
-      <PageHeader icon="alert-fill" trail={['Status', 'Incidents', incident.title]} />
+      <PageHeader icon="alert-fill" trail={['Incidents', incident.title]} />
       <PageBody>
         <Stack gap={4}>
           <IncidentTimeline
@@ -158,8 +164,6 @@ export function IncidentDetailPage() {
                 <input type="hidden" name="status" value="RESOLVED" />
               ) : (
                 <Field label="Status" htmlFor="status">
-                  {/* Resolution goes through the Resolve button below, which is
-                  the one place that transition gets its confirmation. */}
                   {/* Keyed by status: the post-update reset and refresh land a
                   new current status, and the uncontrolled field must reopen
                   on it rather than the one it mounted with. */}
@@ -169,17 +173,22 @@ export function IncidentDetailPage() {
                     name="status"
                     defaultValue={incident.status}
                     disabled={submitting}
-                    options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
-                      (status) => ({
-                        value: status,
-                        label: incidentStatusPresentation[status].label,
-                      }),
-                    )}
+                    options={INCIDENT_STATUSES.map((status) => ({
+                      value: status,
+                      label: incidentStatusPresentation[status].label,
+                    }))}
                   />
                 </Field>
               )}
-              <Field label="Update" htmlFor="body">
-                <Textarea id="body" name="body" required disabled={submitting} />
+              <Field label="Message" htmlFor="body">
+                {/* Keyed by update count: reset() cannot clear the editor, so a
+                posted update remounts it blank. */}
+                <RichTextEditor
+                  key={incident.updates.length}
+                  id="body"
+                  name="body"
+                  disabled={submitting}
+                />
               </Field>
               {formError != null && !confirmingResolve ? (
                 <Text tone="caption">{formError}</Text>
