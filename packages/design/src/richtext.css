@@ -1,0 +1,76 @@
+/*
+ * Typography for rendered rich text (`.tf-prose`): markdown bodies and the
+ * editor's content area share it, so what you type is what readers get.
+ *
+ * StyleX cannot reach descendants of a `dangerouslySetInnerHTML` tree or of
+ * ProseMirror's editable DOM, so this lives as plain CSS. The light-dark()
+ * pairs mirror the design tokens — keep them in sync with
+ * tokens/color.stylex.ts (surfaceSunken, border, borderStrong, accent,
+ * textMuted) and tokens/text.stylex.ts (familyMono).
+ */
+
+/* The editor frame draws its own focus ring; the editable area must not add
+   the browser's blue one on top. */
+.tf-prose[contenteditable] {
+  outline: none;
+}
+
+.tf-prose p,
+.tf-prose ul,
+.tf-prose ol,
+.tf-prose pre,
+.tf-prose blockquote {
+  margin-block: 0.5em;
+}
+
+.tf-prose > :first-child {
+  margin-block-start: 0;
+}
+
+.tf-prose > :last-child {
+  margin-block-end: 0;
+}
+
+.tf-prose ul,
+.tf-prose ol {
+  padding-inline-start: 1.5em;
+}
+
+.tf-prose li + li {
+  margin-block-start: 0.25em;
+}
+
+.tf-prose code {
+  background-color: light-dark(#eeeeee, #242424);
+  border-radius: 4px;
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  padding: 0.1em 0.35em;
+}
+
+.tf-prose pre {
+  background-color: light-dark(#eeeeee, #242424);
+  border-radius: 6px;
+  overflow-x: auto;
+  padding: 0.6em 0.8em;
+}
+
+.tf-prose pre code {
+  background-color: transparent;
+  border-radius: 0;
+  font-size: 0.875em;
+  padding: 0;
+}
+
+.tf-prose blockquote {
+  border-inline-start: 3px solid light-dark(#e2e2e2, #2e2e2e);
+  color: light-dark(#6b6b6b, #afafaf);
+  margin-inline: 0;
+  padding-inline-start: 0.8em;
+}
+
+.tf-prose a {
+  color: light-dark(#5f7eec, #8ca3f2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

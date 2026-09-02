@@ -33,7 +33,7 @@ export function StatusPill({
 
   return (
     <span {...stylex.props(styles.pill)}>
-      <Badge tone={presentation.tone}>
+      <Badge>
         <StatusIcon icon={presentation.icon} tone={presentation.tone} title={presentation.label} />
         {presentation.label}
       </Badge>

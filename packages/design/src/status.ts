@@ -30,6 +30,18 @@ export const incidentStatusPresentation: Record<IncidentStatus, StatusPresentati
   RESOLVED: { tone: 'operational', icon: 'check', label: 'Resolved' },
 };
 
+/**
+ * The timeline's glyph for each incident status: what the responders were
+ * doing at that step, drawn from the Remix set. The pill keeps the geometric
+ * status icon; the timeline gets a verb.
+ */
+export const incidentStatusGlyph: Record<IncidentStatus, string> = {
+  INVESTIGATING: 'search-line',
+  IDENTIFIED: 'lightbulb-line',
+  MONITORING: 'eye-line',
+  RESOLVED: 'check-line',
+};
+
 export const incidentImpactPresentation: Record<IncidentImpact, StatusPresentation> = {
   MINOR: { tone: 'degraded', icon: 'diamond', label: 'Minor' },
   MAJOR: { tone: 'partialOutage', icon: 'triangle', label: 'Major' },

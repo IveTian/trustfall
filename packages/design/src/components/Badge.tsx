@@ -1,15 +1,22 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
+import { mesh } from '../tokens/const.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
-import type { StatusTone } from '../status.ts';
 
 const styles = stylex.create({
+  // One quiet chip for every tone: raised ground, hairline edge, neutral
+  // text. The status color lives in the icon alone.
   badge: {
     alignItems: 'center',
+    backgroundColor: color.surfaceRaised,
+    borderColor: color.border,
     borderRadius: radius.sm,
+    borderStyle: 'solid',
+    borderWidth: mesh.line,
+    color: color.textPrimary,
     display: 'inline-flex',
     fontFamily: text.familyUi,
     fontSize: text.sizeCaption,
@@ -19,38 +26,8 @@ const styles = stylex.create({
     paddingBlock: space[1],
     paddingInline: space[2],
   },
-  operational: {
-    backgroundColor: color.operationalMuted,
-    color: color.operational,
-  },
-  degraded: {
-    backgroundColor: color.degradedMuted,
-    color: color.degraded,
-  },
-  partialOutage: {
-    backgroundColor: color.partialOutageMuted,
-    color: color.partialOutage,
-  },
-  majorOutage: {
-    backgroundColor: color.majorOutageMuted,
-    color: color.majorOutage,
-  },
-  maintenance: {
-    backgroundColor: color.maintenanceMuted,
-    color: color.maintenance,
-  },
-  neutral: {
-    backgroundColor: color.surfaceSunken,
-    color: color.textPrimary,
-  },
 });
 
-export function Badge({
-  children,
-  tone = 'neutral',
-}: {
-  children: ReactNode;
-  tone?: StatusTone | 'neutral';
-}) {
-  return <span {...stylex.props(styles.badge, styles[tone])}>{children}</span>;
+export function Badge({ children }: { children: ReactNode }) {
+  return <span {...stylex.props(styles.badge)}>{children}</span>;
 }

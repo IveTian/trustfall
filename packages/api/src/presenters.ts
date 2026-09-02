@@ -2,7 +2,7 @@ import { toRfc3339 } from '@trustfall/db';
 import type {
   ComponentGroupRow,
   ComponentRow,
-  IncidentUpdateRow,
+  IncidentUpdateWithComponents,
   IncidentWithRelations,
 } from '@trustfall/db';
 
@@ -30,13 +30,18 @@ export function presentGroup(row: ComponentGroupRow) {
   };
 }
 
-export function presentUpdate(row: IncidentUpdateRow) {
+export function presentUpdate(row: IncidentUpdateWithComponents) {
   return {
     id: row.id,
     incident_id: row.incidentId,
     status: row.status,
     body: row.body,
     created_at: toRfc3339(row.createTime)!,
+    affected_components: row.components.map((item) => ({
+      component_id: item.componentId,
+      display_name: item.displayName,
+      status: item.status,
+    })),
   };
 }
 

@@ -15,6 +15,7 @@ import {
   components,
   incidentComponents,
   incidents,
+  incidentUpdateComponents,
   incidentUpdates,
   settings,
 } from './schema.ts';
@@ -24,6 +25,17 @@ export type ComponentGroupRow = typeof componentGroups.$inferSelect;
 export type ComponentRow = typeof components.$inferSelect;
 export type IncidentRow = typeof incidents.$inferSelect;
 export type IncidentUpdateRow = typeof incidentUpdates.$inferSelect;
+
+export type AffectedComponent = {
+  componentId: string;
+  status: ComponentStatus;
+  displayName: string;
+};
+
+/** A timeline entry with the affected set as the entry left it. */
+export type IncidentUpdateWithComponents = IncidentUpdateRow & {
+  components: AffectedComponent[];
+};
 
 export async function getSetting(db: Database, key: string): Promise<string | undefined> {
   const row = await db.select().from(settings).where(eq(settings.key, key)).get();
@@ -181,8 +193,8 @@ export async function setComponentStatus(
 }
 
 export type IncidentWithRelations = IncidentRow & {
-  updates: IncidentUpdateRow[];
-  components: Array<{ componentId: string; status: ComponentStatus; displayName: string }>;
+  updates: IncidentUpdateWithComponents[];
+  components: AffectedComponent[];
 };
 
 async function attachIncidentRelations(
@@ -213,13 +225,68 @@ async function attachIncidentRelations(
       .all(),
   ]);
 
+  const snapshots =
+    updateRows.length === 0
+      ? []
+      : await db
+          .select({
+            updateId: incidentUpdateComponents.updateId,
+            componentId: incidentUpdateComponents.componentId,
+            status: incidentUpdateComponents.status,
+            displayName: components.displayName,
+          })
+          .from(incidentUpdateComponents)
+          .innerJoin(components, eq(components.id, incidentUpdateComponents.componentId))
+          .where(
+            inArray(
+              incidentUpdateComponents.updateId,
+              updateRows.map((update) => update.id),
+            ),
+          )
+          .all();
+
   return rows.map((row) => ({
     ...row,
-    updates: updateRows.filter((update) => update.incidentId === row.id),
+    updates: updateRows
+      .filter((update) => update.incidentId === row.id)
+      .map((update) => ({
+        ...update,
+        components: snapshots
+          .filter((item) => item.updateId === update.id)
+          .map(({ componentId, status, displayName }) => ({ componentId, status, displayName })),
+      })),
     components: affected
       .filter((item) => item.incidentId === row.id)
       .map(({ componentId, status, displayName }) => ({ componentId, status, displayName })),
   }));
+}
+
+/**
+ * Freezes the incident's affected set onto one timeline entry. A resolving
+ * entry records the components at operational, which is where resolving put
+ * them.
+ */
+async function snapshotUpdateComponents(
+  db: Database,
+  incidentId: string,
+  updateId: string,
+  resolved: boolean,
+) {
+  const affected = await db
+    .select({ componentId: incidentComponents.componentId, status: incidentComponents.status })
+    .from(incidentComponents)
+    .where(eq(incidentComponents.incidentId, incidentId))
+    .all();
+  if (affected.length === 0) {
+    return;
+  }
+  await db.insert(incidentUpdateComponents).values(
+    affected.map((item) => ({
+      updateId,
+      componentId: item.componentId,
+      status: resolved ? ('OPERATIONAL' as const) : item.status,
+    })),
+  );
 }
 
 export type IncidentState = 'ACTIVE' | 'RESOLVED';
@@ -305,10 +372,11 @@ export async function createIncident(
     updateTime: now,
   };
 
+  const firstUpdateId = createId('upd');
   await db.batch([
     db.insert(incidents).values(incident),
     db.insert(incidentUpdates).values({
-      id: createId('upd'),
+      id: firstUpdateId,
       incidentId: incident.id,
       status,
       body: input.body,
@@ -334,6 +402,7 @@ export async function createIncident(
       .set({ status: nextStatus, updateTime: now })
       .where(eq(components.id, componentId));
   }
+  await snapshotUpdateComponents(db, incident.id, firstUpdateId, status === 'RESOLVED');
 
   const created = await getIncident(db, incident.id);
   if (!created) {
@@ -362,7 +431,22 @@ export async function updateIncident(
   return getIncident(db, id);
 }
 
+/**
+ * Removes a mistaken incident. CASCADE clears the timeline and affected-set
+ * rows. If the incident is still active, the live component statuses it wrote
+ * are restored to operational so the status page does not keep an unexplained
+ * outage. Resolved incidents already restored those statuses and may have
+ * left join rows in place; rewriting them would clobber a later dashboard
+ * edit or overlapping incident.
+ */
 export async function deleteIncident(db: Database, id: string): Promise<boolean> {
+  const existing = await getIncident(db, id);
+  if (!existing) {
+    return false;
+  }
+  if (isActiveIncidentStatus(existing.status)) {
+    await restoreIncidentComponents(db, existing);
+  }
   const result = await db.delete(incidents).where(eq(incidents.id, id));
   return (result.meta.changes ?? 0) > 0;
 }
@@ -378,8 +462,18 @@ export async function deleteIncident(db: Database, id: string): Promise<boolean>
 export async function addIncidentUpdate(
   db: Database,
   incidentId: string,
-  input: { status: IncidentStatus; body: string },
-): Promise<{ incident: IncidentWithRelations; update: IncidentUpdateRow } | undefined> {
+  input: {
+    status: IncidentStatus;
+    body: string;
+    /**
+     * Per-component corrections riding along with the update. OPERATIONAL
+     * detaches the component from the incident and restores it; anything else
+     * attaches (or re-declares) it and moves the component with it. Components
+     * not mentioned are left alone.
+     */
+    componentStatuses?: Record<string, ComponentStatus>;
+  },
+): Promise<{ incident: IncidentWithRelations; update: IncidentUpdateWithComponents } | undefined> {
   const existing = await getIncident(db, incidentId);
   if (!existing) {
     return undefined;
@@ -405,12 +499,36 @@ export async function addIncidentUpdate(
       .where(eq(incidents.id, incidentId)),
   ]);
 
-  if (resolved) {
-    await restoreIncidentComponents(db, existing);
+  if (input.componentStatuses) {
+    for (const [componentId, status] of Object.entries(input.componentStatuses)) {
+      await db
+        .delete(incidentComponents)
+        .where(
+          and(
+            eq(incidentComponents.incidentId, incidentId),
+            eq(incidentComponents.componentId, componentId),
+          ),
+        );
+      if (status !== 'OPERATIONAL') {
+        await db.insert(incidentComponents).values({ incidentId, componentId, status });
+      }
+      await db
+        .update(components)
+        .set({ status, updateTime: now })
+        .where(eq(components.id, componentId));
+    }
   }
 
+  if (resolved) {
+    const current =
+      (input.componentStatuses ? await getIncident(db, incidentId) : existing) ?? existing;
+    await restoreIncidentComponents(db, current);
+  }
+  await snapshotUpdateComponents(db, incidentId, update.id, resolved);
+
   const incident = await getIncident(db, incidentId);
-  return incident ? { incident, update } : undefined;
+  const created = incident?.updates.find((row) => row.id === update.id);
+  return incident && created ? { incident, update: created } : undefined;
 }
 
 export async function resolveIncident(

@@ -16,13 +16,16 @@ import { Icon } from './Icon.tsx';
  * The last trail segment is the page's `<h1>`. It is small on purpose — the
  * console announces where you are, it does not shout it.
  */
+/** An ancestor segment can carry `onSelect` and becomes the way back up. */
+export type TrailSegment = string | { label: string; onSelect: () => void };
+
 export function PageHeader({
   icon,
   trail,
   actions,
 }: {
   icon?: string;
-  trail: string[];
+  trail: TrailSegment[];
   actions?: ReactNode;
 }) {
   const last = trail.length - 1;
@@ -34,29 +37,45 @@ export function PageHeader({
             <Icon name={icon} size={16} />
           </span>
         ) : null}
-        {trail.map((segment, index) => (
-          <span key={segment} {...stylex.props(styles.segment)}>
-            {index > 0 ? (
-              <span {...stylex.props(styles.separator)}>
-                <Icon name="arrow-right-s-fill" size={16} />
-              </span>
-            ) : null}
-            {index === last ? (
-              <h1 {...stylex.props(styles.current)}>{segment}</h1>
-            ) : (
-              <span {...stylex.props(styles.ancestor)}>{segment}</span>
-            )}
-          </span>
-        ))}
+        {trail.map((segment, index) => {
+          const label = typeof segment === 'string' ? segment : segment.label;
+          const onSelect = typeof segment === 'string' ? undefined : segment.onSelect;
+          return (
+            <span key={label} {...stylex.props(styles.segment)}>
+              {index > 0 ? (
+                <span {...stylex.props(styles.separator)}>
+                  <Icon name="arrow-right-s-line" size={16} />
+                </span>
+              ) : null}
+              {index === last ? (
+                <h1 {...stylex.props(styles.current)}>{label}</h1>
+              ) : onSelect ? (
+                <button
+                  type="button"
+                  onClick={onSelect}
+                  {...stylex.props(styles.ancestor, styles.ancestorLink)}
+                >
+                  {label}
+                </button>
+              ) : (
+                <span {...stylex.props(styles.ancestor)}>{label}</span>
+              )}
+            </span>
+          );
+        })}
       </div>
       {actions ? <div {...stylex.props(styles.actions)}>{actions}</div> : null}
     </header>
   );
 }
 
-/** The scrolling column under the header: page gutters and one max measure. */
-export function PageBody({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.body)}>{children}</div>;
+/**
+ * The scrolling column under the header: page gutters and one max measure.
+ * `wide` is for screens that earn more room — a multi-column dashboard — and
+ * widens the measure without touching the reading pages.
+ */
+export function PageBody({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+  return <div {...stylex.props(styles.body, wide && styles.bodyWide)}>{children}</div>;
 }
 
 const styles = stylex.create({
@@ -118,6 +137,28 @@ const styles = stylex.create({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  ancestorLink: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    color: {
+      default: color.textMuted,
+      ':hover': color.textPrimary,
+    },
+    cursor: 'pointer',
+    outlineColor: {
+      ':focus-visible': color.focus,
+    },
+    outlineOffset: {
+      ':focus-visible': control.focusOffset,
+    },
+    outlineStyle: {
+      ':focus-visible': 'solid',
+    },
+    outlineWidth: {
+      ':focus-visible': control.focusWidth,
+    },
+    padding: 0,
+  },
   current: {
     color: color.textPrimary,
     fontFamily: text.familyUi,
@@ -145,5 +186,8 @@ const styles = stylex.create({
     paddingBlock: space[5],
     paddingInline: space.gutter,
     width: '100%',
+  },
+  bodyWide: {
+    maxWidth: control.contentWidthWide,
   },
 });

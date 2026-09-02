@@ -91,8 +91,11 @@ export function Menu({
   /**
    * `field` dresses the trigger as a form control — full width, sunken, the
    * same inner focus ring as Input — for menus that live inside a Field.
+   * `bare` strips the trigger to its content — no chrome, no chevron — for
+   * dense rows where the value itself is the control. `icon` is a square
+   * ghost trigger for a lone glyph, the IconButton of menus.
    */
-  variant?: 'button' | 'field';
+  variant?: 'button' | 'field' | 'bare' | 'icon';
   /** Forwarded to the trigger so a `<label htmlFor>` can reach it. */
   triggerId?: string;
 }) {
@@ -229,13 +232,19 @@ export function Menu({
         {...stylex.props(
           styles.trigger,
           variant === 'field' && styles.triggerField,
-          open && (variant === 'field' ? styles.triggerFieldOpen : styles.triggerOpen),
+          variant === 'bare' && styles.triggerBare,
+          variant === 'icon' && styles.triggerIconOnly,
+          open && variant === 'button' && styles.triggerOpen,
+          open && variant === 'icon' && styles.triggerIconOnlyOpen,
+          open && variant === 'field' && styles.triggerFieldOpen,
         )}
       >
         <span {...stylex.props(styles.triggerLabel)}>{children}</span>
-        <span {...stylex.props(styles.triggerIcon)}>
-          <Icon name="arrow-down-s-fill" size={16} />
-        </span>
+        {variant === 'bare' || variant === 'icon' ? null : (
+          <span {...stylex.props(styles.triggerIcon)}>
+            <Icon name="arrow-down-s-line" size={16} />
+          </span>
+        )}
       </button>
 
       {open && anchor ? (
@@ -355,17 +364,62 @@ const styles = stylex.create({
     },
     borderColor: color.borderStrong,
   },
+  // A square ghost trigger for a lone glyph: the IconButton of menus.
+  triggerIconOnly: {
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': color.surfaceSubtle,
+      ':disabled': 'transparent',
+    },
+    borderColor: {
+      default: 'transparent',
+      ':hover': 'transparent',
+    },
+    boxShadow: 'none',
+    color: {
+      default: color.textMuted,
+      ':hover': color.textPrimary,
+    },
+    inlineSize: control.heightMd,
+    justifyContent: 'center',
+    minHeight: control.heightMd,
+    paddingBlock: 0,
+    paddingInline: 0,
+  },
+  triggerIconOnlyOpen: {
+    backgroundColor: {
+      default: color.surfaceSubtle,
+      ':hover': color.surfaceSubtle,
+    },
+    color: color.textPrimary,
+  },
+  // The value is the whole control: no fill, no border, no chevron.
+  triggerBare: {
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': 'transparent',
+      ':disabled': 'transparent',
+    },
+    borderColor: {
+      default: 'transparent',
+      ':hover': 'transparent',
+    },
+    boxShadow: 'none',
+    minHeight: 'auto',
+    paddingBlock: 0,
+    paddingInline: 0,
+  },
   // Mirrors the Field control in Field.tsx: sunken ground, focus as an inner
   // accent ring, nothing painted outside the box.
   triggerField: {
     backgroundColor: {
-      default: color.surfaceSunken,
-      ':hover': color.surfaceSunken,
-      ':disabled': color.surfaceSunken,
+      default: color.surfaceRaised,
+      ':hover': color.surfaceRaised,
+      ':disabled': color.surfaceSubtle,
     },
     borderColor: {
-      default: color.surfaceSunken,
-      ':hover': color.border,
+      default: color.border,
+      ':hover': color.borderStrong,
       ':focus': color.accent,
     },
     borderRadius: radius.sm,

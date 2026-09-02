@@ -32,6 +32,14 @@ const styles = stylex.create({
     fontWeight: text.weightBold,
     lineHeight: text.lineTitle,
   },
+  // A section label: between body and title, medium weight — for headings
+  // that name a column or rail without shouting over its content.
+  label: {
+    color: color.textPrimary,
+    fontSize: text.sizeLabel,
+    fontWeight: text.weightMedium,
+    lineHeight: text.lineLabel,
+  },
   display: {
     color: color.textPrimary,
     fontSize: text.sizeDisplay,
@@ -55,7 +63,7 @@ const styles = stylex.create({
   },
 });
 
-type Tone = 'body' | 'muted' | 'caption' | 'title' | 'display' | 'headline' | 'mono';
+type Tone = 'body' | 'muted' | 'caption' | 'title' | 'label' | 'display' | 'headline' | 'mono';
 
 export function Text({
   children,

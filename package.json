@@ -5,7 +5,7 @@
   "description": "A Cloudflare-native, manually-updated status page.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "pnpm cf-typegen && pnpm --parallel --filter @trustfall/web --filter @trustfall/admin dev",
     "build": "pnpm cf-typegen && pnpm --filter @trustfall/admin build && pnpm --filter @trustfall/web build",

@@ -61,7 +61,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader icon="settings-fill" trail={['Status', 'Settings']} />
+      <PageHeader icon="settings-fill" trail={['Settings']} />
       <PageBody>
         <Stack gap={4}>
           {loadError != null ? (

@@ -9,6 +9,7 @@ export { compactSpace, compactText } from './themes.ts';
 export {
   componentStatusPresentation,
   incidentImpactPresentation,
+  incidentStatusGlyph,
   incidentStatusPresentation,
   overallStatusCopy,
 } from './status.ts';
@@ -39,13 +40,27 @@ export { Skeleton } from './components/Skeleton.tsx';
 export { StatusIcon } from './components/StatusIcon.tsx';
 export { StatusPill } from './components/StatusPill.tsx';
 export { StatusSelect } from './components/StatusSelect.tsx';
+export { ImpactSelect, impactStatusLabels } from './components/ImpactSelect.tsx';
+export { DiffBlock } from './components/Diff.tsx';
+export type { DiffLine } from './components/Diff.tsx';
+export type { ImpactStatus } from './components/ImpactSelect.tsx';
 export { OverallStatusBanner } from './components/OverallStatusBanner.tsx';
 export { ComponentRow } from './components/ComponentRow.tsx';
+export { TreeList, TreeRow, TreeNest, TreeEmpty, TreeChevron } from './components/TreeList.tsx';
+export { PageColumns } from './components/PageColumns.tsx';
+export { RichTextBody } from './components/RichTextBody.tsx';
+export { RichTextEditor } from './components/RichTextEditor.tsx';
+export { SectionNav, SectionNavItem } from './components/SectionNav.tsx';
 export { ComponentGroupSection } from './components/ComponentGroupSection.tsx';
 export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';
-export { IncidentTimeline } from './components/IncidentTimeline.tsx';
+export { IncidentTimeline, timeZoneLabel } from './components/IncidentTimeline.tsx';
+export type { TimelineUpdate, TimelineAffectedComponent } from './components/IncidentTimeline.tsx';
+export { AffectedComponentsChart } from './components/AffectedComponentsChart.tsx';
+export type { ChartComponent } from './components/AffectedComponentsChart.tsx';
+export { componentSegments } from './affected-segments.ts';
+export type { ChartUpdate, Segment } from './affected-segments.ts';
 export { RelativeTime } from './components/RelativeTime.tsx';
 export { ThemeToggle } from './components/ThemeToggle.tsx';
 export { DesignGallery } from './components/Gallery.tsx';

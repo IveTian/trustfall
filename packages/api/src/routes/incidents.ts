@@ -15,6 +15,7 @@ import { checkIfMatch, createdLocation, etagFor, ifMatchHeader, problems } from 
 import { presentIncident, presentUpdate } from '../presenters.ts';
 import {
   collectionSchema,
+  componentStatusSchema,
   incidentImpactSchema,
   incidentSchema,
   incidentStatusSchema,
@@ -104,7 +105,7 @@ export function incidentRoutes() {
       tags: ['Incidents'],
       summary: 'Open an incident',
       description:
-        'Creates the incident and its first timeline entry, and puts every affected component into a partial outage.',
+        'Creates the incident and its first timeline entry, and moves every affected component to its declared status (partial outage when none is given).',
       request: {
         body: {
           content: {
@@ -117,6 +118,10 @@ export function incidentRoutes() {
                   description: 'Defaults to INVESTIGATING.',
                 }),
                 component_ids: z.array(z.string()).default([]),
+                component_statuses: z.record(z.string(), componentStatusSchema).optional().openapi({
+                  description:
+                    'Status per affected component id; an omitted component falls back to PARTIAL_OUTAGE.',
+                }),
               }),
             },
           },
@@ -141,6 +146,7 @@ export function incidentRoutes() {
         body: body.body,
         status: body.status,
         componentIds: body.component_ids,
+        componentStatuses: body.component_statuses,
       });
       return c.json(presentIncident(incident), 201, {
         Location: createdLocation(c, incident.id),
@@ -285,7 +291,7 @@ export function incidentRoutes() {
       tags: ['Incidents'],
       summary: 'Post a timeline update',
       description:
-        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational.',
+        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational. `component_statuses` corrects the affected set as the update lands: OPERATIONAL detaches a component, anything else attaches or re-declares it.',
       request: {
         params: incidentParam,
         body: {
@@ -294,6 +300,7 @@ export function incidentRoutes() {
               schema: z.object({
                 status: incidentStatusSchema,
                 body: z.string().min(1),
+                component_statuses: z.record(z.string(), componentStatusSchema).optional(),
               }),
             },
           },
@@ -312,7 +319,12 @@ export function incidentRoutes() {
     }),
     async (c) => {
       const { incident_id: incidentId } = c.req.valid('param');
-      const result = await addIncidentUpdate(db(), incidentId, c.req.valid('json'));
+      const body = c.req.valid('json');
+      const result = await addIncidentUpdate(db(), incidentId, {
+        status: body.status,
+        body: body.body,
+        componentStatuses: body.component_statuses,
+      });
       if (!result) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');
       }

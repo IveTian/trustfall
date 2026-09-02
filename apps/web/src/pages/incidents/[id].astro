@@ -1,7 +1,15 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, getIncident, getSetting, isSiteInitialized } from '@trustfall/db';
-import { IncidentTimeline, SiteChrome, Stack, StatusPill, Text } from '@trustfall/design';
+import {
+  AffectedComponentsChart,
+  type ChartComponent,
+  IncidentTimeline,
+  SiteChrome,
+  Stack,
+  StatusPill,
+  Text,
+} from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
 import Base from '../../layouts/Base.astro';
 
@@ -26,6 +34,34 @@ if (initialized) {
   Astro.response.status = 503;
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
+
+// The page is rendered once and cached for everyone, so it speaks UTC rather
+// than guessing a reader's zone.
+const startedAt = incident
+  ? new Intl.DateTimeFormat('en', {
+      timeZone: 'UTC',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(incident.startTime))
+  : '';
+
+// Every component the incident ever named, currently affected ones first.
+const affected: ChartComponent[] = [];
+if (incident) {
+  const seen = new Set<string>();
+  const current = new Map(incident.components.map((item) => [item.componentId, item.status]));
+  const place = (item: { componentId: string; displayName: string }) => {
+    if (seen.has(item.componentId)) return;
+    seen.add(item.componentId);
+    affected.push({
+      id: item.componentId,
+      displayName: item.displayName,
+      status: current.get(item.componentId) ?? 'OPERATIONAL',
+    });
+  };
+  incident.components.forEach(place);
+  incident.updates.forEach((update) => update.components.forEach(place));
+}
 ---
 
 <Base title={incident ? `${incident.title} · ${siteName}` : siteName}>
@@ -38,7 +74,23 @@ if (initialized) {
             <StatusPill status={incident.impact} kind="impact" />
           </Stack>
           <Text as="h1" tone="display">{incident.title}</Text>
-          <IncidentTimeline updates={incident.updates} />
+          <Text tone="caption">Started {startedAt} UTC</Text>
+          <IncidentTimeline updates={incident.updates} timeZone="UTC" />
+          {
+            affected.length > 0 ? (
+              <Stack gap={3}>
+                <Text as="h2" tone="label">Affected components</Text>
+                <AffectedComponentsChart
+                  components={affected}
+                  updates={incident.updates}
+                  startTime={incident.startTime}
+                  endTime={incident.resolveTime}
+                  timeZone="UTC"
+                  now={Date.now()}
+                />
+              </Stack>
+            ) : null
+          }
         </Stack>
       </SiteChrome>
     ) : (
