@@ -154,21 +154,25 @@ export function IncidentDetailPage() {
           />
           <form onSubmit={onUpdate}>
             <Stack gap={3}>
-              <Field label="Status" htmlFor="status">
-                {/* Resolution goes through the Resolve button below, which is
-                the one place that transition gets its confirmation. */}
-                <Select
-                  id="status"
-                  name="status"
-                  defaultValue={resolved ? undefined : incident.status}
-                  options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
-                    (status) => ({
-                      value: status,
-                      label: incidentStatusPresentation[status].label,
-                    }),
-                  )}
-                />
-              </Field>
+              {resolved ? (
+                <input type="hidden" name="status" value="RESOLVED" />
+              ) : (
+                <Field label="Status" htmlFor="status">
+                  {/* Resolution goes through the Resolve button below, which is
+                  the one place that transition gets its confirmation. */}
+                  <Select
+                    id="status"
+                    name="status"
+                    defaultValue={incident.status}
+                    options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
+                      (status) => ({
+                        value: status,
+                        label: incidentStatusPresentation[status].label,
+                      }),
+                    )}
+                  />
+                </Field>
+              )}
               <Field label="Update" htmlFor="body">
                 <Textarea id="body" name="body" required />
               </Field>
