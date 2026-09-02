@@ -1,11 +1,17 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  const el =
+    target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  return el?.closest('a, button') != null;
+}
 
 const styles = stylex.create({
   card: {
@@ -17,8 +23,7 @@ const styles = stylex.create({
     padding: space[4],
   },
   // The whole card is the control: quiet at rest, a soft shadow lift on
-  // hover, the standard ring on focus. Don't nest other interactive elements
-  // inside.
+  // hover, the standard ring on focus. Nested links keep their own click.
   clickable: {
     boxShadow: {
       default: 'none',
@@ -59,14 +64,27 @@ export function Card({
 }: {
   children: ReactNode;
   as?: 'div' | 'section' | 'li' | 'article';
-  /** Makes the whole card the control; it renders as a button. */
+  /** Makes the whole card the control. Nested links keep their own activation. */
   onClick?: () => void;
 }) {
   if (onClick != null) {
     return (
-      <button type="button" onClick={onClick} {...stylex.props(styles.card, styles.clickable)}>
+      <Tag
+        {...stylex.props(styles.card, styles.clickable)}
+        tabIndex={0}
+        onClick={(event: MouseEvent<HTMLElement>) => {
+          if (isInteractiveTarget(event.target)) return;
+          onClick();
+        }}
+        onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          if (event.currentTarget !== event.target) return;
+          event.preventDefault();
+          onClick();
+        }}
+      >
         {children}
-      </button>
+      </Tag>
     );
   }
   return <Tag {...stylex.props(styles.card)}>{children}</Tag>;
