@@ -167,22 +167,28 @@ export function IncidentsPage() {
                   <Input id="title" name="title" required />
                 </Field>
                 <Field label="Impact" htmlFor="impact">
-                  <Select id="impact" name="impact" defaultValue="MINOR">
-                    {INCIDENT_IMPACTS.map((impact) => (
-                      <option key={impact} value={impact}>
-                        {incidentImpactPresentation[impact].label}
-                      </option>
-                    ))}
-                  </Select>
+                  <Select
+                    id="impact"
+                    name="impact"
+                    defaultValue="MINOR"
+                    options={INCIDENT_IMPACTS.map((impact) => ({
+                      value: impact,
+                      label: incidentImpactPresentation[impact].label,
+                    }))}
+                  />
                 </Field>
                 <Field label="Status" htmlFor="status">
-                  <Select id="status" name="status" defaultValue="INVESTIGATING">
-                    {INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map((status) => (
-                      <option key={status} value={status}>
-                        {incidentStatusPresentation[status].label}
-                      </option>
-                    ))}
-                  </Select>
+                  <Select
+                    id="status"
+                    name="status"
+                    defaultValue="INVESTIGATING"
+                    options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
+                      (status) => ({
+                        value: status,
+                        label: incidentStatusPresentation[status].label,
+                      }),
+                    )}
+                  />
                 </Field>
                 <Field label="Update" htmlFor="body">
                   <Textarea id="body" name="body" required />

@@ -235,14 +235,18 @@ export function ComponentsPage() {
                   <Textarea id="component-description" name="description" />
                 </Field>
                 <Field label="Group" htmlFor="component-group">
-                  <Select id="component-group" name="group_id" defaultValue="">
-                    <option value="">Ungrouped</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.display_name}
-                      </option>
-                    ))}
-                  </Select>
+                  <Select
+                    id="component-group"
+                    name="group_id"
+                    defaultValue=""
+                    options={[
+                      { value: '', label: 'Ungrouped' },
+                      ...groups.map((group) => ({
+                        value: group.id,
+                        label: group.display_name,
+                      })),
+                    ]}
+                  />
                 </Field>
                 {formError != null ? <Text tone="caption">{formError}</Text> : null}
               </Stack>
