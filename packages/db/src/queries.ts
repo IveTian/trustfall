@@ -364,15 +364,20 @@ export async function updateIncident(
 
 /**
  * Removes a mistaken incident. CASCADE clears the timeline and affected-set
- * rows; the live component statuses it wrote are restored to operational so
- * the status page does not keep an unexplained outage.
+ * rows. If the incident is still active, the live component statuses it wrote
+ * are restored to operational so the status page does not keep an unexplained
+ * outage. Resolved incidents already restored those statuses and may have
+ * left join rows in place; rewriting them would clobber a later dashboard
+ * edit or overlapping incident.
  */
 export async function deleteIncident(db: Database, id: string): Promise<boolean> {
   const existing = await getIncident(db, id);
   if (!existing) {
     return false;
   }
-  await restoreIncidentComponents(db, existing);
+  if (isActiveIncidentStatus(existing.status)) {
+    await restoreIncidentComponents(db, existing);
+  }
   const result = await db.delete(incidents).where(eq(incidents.id, id));
   return (result.meta.changes ?? 0) > 0;
 }
