@@ -1,12 +1,15 @@
 import {
   Button,
+  Dialog,
   Field,
   PageBody,
   PageHeader,
   Select,
+  Skeleton,
   Stack,
   Text,
   Textarea,
+  Toast,
   incidentStatusPresentation,
 } from '@trustfall/design';
 import { IncidentTimeline } from '@trustfall/design';
@@ -15,6 +18,7 @@ import { INCIDENT_STATUSES } from '@trustfall/shared';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { api } from '../lib/api.ts';
+import { useToast } from '../lib/toast.ts';
 
 type Incident = {
   id: string;
@@ -28,46 +32,95 @@ type Incident = {
 export function IncidentDetailPage() {
   const { incidentId } = useParams();
   const [incident, setIncident] = useState<Incident | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [confirmingResolve, setConfirmingResolve] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [toast, showToast] = useToast();
 
   const refresh = useCallback(async () => {
     if (!incidentId) {
       return;
     }
-    setIncident(await api<Incident>(`/api/incidents/${incidentId}`));
+    try {
+      setIncident(await api<Incident>(`/api/incidents/${incidentId}`));
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Could not load the incident.');
+    }
   }, [incidentId]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  async function postUpdate(body: { status: string; body: string }): Promise<boolean> {
+    if (!incidentId) {
+      return false;
+    }
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      await api(`/api/incidents/${incidentId}/updates`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      return true;
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Could not post the update.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function onUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!incidentId) {
+    // `currentTarget` is nulled once the event finishes dispatching, so grab
+    // the form now — after the awaits below it is gone.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const posted = await postUpdate({
+      status: String(form.get('status')),
+      body: String(form.get('body')),
+    });
+    if (!posted) {
       return;
     }
-    const form = new FormData(event.currentTarget);
-    await api(`/api/incidents/${incidentId}/updates`, {
-      method: 'POST',
-      body: JSON.stringify({
-        status: form.get('status'),
-        body: form.get('body'),
-      }),
-    });
-    event.currentTarget.reset();
+    formElement.reset();
+    showToast('Update posted.');
     await refresh();
   }
 
   // Resolving is a timeline update like any other: the status transition and
   // the explanation readers get are the same act.
   async function resolve() {
-    if (!incidentId) {
+    const posted = await postUpdate({
+      status: 'RESOLVED',
+      body: 'This incident has been resolved.',
+    });
+    setConfirmingResolve(false);
+    if (!posted) {
       return;
     }
-    await api(`/api/incidents/${incidentId}/updates`, {
-      method: 'POST',
-      body: JSON.stringify({ status: 'RESOLVED', body: 'This incident has been resolved.' }),
-    });
+    showToast('Incident resolved.');
     await refresh();
+  }
+
+  if (loadError != null) {
+    return (
+      <>
+        <PageHeader icon="alert-fill" trail={['Status', 'Incidents']} />
+        <PageBody>
+          <Stack gap={3} align="start">
+            <Text tone="muted">{loadError}</Text>
+            <Button variant="secondary" onClick={() => void refresh()}>
+              Retry
+            </Button>
+          </Stack>
+        </PageBody>
+      </>
+    );
   }
 
   if (!incident) {
@@ -75,11 +128,16 @@ export function IncidentDetailPage() {
       <>
         <PageHeader icon="alert-fill" trail={['Status', 'Incidents']} />
         <PageBody>
-          <Text tone="muted">Loading incident…</Text>
+          <Stack gap={3}>
+            <Skeleton label="Loading incident" />
+            <Skeleton label="Loading incident" />
+          </Stack>
         </PageBody>
       </>
     );
   }
+
+  const resolved = incident.status === 'RESOLVED';
 
   return (
     <>
@@ -97,8 +155,14 @@ export function IncidentDetailPage() {
           <form onSubmit={onUpdate}>
             <Stack gap={3}>
               <Field label="Status" htmlFor="status">
-                <Select id="status" name="status" defaultValue={incident.status}>
-                  {INCIDENT_STATUSES.map((status) => (
+                <Select
+                  id="status"
+                  name="status"
+                  defaultValue={resolved ? undefined : incident.status}
+                >
+                  {/* Resolution goes through the Resolve button below, which is
+                  the one place that transition gets its confirmation. */}
+                  {INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map((status) => (
                     <option key={status} value={status}>
                       {incidentStatusPresentation[status].label}
                     </option>
@@ -108,14 +172,62 @@ export function IncidentDetailPage() {
               <Field label="Update" htmlFor="body">
                 <Textarea id="body" name="body" required />
               </Field>
-              <Stack direction="horizontal" gap={2}>
-                <Button type="submit">Post update</Button>
-                <Button type="button" variant="danger" onClick={resolve}>
+              {formError != null && !confirmingResolve ? (
+                <Text tone="caption">{formError}</Text>
+              ) : null}
+              <Button
+                type="submit"
+                loading={submitting && !confirmingResolve}
+                loadingLabel="Posting"
+              >
+                Post update
+              </Button>
+              {resolved ? null : (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => {
+                    setFormError(null);
+                    setConfirmingResolve(true);
+                  }}
+                >
                   Resolve incident
                 </Button>
-              </Stack>
+              )}
             </Stack>
           </form>
+
+          <Dialog
+            open={confirmingResolve}
+            title="Resolve incident?"
+            onClose={() => setConfirmingResolve(false)}
+            closeable={!submitting}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={submitting}
+                  onClick={() => setConfirmingResolve(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  loading={submitting}
+                  loadingLabel="Resolving"
+                  onClick={() => void resolve()}
+                >
+                  Resolve
+                </Button>
+              </>
+            }
+          >
+            <Text>
+              This posts “This incident has been resolved.” to the public timeline and closes the
+              incident.
+            </Text>
+          </Dialog>
+
+          <Toast message={toast} />
         </Stack>
       </PageBody>
     </>

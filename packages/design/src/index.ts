@@ -29,6 +29,7 @@ export { Menu } from './components/Menu.tsx';
 export type { MenuItem } from './components/Menu.tsx';
 export { Badge } from './components/Badge.tsx';
 export { Field, Input, Textarea, Select } from './components/Field.tsx';
+export { Checkbox } from './components/Checkbox.tsx';
 export { Dialog } from './components/Dialog.tsx';
 export { Toast } from './components/Toast.tsx';
 export { Tabs, TabPanel } from './components/Tabs.tsx';

@@ -3,6 +3,7 @@ import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustf
 import { useState } from 'react';
 import { Button } from './Button.tsx';
 import { Card } from './Card.tsx';
+import { Checkbox } from './Checkbox.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { Field, Input, Select, Textarea } from './Field.tsx';
 import { Icon } from './Icon.tsx';
@@ -100,6 +101,8 @@ export function DesignGallery() {
               <option value="DEGRADED_PERFORMANCE">Degraded performance</option>
             </Select>
           </Field>
+          <Checkbox label="API" defaultChecked />
+          <Checkbox label="Dashboard" />
         </Stack>
       </Card>
 
