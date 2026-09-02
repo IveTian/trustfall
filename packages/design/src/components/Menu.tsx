@@ -92,9 +92,10 @@ export function Menu({
    * `field` dresses the trigger as a form control — full width, sunken, the
    * same inner focus ring as Input — for menus that live inside a Field.
    * `bare` strips the trigger to its content — no chrome, no chevron — for
-   * dense rows where the value itself is the control.
+   * dense rows where the value itself is the control. `icon` is a square
+   * ghost trigger for a lone glyph, the IconButton of menus.
    */
-  variant?: 'button' | 'field' | 'bare';
+  variant?: 'button' | 'field' | 'bare' | 'icon';
   /** Forwarded to the trigger so a `<label htmlFor>` can reach it. */
   triggerId?: string;
 }) {
@@ -232,12 +233,14 @@ export function Menu({
           styles.trigger,
           variant === 'field' && styles.triggerField,
           variant === 'bare' && styles.triggerBare,
+          variant === 'icon' && styles.triggerIconOnly,
           open && variant === 'button' && styles.triggerOpen,
+          open && variant === 'icon' && styles.triggerIconOnlyOpen,
           open && variant === 'field' && styles.triggerFieldOpen,
         )}
       >
         <span {...stylex.props(styles.triggerLabel)}>{children}</span>
-        {variant === 'bare' ? null : (
+        {variant === 'bare' || variant === 'icon' ? null : (
           <span {...stylex.props(styles.triggerIcon)}>
             <Icon name="arrow-down-s-line" size={16} />
           </span>
@@ -360,6 +363,35 @@ const styles = stylex.create({
       ':hover': color.surfaceSubtle,
     },
     borderColor: color.borderStrong,
+  },
+  // A square ghost trigger for a lone glyph: the IconButton of menus.
+  triggerIconOnly: {
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': color.surfaceSubtle,
+      ':disabled': 'transparent',
+    },
+    borderColor: {
+      default: 'transparent',
+      ':hover': 'transparent',
+    },
+    boxShadow: 'none',
+    color: {
+      default: color.textMuted,
+      ':hover': color.textPrimary,
+    },
+    inlineSize: control.heightMd,
+    justifyContent: 'center',
+    minHeight: control.heightMd,
+    paddingBlock: 0,
+    paddingInline: 0,
+  },
+  triggerIconOnlyOpen: {
+    backgroundColor: {
+      default: color.surfaceSubtle,
+      ':hover': color.surfaceSubtle,
+    },
+    color: color.textPrimary,
   },
   // The value is the whole control: no fill, no border, no chevron.
   triggerBare: {

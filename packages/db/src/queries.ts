@@ -378,7 +378,17 @@ export async function deleteIncident(db: Database, id: string): Promise<boolean>
 export async function addIncidentUpdate(
   db: Database,
   incidentId: string,
-  input: { status: IncidentStatus; body: string },
+  input: {
+    status: IncidentStatus;
+    body: string;
+    /**
+     * Per-component corrections riding along with the update. OPERATIONAL
+     * detaches the component from the incident and restores it; anything else
+     * attaches (or re-declares) it and moves the component with it. Components
+     * not mentioned are left alone.
+     */
+    componentStatuses?: Record<string, ComponentStatus>;
+  },
 ): Promise<{ incident: IncidentWithRelations; update: IncidentUpdateRow } | undefined> {
   const existing = await getIncident(db, incidentId);
   if (!existing) {
@@ -407,6 +417,24 @@ export async function addIncidentUpdate(
 
   if (resolved) {
     await restoreIncidentComponents(db, existing);
+  } else if (input.componentStatuses) {
+    for (const [componentId, status] of Object.entries(input.componentStatuses)) {
+      await db
+        .delete(incidentComponents)
+        .where(
+          and(
+            eq(incidentComponents.incidentId, incidentId),
+            eq(incidentComponents.componentId, componentId),
+          ),
+        );
+      if (status !== 'OPERATIONAL') {
+        await db.insert(incidentComponents).values({ incidentId, componentId, status });
+      }
+      await db
+        .update(components)
+        .set({ status, updateTime: now })
+        .where(eq(components.id, componentId));
+    }
   }
 
   const incident = await getIncident(db, incidentId);

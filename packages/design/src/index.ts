@@ -40,6 +40,8 @@ export { StatusIcon } from './components/StatusIcon.tsx';
 export { StatusPill } from './components/StatusPill.tsx';
 export { StatusSelect } from './components/StatusSelect.tsx';
 export { ImpactSelect, impactStatusLabels } from './components/ImpactSelect.tsx';
+export { DiffBlock } from './components/Diff.tsx';
+export type { DiffLine } from './components/Diff.tsx';
 export type { ImpactStatus } from './components/ImpactSelect.tsx';
 export { OverallStatusBanner } from './components/OverallStatusBanner.tsx';
 export { ComponentRow } from './components/ComponentRow.tsx';

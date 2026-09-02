@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button, IconButton } from './Button.tsx';
 import { Card } from './Card.tsx';
 import { Checkbox } from './Checkbox.tsx';
+import { DiffBlock } from './Diff.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { Field, Input, Textarea } from './Field.tsx';
 import { Select } from './Select.tsx';
@@ -350,6 +351,25 @@ export function DesignGallery() {
         <Card>
           <RichTextBody markdown={SAMPLE_MARKDOWN} />
         </Card>
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Diff
+        </Text>
+        <Text tone="muted">
+          A review screen&apos;s answer to &quot;what exactly will this do&quot;: red leaves, green
+          arrives, plain stands still.
+        </Text>
+        <DiffBlock
+          lines={[
+            { kind: 'removed', text: 'Investigating' },
+            { kind: 'added', text: 'Monitoring' },
+            { kind: 'context', text: 'Public API: Degraded performance' },
+            { kind: 'removed', text: 'China CDN: Partial outage' },
+            { kind: 'added', text: 'China CDN: Full outage' },
+          ]}
+        />
       </Stack>
 
       <Stack gap={3}>

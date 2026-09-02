@@ -1,4 +1,11 @@
 import {
+  DiffBlock,
+  type DiffLine,
+  Icon,
+  Menu,
+  RichTextBody,
+  impactStatusLabels,
+  type ImpactStatus,
   Button,
   Dialog,
   Field,
@@ -16,8 +23,15 @@ import { IncidentTimeline } from '@trustfall/design';
 import type { IncidentStatus } from '@trustfall/shared';
 import { INCIDENT_STATUSES } from '@trustfall/shared';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router';
-import { api } from '../lib/api.ts';
+import { useNavigate, useParams } from 'react-router';
+import { api, type Page } from '../lib/api.ts';
+import {
+  AffectedComponentsField,
+  type AffectedComponent,
+  type AffectedGroup,
+  byPosition,
+  membersOf,
+} from '../components/AffectedComponentsField.tsx';
 import { useToast } from '../lib/toast.ts';
 
 type Incident = {
@@ -27,34 +41,101 @@ type Incident = {
   impact: 'MINOR' | 'MAJOR' | 'CRITICAL';
   started_at: string;
   updates: Array<{ id: string; status: IncidentStatus; body: string; created_at: string }>;
+  affected_components: Array<{ component_id: string; display_name: string; status: string }>;
 };
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams();
+  const navigate = useNavigate();
   const [incident, setIncident] = useState<Incident | null>(null);
+  const [components, setComponents] = useState<AffectedComponent[]>([]);
+  const [groups, setGroups] = useState<AffectedGroup[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [confirmingResolve, setConfirmingResolve] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // The dialog opens on the incident's current affected set; the diff against
+  // this baseline is what a published update sends.
+  const [impacts, setImpacts] = useState<Record<string, ImpactStatus>>({});
+  const [baseline, setBaseline] = useState<Record<string, ImpactStatus>>({});
+  // Publishing is two steps: write the update, review the exact changes it
+  // makes, then publish. The form stays mounted (hidden) during review so
+  // Back returns to it untouched.
+  const [step, setStep] = useState<'edit' | 'review'>('edit');
+  const [draft, setDraft] = useState<{ status: string; body: string } | null>(null);
   const [toast, showToast] = useToast();
+
+  const backTrail = { label: 'Incidents', onSelect: () => navigate('/incidents') };
 
   const refresh = useCallback(async () => {
     if (!incidentId) {
       return;
     }
     try {
-      setIncident(await api<Incident>(`/api/incidents/${incidentId}`));
+      const [loaded, componentPage, groupPage] = await Promise.all([
+        api<Incident>(`/api/incidents/${incidentId}`),
+        api<Page<AffectedComponent>>('/api/components'),
+        api<Page<AffectedGroup>>('/api/component-groups'),
+      ]);
+      setIncident(loaded);
+      setComponents(componentPage.items);
+      setGroups(groupPage.items);
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load the incident.');
     }
   }, [incidentId]);
 
+  function currentImpacts(loaded: Incident): Record<string, ImpactStatus> {
+    return Object.fromEntries(
+      loaded.affected_components.map((affected) => [
+        affected.component_id,
+        affected.status as ImpactStatus,
+      ]),
+    );
+  }
+
+  function openUpdate() {
+    if (!incident) {
+      return;
+    }
+    const current = currentImpacts(incident);
+    setImpacts(current);
+    setBaseline(current);
+    setFormError(null);
+    setStep('edit');
+    setDraft(null);
+    setUpdating(true);
+  }
+
+  // Only what the operator changed travels: untouched components must not be
+  // rewritten, or an unrelated incident's declarations would be undone.
+  function changedImpacts(): Record<string, ImpactStatus> {
+    return Object.fromEntries(
+      Object.entries(impacts).filter(([id, status]) => (baseline[id] ?? 'OPERATIONAL') !== status),
+    );
+  }
+
+  function setImpact(componentIds: string[], status: ImpactStatus) {
+    setImpacts((prev) => {
+      const next = { ...prev };
+      for (const id of componentIds) {
+        next[id] = status;
+      }
+      return next;
+    });
+  }
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  async function postUpdate(body: { status: string; body: string }): Promise<boolean> {
+  async function postUpdate(body: {
+    status: string;
+    body: string;
+    component_statuses?: Record<string, ImpactStatus>;
+  }): Promise<boolean> {
     if (!incidentId) {
       return false;
     }
@@ -74,49 +155,110 @@ export function IncidentDetailPage() {
     }
   }
 
-  async function onUpdate(event: FormEvent<HTMLFormElement>) {
+  function reviewUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // `currentTarget` is nulled once the event finishes dispatching, so grab
-    // the form now — after the awaits below it is gone.
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
+    const form = new FormData(event.currentTarget);
     // The rich text editor reports through a hidden field, out of reach of
     // native `required` — emptiness is checked here instead.
     if (!String(form.get('body') ?? '').trim()) {
       setFormError('Message is required.');
       return;
     }
-    const posted = await postUpdate({
+    setFormError(null);
+    setDraft({
       status: String(form.get('status')),
       body: String(form.get('body')),
     });
+    setStep('review');
+  }
+
+  async function publishUpdate() {
+    if (!draft) {
+      return;
+    }
+    const changed = changedImpacts();
+    const posted = await postUpdate({
+      status: draft.status,
+      body: draft.body,
+      ...(Object.keys(changed).length > 0 ? { component_statuses: changed } : {}),
+    });
     if (!posted) {
       return;
     }
-    formElement.reset();
-    showToast('Update posted.');
+    // Closing unmounts the dialog form, so the next open starts blank.
+    setUpdating(false);
+    showToast('Update published.');
     await refresh();
   }
 
-  // Resolving is a timeline update like any other: the status transition and
-  // the explanation readers get are the same act.
-  async function resolve() {
-    const posted = await postUpdate({
-      status: 'RESOLVED',
-      body: 'This incident has been resolved.',
-    });
-    setConfirmingResolve(false);
-    if (!posted) {
+  // What review shows, spoken in diff: the incident's status transition and
+  // every component the update re-declares.
+  function statusDiff(): DiffLine[] {
+    if (!incident || !draft) {
+      return [];
+    }
+    const from = incidentStatusPresentation[incident.status].label;
+    const to = incidentStatusPresentation[draft.status as IncidentStatus].label;
+    if (from === to) {
+      return [{ kind: 'context', text: from }];
+    }
+    return [
+      { kind: 'removed', text: from },
+      { kind: 'added', text: to },
+    ];
+  }
+
+  function componentDiff(): DiffLine[] {
+    const changed = changedImpacts();
+    const ordered = [
+      ...membersOf(components, groups, null),
+      ...[...groups].sort(byPosition).flatMap((group) => membersOf(components, groups, group.id)),
+    ];
+    const lines: DiffLine[] = [];
+    for (const component of ordered) {
+      const status = changed[component.id];
+      if (status === undefined) {
+        continue;
+      }
+      const before = baseline[component.id] ?? 'OPERATIONAL';
+      if (before !== 'OPERATIONAL') {
+        lines.push({
+          kind: 'removed',
+          text: `${component.display_name}: ${impactStatusLabels[before]}`,
+        });
+      }
+      if (status !== 'OPERATIONAL') {
+        lines.push({
+          kind: 'added',
+          text: `${component.display_name}: ${impactStatusLabels[status]}`,
+        });
+      }
+    }
+    return lines;
+  }
+
+  async function deleteIncident() {
+    if (!incidentId) {
       return;
     }
-    showToast('Incident resolved.');
-    await refresh();
+    setSubmitting(true);
+    try {
+      await api(`/api/incidents/${incidentId}`, { method: 'DELETE' });
+    } catch (err) {
+      setSubmitting(false);
+      setConfirmingDelete(false);
+      showToast(err instanceof Error ? err.message : 'Could not delete the incident.');
+      return;
+    }
+    setSubmitting(false);
+    showToast('Incident deleted.');
+    navigate('/incidents');
   }
 
   if (loadError != null) {
     return (
       <>
-        <PageHeader icon="alert-fill" trail={['Incidents']} />
+        <PageHeader icon="alert-fill" trail={[backTrail, 'Incident']} />
         <PageBody>
           <Stack gap={3} align="start">
             <Text tone="muted">{loadError}</Text>
@@ -132,7 +274,7 @@ export function IncidentDetailPage() {
   if (!incident) {
     return (
       <>
-        <PageHeader icon="alert-fill" trail={['Incidents']} />
+        <PageHeader icon="alert-fill" trail={[backTrail, 'Incident']} />
         <PageBody>
           <Stack gap={3}>
             <Skeleton label="Loading incident" />
@@ -147,7 +289,36 @@ export function IncidentDetailPage() {
 
   return (
     <>
-      <PageHeader icon="alert-fill" trail={['Incidents', incident.title]} />
+      <PageHeader
+        icon="alert-fill"
+        trail={[backTrail, incident.title]}
+        actions={
+          <>
+            <Menu
+              label="More actions"
+              variant="icon"
+              items={[
+                {
+                  id: 'delete',
+                  label: 'Delete incident',
+                  icon: <Icon name="delete-bin-line" size={16} />,
+                  onSelect: () => setConfirmingDelete(true),
+                },
+              ]}
+            >
+              <Icon name="more-line" size={16} />
+            </Menu>
+            <Button
+              variant="secondary"
+              startEnhancer={<Icon name="external-link-line" size={16} />}
+              onClick={() => window.open(`/incidents/${incident.id}`, '_blank', 'noopener')}
+            >
+              View on status page
+            </Button>
+            <Button onClick={openUpdate}>Publish update</Button>
+          </>
+        }
+      />
       <PageBody>
         <Stack gap={4}>
           <IncidentTimeline
@@ -158,90 +329,126 @@ export function IncidentDetailPage() {
               createTime: Date.parse(update.created_at),
             }))}
           />
-          <form onSubmit={onUpdate}>
-            <Stack gap={3}>
-              {resolved ? (
-                <input type="hidden" name="status" value="RESOLVED" />
-              ) : (
-                <Field label="Status" htmlFor="status">
-                  {/* Keyed by status: the post-update reset and refresh land a
-                  new current status, and the uncontrolled field must reopen
-                  on it rather than the one it mounted with. */}
-                  <Select
-                    key={incident.status}
-                    id="status"
-                    name="status"
-                    defaultValue={incident.status}
-                    disabled={submitting}
-                    options={INCIDENT_STATUSES.map((status) => ({
-                      value: status,
-                      label: incidentStatusPresentation[status].label,
-                    }))}
-                  />
-                </Field>
-              )}
-              <Field label="Message" htmlFor="body">
-                {/* Keyed by update count: reset() cannot clear the editor, so a
-                posted update remounts it blank. */}
-                <RichTextEditor
-                  key={incident.updates.length}
-                  id="body"
-                  name="body"
-                  disabled={submitting}
-                />
-              </Field>
-              {formError != null && !confirmingResolve ? (
-                <Text tone="caption">{formError}</Text>
-              ) : null}
-              <Button
-                type="submit"
-                loading={submitting && !confirmingResolve}
-                loadingLabel="Posting"
-              >
-                Post update
-              </Button>
-              {resolved ? null : (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    setFormError(null);
-                    setConfirmingResolve(true);
-                  }}
-                >
-                  Resolve incident
-                </Button>
-              )}
-            </Stack>
-          </form>
 
           <Dialog
-            open={confirmingResolve}
-            title="Resolve incident?"
-            onClose={() => setConfirmingResolve(false)}
+            open={updating}
+            title={step === 'review' ? 'Review update' : 'Publish update'}
+            onClose={() => setUpdating(false)}
+            closeable={!submitting}
+            actions={
+              step === 'review' ? (
+                <>
+                  <Button variant="secondary" disabled={submitting} onClick={() => setStep('edit')}>
+                    Back
+                  </Button>
+                  <Button
+                    loading={submitting && !confirmingDelete}
+                    loadingLabel="Publishing"
+                    onClick={() => void publishUpdate()}
+                  >
+                    Publish update
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="secondary"
+                    disabled={submitting}
+                    onClick={() => setUpdating(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" form="publish-update">
+                    Review
+                  </Button>
+                </>
+              )
+            }
+          >
+            {step === 'review' && draft ? (
+              <Stack gap={3}>
+                <Stack gap={2}>
+                  <Text tone="caption">Status</Text>
+                  <DiffBlock lines={statusDiff()} />
+                </Stack>
+                <Stack gap={2}>
+                  <Text tone="caption">Message</Text>
+                  <RichTextBody markdown={draft.body} />
+                </Stack>
+                {componentDiff().length > 0 ? (
+                  <Stack gap={2}>
+                    <Text tone="caption">Affected components</Text>
+                    <DiffBlock lines={componentDiff()} />
+                  </Stack>
+                ) : null}
+                {formError != null ? <Text tone="caption">{formError}</Text> : null}
+              </Stack>
+            ) : null}
+            <div hidden={step === 'review'}>
+              <form id="publish-update" onSubmit={reviewUpdate}>
+                <Stack gap={3}>
+                  {resolved ? (
+                    <input type="hidden" name="status" value="RESOLVED" />
+                  ) : (
+                    <Field label="Status" htmlFor="status">
+                      <Select
+                        id="status"
+                        name="status"
+                        defaultValue={incident.status}
+                        disabled={submitting}
+                        options={INCIDENT_STATUSES.map((status) => ({
+                          value: status,
+                          label: incidentStatusPresentation[status].label,
+                        }))}
+                      />
+                    </Field>
+                  )}
+                  <Field label="Message" htmlFor="body">
+                    <RichTextEditor id="body" name="body" disabled={submitting} />
+                  </Field>
+                  {resolved ? null : (
+                    <AffectedComponentsField
+                      components={components}
+                      groups={groups}
+                      impacts={impacts}
+                      onSetImpact={setImpact}
+                      disabled={submitting}
+                    />
+                  )}
+                  {formError != null ? <Text tone="caption">{formError}</Text> : null}
+                </Stack>
+              </form>
+            </div>
+          </Dialog>
+
+          <Dialog
+            open={confirmingDelete}
+            title="Delete incident?"
+            onClose={() => setConfirmingDelete(false)}
             closeable={!submitting}
             actions={
               <>
                 <Button
                   variant="secondary"
                   disabled={submitting}
-                  onClick={() => setConfirmingResolve(false)}
+                  onClick={() => setConfirmingDelete(false)}
                 >
                   Cancel
                 </Button>
                 <Button
+                  variant="danger"
                   loading={submitting}
-                  loadingLabel="Resolving"
-                  onClick={() => void resolve()}
+                  loadingLabel="Deleting"
+                  onClick={() => void deleteIncident()}
                 >
-                  Resolve
+                  Delete
                 </Button>
               </>
             }
           >
             <Text>
-              This posts “This incident has been resolved.” to the public timeline and closes the
-              incident.
+              The incident and its whole timeline disappear from the status page immediately. This
+              cannot be undone.
             </Text>
           </Dialog>
 

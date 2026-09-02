@@ -291,7 +291,7 @@ export function incidentRoutes() {
       tags: ['Incidents'],
       summary: 'Post a timeline update',
       description:
-        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational.',
+        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational. `component_statuses` corrects the affected set as the update lands: OPERATIONAL detaches a component, anything else attaches or re-declares it.',
       request: {
         params: incidentParam,
         body: {
@@ -300,6 +300,7 @@ export function incidentRoutes() {
               schema: z.object({
                 status: incidentStatusSchema,
                 body: z.string().min(1),
+                component_statuses: z.record(z.string(), componentStatusSchema).optional(),
               }),
             },
           },
@@ -318,7 +319,12 @@ export function incidentRoutes() {
     }),
     async (c) => {
       const { incident_id: incidentId } = c.req.valid('param');
-      const result = await addIncidentUpdate(db(), incidentId, c.req.valid('json'));
+      const body = c.req.valid('json');
+      const result = await addIncidentUpdate(db(), incidentId, {
+        status: body.status,
+        body: body.body,
+        componentStatuses: body.component_statuses,
+      });
       if (!result) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');
       }

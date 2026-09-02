@@ -1,20 +1,16 @@
 import {
   Button,
-  Card,
   componentStatusPresentation,
   EmptyState,
   Icon,
   PageBody,
   PageColumns,
   PageHeader,
-  RelativeTime,
-  RichTextBody,
   SectionNav,
   SectionNavItem,
   Skeleton,
   Stack,
   StatusIcon,
-  StatusPill,
   StatusSelect,
   Text,
   Toast,
@@ -24,11 +20,12 @@ import {
   TreeNest,
   TreeRow,
 } from '@trustfall/design';
-import type { ComponentStatus, IncidentImpact, IncidentStatus } from '@trustfall/shared';
+import type { ComponentStatus } from '@trustfall/shared';
 import { COMPONENT_STATUSES } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api, type Page } from '../lib/api.ts';
+import { IncidentSummaryCard, type IncidentSummary } from '../components/IncidentSummaryCard.tsx';
 import { useToast } from '../lib/toast.ts';
 
 type Group = { id: string; display_name: string; description: string | null; position: number };
@@ -40,20 +37,6 @@ type Component = {
   group_id: string | null;
   position: number;
 };
-type Incident = {
-  id: string;
-  title: string;
-  status: IncidentStatus;
-  impact: IncidentImpact;
-  // Newest first; the first entry is the incident's latest word.
-  updates: Array<{ id: string; body: string; created_at: string }>;
-};
-
-const absoluteTime = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
 type Section = 'now' | 'past' | 'maintenance';
 
 function byPosition(a: { position: number; display_name: string }, b: typeof a) {
@@ -77,7 +60,7 @@ export function DashboardPage() {
   // "nothing here" answer.
   const [components, setComponents] = useState<Component[] | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [incidents, setIncidents] = useState<Incident[] | null>(null);
+  const [incidents, setIncidents] = useState<IncidentSummary[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [section, setSection] = useState<Section>('now');
   // Groups fold closed by default; the rail is a glance, not an inventory.
@@ -92,7 +75,7 @@ export function DashboardPage() {
       const [groupPage, componentPage, incidentPage] = await Promise.all([
         api<Page<Group>>('/api/component-groups'),
         api<Page<Component>>('/api/components'),
-        api<Page<Incident>>('/api/incidents'),
+        api<Page<IncidentSummary>>('/api/incidents'),
       ]);
       setGroups(groupPage.items);
       setComponents(componentPage.items);
@@ -174,32 +157,13 @@ export function DashboardPage() {
     );
   }
 
-  function incidentCard(incident: Incident) {
-    const latest = incident.updates[0];
+  function incidentCard(incident: IncidentSummary) {
     return (
-      <Card key={incident.id} onClick={() => navigate(`/incidents/${incident.id}`)}>
-        <Stack gap={2}>
-          <Stack direction="horizontal" justify="between" gap={3}>
-            <Text tone="label">{incident.title}</Text>
-            <Text tone="muted" as="span">
-              <Icon name="arrow-right-line" size={16} />
-            </Text>
-          </Stack>
-          <Stack direction="horizontal" gap={2}>
-            <StatusPill status={incident.status} kind="incident" />
-            <StatusPill status={incident.impact} kind="impact" />
-          </Stack>
-          {latest ? (
-            <>
-              <RichTextBody markdown={latest.body} size="small" muted />
-              <Text tone="caption">
-                {absoluteTime.format(new Date(latest.created_at))} ·{' '}
-                <RelativeTime value={latest.created_at} />
-              </Text>
-            </>
-          ) : null}
-        </Stack>
-      </Card>
+      <IncidentSummaryCard
+        key={incident.id}
+        incident={incident}
+        onOpen={() => navigate(`/incidents/${incident.id}`)}
+      />
     );
   }
 
