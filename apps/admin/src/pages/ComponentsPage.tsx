@@ -198,7 +198,7 @@ export function ComponentsPage() {
             <form id="new-group" onSubmit={createGroup}>
               <Stack gap={3}>
                 <Field label="Display name" htmlFor="group-name">
-                  <Input id="group-name" name="display_name" required />
+                  <Input id="group-name" name="display_name" required disabled={submitting} />
                 </Field>
                 {formError != null ? <Text tone="caption">{formError}</Text> : null}
               </Stack>
@@ -229,16 +229,17 @@ export function ComponentsPage() {
             <form id="new-component" onSubmit={createComponent}>
               <Stack gap={3}>
                 <Field label="Display name" htmlFor="component-name">
-                  <Input id="component-name" name="display_name" required />
+                  <Input id="component-name" name="display_name" required disabled={submitting} />
                 </Field>
                 <Field label="Description" htmlFor="component-description">
-                  <Textarea id="component-description" name="description" />
+                  <Textarea id="component-description" name="description" disabled={submitting} />
                 </Field>
                 <Field label="Group" htmlFor="component-group">
                   <Select
                     id="component-group"
                     name="group_id"
                     defaultValue=""
+                    disabled={submitting}
                     options={[
                       { value: '', label: 'Ungrouped' },
                       ...groups.map((group) => ({

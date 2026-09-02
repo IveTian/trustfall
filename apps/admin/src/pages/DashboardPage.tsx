@@ -44,7 +44,9 @@ export function DashboardPage() {
   // "no components" answer.
   const [components, setComponents] = useState<Component[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  // One entry per in-flight PATCH: a second component's update must not
+  // re-enable the first while its request is still settling.
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
   const [toast, showToast] = useToast();
 
   async function refresh() {
@@ -63,7 +65,7 @@ export function DashboardPage() {
 
   // Declaring a status is an edit to the component, not a separate operation.
   async function setStatus(component: Component, status: ComponentStatus) {
-    setPendingId(component.id);
+    setPendingIds((prev) => new Set(prev).add(component.id));
     try {
       await api(`/api/components/${component.id}`, {
         method: 'PATCH',
@@ -73,7 +75,11 @@ export function DashboardPage() {
       showToast(err instanceof Error ? err.message : 'Could not update the status.');
       return;
     } finally {
-      setPendingId(null);
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(component.id);
+        return next;
+      });
     }
     showToast(`Updated ${component.display_name}`);
     await refresh();
@@ -139,7 +145,7 @@ export function DashboardPage() {
                     <StatusSelect
                       status={component.status}
                       componentName={component.display_name}
-                      disabled={pendingId === component.id}
+                      disabled={pendingIds.has(component.id)}
                       onChange={(status) => void setStatus(component, status)}
                     />
                   }

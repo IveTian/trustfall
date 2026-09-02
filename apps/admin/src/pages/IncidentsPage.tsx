@@ -164,13 +164,14 @@ export function IncidentsPage() {
             <form id="new-incident" onSubmit={createIncident}>
               <Stack gap={3}>
                 <Field label="Title" htmlFor="title">
-                  <Input id="title" name="title" required />
+                  <Input id="title" name="title" required disabled={submitting} />
                 </Field>
                 <Field label="Impact" htmlFor="impact">
                   <Select
                     id="impact"
                     name="impact"
                     defaultValue="MINOR"
+                    disabled={submitting}
                     options={INCIDENT_IMPACTS.map((impact) => ({
                       value: impact,
                       label: incidentImpactPresentation[impact].label,
@@ -182,6 +183,7 @@ export function IncidentsPage() {
                     id="status"
                     name="status"
                     defaultValue="INVESTIGATING"
+                    disabled={submitting}
                     options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
                       (status) => ({
                         value: status,
@@ -191,7 +193,7 @@ export function IncidentsPage() {
                   />
                 </Field>
                 <Field label="Update" htmlFor="body">
-                  <Textarea id="body" name="body" required />
+                  <Textarea id="body" name="body" required disabled={submitting} />
                 </Field>
                 <Stack gap={2}>
                   <Text tone="caption">Affected components</Text>
@@ -204,6 +206,7 @@ export function IncidentsPage() {
                         name="component_ids"
                         value={component.id}
                         label={component.display_name}
+                        disabled={submitting}
                       />
                     ))
                   )}

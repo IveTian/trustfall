@@ -160,10 +160,15 @@ export function IncidentDetailPage() {
                 <Field label="Status" htmlFor="status">
                   {/* Resolution goes through the Resolve button below, which is
                   the one place that transition gets its confirmation. */}
+                  {/* Keyed by status: the post-update reset and refresh land a
+                  new current status, and the uncontrolled field must reopen
+                  on it rather than the one it mounted with. */}
                   <Select
+                    key={incident.status}
                     id="status"
                     name="status"
                     defaultValue={incident.status}
+                    disabled={submitting}
                     options={INCIDENT_STATUSES.filter((status) => status !== 'RESOLVED').map(
                       (status) => ({
                         value: status,
@@ -174,7 +179,7 @@ export function IncidentDetailPage() {
                 </Field>
               )}
               <Field label="Update" htmlFor="body">
-                <Textarea id="body" name="body" required />
+                <Textarea id="body" name="body" required disabled={submitting} />
               </Field>
               {formError != null && !confirmingResolve ? (
                 <Text tone="caption">{formError}</Text>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Menu } from './Menu.tsx';
 
 export type SelectOption = {
@@ -38,8 +38,23 @@ export function Select({
   disabled?: boolean;
   onChange?: (value: string) => void;
 }) {
-  const [value, setValue] = useState(() => defaultValue ?? options[0]?.value ?? '');
+  const fallback = defaultValue ?? options[0]?.value ?? '';
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(fallback);
   const current = options.find((option) => option.value === value);
+
+  // form.reset() must return this field to its default, as it would the
+  // native select. The hidden input's form association names the owner to
+  // listen to; the browser itself never resets a hidden input.
+  useEffect(() => {
+    const form = inputRef.current?.form;
+    if (!form) {
+      return;
+    }
+    const onReset = () => setValue(fallback);
+    form.addEventListener('reset', onReset);
+    return () => form.removeEventListener('reset', onReset);
+  }, [fallback]);
   return (
     <>
       <Menu
@@ -62,7 +77,10 @@ export function Select({
         {current?.icon}
         {current?.label ?? ''}
       </Menu>
-      {name == null ? null : <input type="hidden" name={name} value={value} />}
+      {/* Disabled with the control: a disabled native select never reaches
+      FormData, and neither may its stand-in. Rendered even without a name for
+      its .form pointer. */}
+      <input ref={inputRef} type="hidden" name={name} value={value} disabled={disabled} />
     </>
   );
 }

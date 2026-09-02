@@ -82,6 +82,7 @@ export function SettingsPage() {
                 <Field label="Site name" htmlFor="siteName">
                   <Input
                     id="siteName"
+                    disabled={saving}
                     value={settings.site_name}
                     onChange={(event) =>
                       setSettings({ ...settings, site_name: event.target.value })
@@ -91,6 +92,7 @@ export function SettingsPage() {
                 <Field label="Description" htmlFor="siteDescription">
                   <Textarea
                     id="siteDescription"
+                    disabled={saving}
                     value={settings.site_description}
                     onChange={(event) =>
                       setSettings({ ...settings, site_description: event.target.value })

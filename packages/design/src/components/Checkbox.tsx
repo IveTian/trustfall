@@ -12,8 +12,8 @@ const styles = stylex.create({
     display: 'flex',
     gap: space[2],
   },
-  // Like Select, this keeps the native control for its behavior and
-  // accessibility, and restyles it: accent-color repaints the check itself.
+  // Keeps the native control for its behavior and accessibility, and
+  // restyles it: accent-color repaints the check itself.
   box: {
     accentColor: color.accent,
     cursor: 'inherit',
@@ -54,7 +54,7 @@ export function Checkbox({
 }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
   return (
     <label {...stylex.props(styles.root)}>
-      <input type="checkbox" {...props} {...stylex.props(styles.box)} />
+      <input {...props} type="checkbox" {...stylex.props(styles.box)} />
       <span {...stylex.props(styles.label)}>{label}</span>
     </label>
   );
