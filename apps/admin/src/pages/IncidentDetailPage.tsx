@@ -87,6 +87,11 @@ export function IncidentDetailPage() {
     if (!posted) {
       return;
     }
+    // Apply the posted status before reset so the keyed Select remounts on
+    // that default. Resetting first would restore the mount-time value and
+    // flash it until refresh returns.
+    const status = String(form.get('status')) as IncidentStatus;
+    setIncident((current) => (current == null ? current : { ...current, status }));
     formElement.reset();
     showToast('Update posted.');
     await refresh();
