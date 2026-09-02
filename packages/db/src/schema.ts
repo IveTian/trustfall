@@ -58,8 +58,10 @@ export const incidentUpdates = sqliteTable('incident_updates', {
 
 /**
  * The affected set as it stood once an update landed: one row per component
- * the incident touched at that moment, with the status the update left it in.
- * A resolving update records everything at OPERATIONAL.
+ * the incident touched at that moment, with the status the update left it in
+ * and the name it had then. Component ids are stored without a live foreign
+ * key so retiring a service does not erase the snapshot. A resolving update
+ * records everything at OPERATIONAL.
  */
 export const incidentUpdateComponents = sqliteTable(
   'incident_update_components',
@@ -67,9 +69,8 @@ export const incidentUpdateComponents = sqliteTable(
     updateId: text('update_id')
       .notNull()
       .references(() => incidentUpdates.id, { onDelete: 'cascade' }),
-    componentId: text('component_id')
-      .notNull()
-      .references(() => components.id, { onDelete: 'cascade' }),
+    componentId: text('component_id').notNull(),
+    displayName: text('display_name').notNull(),
     status: text('status').$type<ComponentStatus>().notNull(),
   },
   (table) => [primaryKey({ columns: [table.updateId, table.componentId] })],

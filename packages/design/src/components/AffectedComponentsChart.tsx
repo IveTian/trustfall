@@ -85,7 +85,13 @@ export function AffectedComponentsChart({
             const presentation = componentStatusPresentation[component.status];
             const group = component.group ?? null;
             const previousGroup = index > 0 ? (components[index - 1]!.group ?? null) : null;
-            const segments = componentSegments(component.id, updates, chartStart, startTime, end);
+            const segments = componentSegments(
+              component.id,
+              updates,
+              chartStart,
+              startTime,
+              chartEnd,
+            );
             return (
               <li key={component.id} {...stylex.props(styles.row)}>
                 {group != null && group !== previousGroup ? (
@@ -104,7 +110,7 @@ export function AffectedComponentsChart({
                   aria-label={segments
                     .map(
                       (segment) =>
-                        `${componentStatusPresentation[segment.status].label} from ${stamp.format(new Date(segment.start))} to ${segment.end === end && endTime == null ? 'now' : stamp.format(new Date(segment.end))}`,
+                        `${componentStatusPresentation[segment.status].label} from ${stamp.format(new Date(segment.start))} to ${segment.end === chartEnd && endTime == null ? 'now' : stamp.format(new Date(segment.end))}`,
                     )
                     .join('; ')}
                   {...stylex.props(styles.bar)}
@@ -174,11 +180,12 @@ const styles = stylex.create({
   rows: {
     position: 'relative',
   },
-  // The markers share the rows' inline padding so a percentage lands on the
-  // same clock time in the overlay and in every bar.
+  // Inset to the same box as the bars: rows pad with space[4], and
+  // percentages on absolutely positioned markers resolve against this
+  // overlay's padding edge, not its content box.
   markers: {
-    inset: 0,
-    paddingInline: space[4],
+    insetBlock: 0,
+    insetInline: space[4],
     pointerEvents: 'none',
     position: 'absolute',
   },

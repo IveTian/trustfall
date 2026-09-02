@@ -233,10 +233,9 @@ async function attachIncidentRelations(
             updateId: incidentUpdateComponents.updateId,
             componentId: incidentUpdateComponents.componentId,
             status: incidentUpdateComponents.status,
-            displayName: components.displayName,
+            displayName: incidentUpdateComponents.displayName,
           })
           .from(incidentUpdateComponents)
-          .innerJoin(components, eq(components.id, incidentUpdateComponents.componentId))
           .where(
             inArray(
               incidentUpdateComponents.updateId,
@@ -273,8 +272,13 @@ async function snapshotUpdateComponents(
   resolved: boolean,
 ) {
   const affected = await db
-    .select({ componentId: incidentComponents.componentId, status: incidentComponents.status })
+    .select({
+      componentId: incidentComponents.componentId,
+      status: incidentComponents.status,
+      displayName: components.displayName,
+    })
     .from(incidentComponents)
+    .innerJoin(components, eq(components.id, incidentComponents.componentId))
     .where(eq(incidentComponents.incidentId, incidentId))
     .all();
   if (affected.length === 0) {
@@ -284,6 +288,7 @@ async function snapshotUpdateComponents(
     affected.map((item) => ({
       updateId,
       componentId: item.componentId,
+      displayName: item.displayName,
       status: resolved ? ('OPERATIONAL' as const) : item.status,
     })),
   );
