@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage.tsx';
 import { IncidentDetailPage } from './pages/IncidentDetailPage.tsx';
 import { IncidentsPage } from './pages/IncidentsPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
+import { RegisterPage } from './pages/RegisterPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 import { SetupPage } from './pages/SetupPage.tsx';
 
@@ -24,18 +25,28 @@ function Gate() {
   // answer: a stale `initialized: false` must never bounce a signed-in user
   // back to the setup form.
   if (data) {
-    if (location.pathname === '/login' || location.pathname === '/setup') {
+    if (
+      location.pathname === '/login' ||
+      location.pathname === '/setup' ||
+      location.pathname === '/register'
+    ) {
       return <Navigate to="/" replace />;
     }
   } else if (!initialized) {
     if (location.pathname !== '/setup') {
       return <Navigate to="/setup" replace />;
     }
+  } else if (location.pathname === '/register') {
+    // Invite-only registration: the page itself checks the token.
   } else if (location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
   }
 
-  if (location.pathname === '/login' || location.pathname === '/setup') {
+  if (
+    location.pathname === '/login' ||
+    location.pathname === '/setup' ||
+    location.pathname === '/register'
+  ) {
     return (
       <MeshScreen>
         <Outlet />
@@ -57,6 +68,7 @@ const router = createBrowserRouter(
       children: [
         { path: '/', element: <DashboardPage /> },
         { path: '/login', element: <LoginPage /> },
+        { path: '/register', element: <RegisterPage /> },
         { path: '/setup', element: <SetupPage /> },
         { path: '/components', element: <ComponentsPage /> },
         { path: '/incidents', element: <IncidentsPage /> },

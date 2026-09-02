@@ -16,6 +16,9 @@ function createAuth(database: D1Database, secret: string) {
     appName: 'TrustFall',
     emailAndPassword: {
       enabled: true,
+      // Public /sign-up/email stays closed. After setup, accounts are created
+      // only through invite-link registration, which calls the admin plugin's
+      // createUser API — the same path setup uses for the owner.
       disableSignUp: true,
     },
     advanced: { database: { joins: true } },

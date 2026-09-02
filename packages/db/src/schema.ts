@@ -79,3 +79,14 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
 });
+
+export const inviteLinks = sqliteTable('invite_links', {
+  id: text('id').primaryKey(),
+  token: text('token').notNull().unique(),
+  maxUses: integer('max_uses').notNull(),
+  useCount: integer('use_count').notNull().default(0),
+  createdBy: text('created_by').notNull(),
+  revokeTime: integer('revoke_time', { mode: 'number' }),
+  createTime: integer('create_time', { mode: 'number' }).notNull(),
+  updateTime: integer('update_time', { mode: 'number' }).notNull(),
+});

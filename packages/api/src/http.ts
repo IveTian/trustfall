@@ -71,5 +71,6 @@ export const problems = {
   unauthenticated: problem('Authentication is required.'),
   notFound: problem('The resource does not exist.'),
   conflict: problem('The request conflicts with the current state of the resource.'),
+  failedPrecondition: problem('The resource exists but cannot be used in its current state.'),
   preconditionFailed: problem('`If-Match` did not match; the resource changed.'),
 };

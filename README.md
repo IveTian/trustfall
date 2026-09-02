@@ -17,7 +17,7 @@ Replace the URL in that badge with your fork after you publish the repository.
 ## One-click deploy
 
 1. Click the button. Cloudflare clones the repo, provisions D1, and deploys the Worker.
-2. Open `/admin`. Create the owner account. Sign-up stays closed after that.
+2. Open `/admin`. Create the owner account. Public sign-up stays closed after that; invite others from Settings with a generated link.
 3. Add component groups and components, then publish incidents as they happen.
 
 If Cloudflare did not apply SQL automatically, the first visit to setup will attempt Better Auth’s programmatic migrations. Application tables come from `migrations/` via `wrangler d1 migrations apply DB --remote` in the deploy script.
@@ -37,6 +37,7 @@ pnpm dev
 
 - Status page: `http://localhost:4321` (Astro may pick the next port if 4321 is taken)
 - Admin: `http://localhost:5173/admin/` — hot reload, with `/api` proxied to the Astro server
+- Invite registration: `/admin/register?invite=…` after an operator generates a link in Settings
 - Production-shaped Worker locally: `pnpm preview` then `http://localhost:8787`
 - API docs: `/api/docs`
 - Design gallery (dev only): `/design`

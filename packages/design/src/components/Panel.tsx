@@ -50,7 +50,7 @@ export function PanelRow({
   end,
 }: {
   title: string;
-  description?: string | null;
+  description?: ReactNode;
   end?: ReactNode;
 }) {
   return (

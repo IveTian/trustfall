@@ -4,7 +4,9 @@ import type {
   ComponentRow,
   IncidentUpdateWithComponents,
   IncidentWithRelations,
+  InviteLinkRow,
 } from '@trustfall/db';
+import { inviteLinkState, inviteRegistrationUrl, remainingUses } from '@trustfall/db';
 
 export function presentComponent(row: ComponentRow) {
   return {
@@ -61,5 +63,28 @@ export function presentIncident(row: IncidentWithRelations) {
       status: item.status,
     })),
     updates: row.updates.map(presentUpdate),
+  };
+}
+
+export function presentInviteLink(row: InviteLinkRow, origin: string) {
+  return {
+    id: row.id,
+    token: row.token,
+    url: inviteRegistrationUrl(origin, row.token),
+    max_uses: row.maxUses,
+    use_count: row.useCount,
+    remaining_uses: remainingUses(row),
+    state: inviteLinkState(row),
+    created_by: row.createdBy,
+    revoked_at: toRfc3339(row.revokeTime),
+    created_at: toRfc3339(row.createTime)!,
+    updated_at: toRfc3339(row.updateTime)!,
+  };
+}
+
+export function presentPublicInvite(row: InviteLinkRow) {
+  return {
+    state: inviteLinkState(row),
+    remaining_uses: remainingUses(row),
   };
 }

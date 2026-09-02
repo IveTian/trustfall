@@ -56,7 +56,10 @@ export function SetupPage() {
         <Text as="h1" tone="title">
           Set up TrustFall
         </Text>
-        <Text tone="muted">Create the owner account. Sign-up stays closed after this.</Text>
+        <Text tone="muted">
+          Create the owner account. Public sign-up stays closed after this; invite others from
+          Settings.
+        </Text>
       </Stack>
       <form onSubmit={onSubmit}>
         <Stack gap={4}>
