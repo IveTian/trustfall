@@ -75,14 +75,26 @@ export function Menu({
   items,
   align = 'end',
   disabled = false,
+  variant = 'button',
+  triggerId,
 }: {
-  /** Accessible name for the trigger, e.g. "Status for Checkout API". */
-  label: string;
+  /**
+   * Accessible name for the trigger, e.g. "Status for Checkout API". Omit only
+   * when a `<label htmlFor>` pointing at `triggerId` names it instead.
+   */
+  label?: string;
   /** Trigger content: the current value. */
   children: ReactNode;
   items: MenuItem[];
   align?: 'start' | 'end';
   disabled?: boolean;
+  /**
+   * `field` dresses the trigger as a form control — full width, sunken, the
+   * same inner focus ring as Input — for menus that live inside a Field.
+   */
+  variant?: 'button' | 'field';
+  /** Forwarded to the trigger so a `<label htmlFor>` can reach it. */
+  triggerId?: string;
 }) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -169,6 +181,9 @@ export function Menu({
     }
     if (event.key === 'Escape') {
       event.preventDefault();
+      // Escape closes the menu and nothing else — a Dialog listening on the
+      // document must not fold up along with it.
+      event.stopPropagation();
       close(true);
       return;
     }
@@ -190,9 +205,14 @@ export function Menu({
     // The handler sits on the wrapper so Escape works from the trigger and from
     // inside the panel alike.
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
-    <div ref={rootRef} onKeyDown={onKeyDown} {...stylex.props(styles.root)}>
+    <div
+      ref={rootRef}
+      onKeyDown={onKeyDown}
+      {...stylex.props(styles.root, variant === 'field' && styles.rootField)}
+    >
       <button
         ref={triggerRef}
+        id={triggerId}
         type="button"
         disabled={disabled}
         aria-label={label}
@@ -206,7 +226,11 @@ export function Menu({
             openMenu(event.detail === 0 ? 'first' : null);
           }
         }}
-        {...stylex.props(styles.trigger, open && styles.triggerOpen)}
+        {...stylex.props(
+          styles.trigger,
+          variant === 'field' && styles.triggerField,
+          open && (variant === 'field' ? styles.triggerFieldOpen : styles.triggerOpen),
+        )}
       >
         <span {...stylex.props(styles.triggerLabel)}>{children}</span>
         <span {...stylex.props(styles.triggerIcon)}>
@@ -266,6 +290,9 @@ const styles = stylex.create({
   root: {
     minWidth: 0,
     position: 'relative',
+  },
+  rootField: {
+    width: '100%',
   },
   trigger: {
     alignItems: 'center',
@@ -327,6 +354,37 @@ const styles = stylex.create({
       ':hover': color.surfaceSubtle,
     },
     borderColor: color.borderStrong,
+  },
+  // Mirrors the Field control in Field.tsx: sunken ground, focus as an inner
+  // accent ring, nothing painted outside the box.
+  triggerField: {
+    backgroundColor: {
+      default: color.surfaceSunken,
+      ':hover': color.surfaceSunken,
+      ':disabled': color.surfaceSunken,
+    },
+    borderColor: {
+      default: color.surfaceSunken,
+      ':hover': color.border,
+      ':focus': color.accent,
+    },
+    borderRadius: radius.sm,
+    boxShadow: {
+      default: 'none',
+      ':focus': `inset 0 0 0 ${mesh.line} ${color.accent}`,
+    },
+    fontSize: text.sizeBody,
+    fontWeight: text.weightRegular,
+    lineHeight: text.lineBody,
+    minHeight: control.heightLg,
+    outlineStyle: 'none',
+    paddingBlock: space[2],
+    paddingInline: space[3],
+    width: '100%',
+  },
+  triggerFieldOpen: {
+    borderColor: color.accent,
+    boxShadow: `inset 0 0 0 ${mesh.line} ${color.accent}`,
   },
   triggerLabel: {
     alignItems: 'center',

@@ -3,8 +3,10 @@ import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustf
 import { useState } from 'react';
 import { Button } from './Button.tsx';
 import { Card } from './Card.tsx';
+import { Checkbox } from './Checkbox.tsx';
 import { EmptyState } from './EmptyState.tsx';
-import { Field, Input, Select, Textarea } from './Field.tsx';
+import { Field, Input, Textarea } from './Field.tsx';
+import { Select } from './Select.tsx';
 import { Icon } from './Icon.tsx';
 import { Panel, PanelHeader, PanelList, PanelRow } from './Panel.tsx';
 import { Stack } from './Stack.tsx';
@@ -95,11 +97,17 @@ export function DesignGallery() {
             />
           </Field>
           <Field label="Status" htmlFor="gallery-status">
-            <Select id="gallery-status" defaultValue="OPERATIONAL">
-              <option value="OPERATIONAL">Operational</option>
-              <option value="DEGRADED_PERFORMANCE">Degraded performance</option>
-            </Select>
+            <Select
+              id="gallery-status"
+              defaultValue="OPERATIONAL"
+              options={[
+                { value: 'OPERATIONAL', label: 'Operational' },
+                { value: 'DEGRADED_PERFORMANCE', label: 'Degraded performance' },
+              ]}
+            />
           </Field>
+          <Checkbox label="API" defaultChecked />
+          <Checkbox label="Dashboard" />
         </Stack>
       </Card>
 

@@ -9,13 +9,17 @@ import {
   PanelHeader,
   PanelList,
   PanelRow,
+  Skeleton,
+  Stack,
   StatusSelect,
+  Text,
   Toast,
 } from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api, type Page } from '../lib/api.ts';
+import { useToast } from '../lib/toast.ts';
 
 type Component = {
   id: string;
@@ -36,12 +40,23 @@ function summarize(components: Component[]): string {
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const [components, setComponents] = useState<Component[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
+  // `null` means the first load has not landed yet; an empty array is a real
+  // "no components" answer.
+  const [components, setComponents] = useState<Component[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // One entry per in-flight PATCH: a second component's update must not
+  // re-enable the first while its request is still settling.
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
+  const [toast, showToast] = useToast();
 
   async function refresh() {
-    const page = await api<Page<Component>>('/api/components');
-    setComponents(page.items);
+    try {
+      const page = await api<Page<Component>>('/api/components');
+      setComponents(page.items);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Could not load components.');
+    }
   }
 
   useEffect(() => {
@@ -50,11 +65,23 @@ export function DashboardPage() {
 
   // Declaring a status is an edit to the component, not a separate operation.
   async function setStatus(component: Component, status: ComponentStatus) {
-    await api(`/api/components/${component.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-    setToast(`Updated ${component.display_name}`);
+    setPendingIds((prev) => new Set(prev).add(component.id));
+    try {
+      await api(`/api/components/${component.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not update the status.');
+      return;
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(component.id);
+        return next;
+      });
+    }
+    showToast(`Updated ${component.display_name}`);
     await refresh();
   }
 
@@ -75,7 +102,19 @@ export function DashboardPage() {
         }
       />
       <PageBody>
-        {components.length === 0 ? (
+        {loadError != null ? (
+          <Stack gap={3} align="start">
+            <Text tone="muted">{loadError}</Text>
+            <Button variant="secondary" onClick={() => void refresh()}>
+              Retry
+            </Button>
+          </Stack>
+        ) : components == null ? (
+          <Stack gap={3}>
+            <Skeleton label="Loading components" />
+            <Skeleton label="Loading components" />
+          </Stack>
+        ) : components.length === 0 ? (
           <EmptyState
             icon="stack-fill"
             title="No components yet"
@@ -106,6 +145,7 @@ export function DashboardPage() {
                     <StatusSelect
                       status={component.status}
                       componentName={component.display_name}
+                      disabled={pendingIds.has(component.id)}
                       onChange={(status) => void setStatus(component, status)}
                     />
                   }

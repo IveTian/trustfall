@@ -1,10 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
-} from 'react';
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react';
 import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
@@ -83,15 +78,4 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea {...props} {...stylex.props(styles.control, styles.area)} />;
-}
-
-export function Select({
-  children,
-  ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode }) {
-  return (
-    <select {...props} {...stylex.props(styles.control)}>
-      {children}
-    </select>
-  );
 }
