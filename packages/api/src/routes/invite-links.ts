@@ -12,7 +12,7 @@ import {
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { getAuth } from '../auth.ts';
-import { db } from '../bindings.ts';
+import { bindings, db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
 import { ApiError, ProblemType } from '../errors.ts';
 import { createdLocation, problems } from '../http.ts';
@@ -36,7 +36,7 @@ const inviteLinkParam = z.object({
 });
 
 function publicOrigin(c: Context<AppEnv>): string {
-  const configured = c.env.BETTER_AUTH_URL?.replace(/\/$/, '');
+  const configured = bindings().BETTER_AUTH_URL?.replace(/\/$/, '');
   if (configured) {
     return configured;
   }
