@@ -49,6 +49,9 @@
   flex-direction: column;
   align-items: inherit;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* A cell apart from the block before, less the line that block's bottom border covers. */
@@ -56,9 +59,13 @@
   margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
 }
 
-/* Grouped panels share the line between them. */
+/* Grouped panels share the line between them, or stand a cell apart. */
 .tf-site-group > .tf-site-panel + .tf-site-panel {
   margin-block-start: calc(var(--tf-site-line) * -1);
+}
+
+.tf-site-group[data-spacing='cell'] > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
 }
 
 /*
@@ -88,8 +95,12 @@
   flex-shrink: 0;
   width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
   max-width: 100%;
-  background-color: light-dark(#fff, #1a1a1a);
   border: var(--tf-site-line) solid light-dark(#dcdcdc, #333);
+}
+
+/* A toned panel paints its own fill (SiteShell.tsx); the rest are white. */
+.tf-site-panel:not([data-tone]) {
+  background-color: light-dark(#fff, #1a1a1a);
 }
 
 .tf-site-content {
@@ -97,6 +108,12 @@
   flex-direction: column;
   flex-grow: 1;
   padding: 32px;
+}
+
+/* One line of content in one cell: half the inset, and centred in the row. */
+.tf-site-panel[data-density='row'] > .tf-site-content {
+  justify-content: center;
+  padding-block: 16px;
 }
 
 /* After site-shell-runtime measures: the mesh origins at the panels' left edge. */

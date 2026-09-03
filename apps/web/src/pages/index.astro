@@ -8,10 +8,11 @@ import {
   listMaintenances,
 } from '@trustfall/db';
 import {
-  ComponentGroupSection,
+  ComponentRow,
   IncidentCard,
   MaintenanceCard,
   OverallStatusBanner,
+  overallStatusTone,
   type PublicIncident,
   type PublicMaintenance,
   SiteGroup,
@@ -122,6 +123,15 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
     description: component.description,
     status: component.status as ComponentStatus,
   }));
+// Every group with something in it, the ungrouped rest last as "Other".
+const services = [
+  ...summary.componentGroups
+    .filter((group) => group.components.length > 0)
+    .map((group) => ({ displayName: group.displayName, components: toComponents(group.components) })),
+  ...(summary.ungroupedComponents.length > 0
+    ? [{ displayName: 'Other', components: toComponents(summary.ungroupedComponents) }]
+    : []),
+];
 ---
 
 {
@@ -132,7 +142,11 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
       siteName={summary.siteName}
       current="overview"
     >
-      <SitePanel>
+      <SitePanel
+        tone={
+          summary.overallStatus === 'OPERATIONAL' ? undefined : overallStatusTone(summary.overallStatus)
+        }
+      >
         <OverallStatusBanner
           status={summary.overallStatus}
           siteName={summary.siteName}
@@ -141,32 +155,31 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
       </SitePanel>
 
       <SiteHeading>Current status</SiteHeading>
-      <SiteGroup>
-        {hasComponents ? null : (
-          <SitePanel>
-            <Text tone="muted">No components have been published yet.</Text>
-          </SitePanel>
-        )}
-        {summary.componentGroups.map((group) => (
-          <SitePanel>
-            <ComponentGroupSection
-              surface="plain"
-              displayName={group.displayName}
-              description={group.description}
-              components={toComponents(group.components)}
-            />
-          </SitePanel>
-        ))}
-        {summary.ungroupedComponents.length > 0 ? (
-          <SitePanel>
-            <ComponentGroupSection
-              surface="plain"
-              displayName="Other"
-              components={toComponents(summary.ungroupedComponents)}
-            />
-          </SitePanel>
-        ) : null}
-      </SiteGroup>
+      {hasComponents ? null : (
+        <SitePanel>
+          <Text tone="muted">No components have been published yet.</Text>
+        </SitePanel>
+      )}
+      {services.map((group) => (
+        <>
+          <SiteHeading as="h3" tone="group">
+            {group.displayName}
+          </SiteHeading>
+          <SiteGroup as="ul" spacing="cell">
+            {group.components.map((component) => (
+              <SitePanel as="li" density="row">
+                <ComponentRow
+                  as="div"
+                  bare
+                  displayName={component.displayName}
+                  description={component.description}
+                  status={component.status}
+                />
+              </SitePanel>
+            ))}
+          </SiteGroup>
+        </>
+      ))}
 
       <SiteHeading>Active incidents and maintenance</SiteHeading>
       <SiteGroup>

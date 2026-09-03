@@ -1,6 +1,7 @@
 import '../site-shell.css';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import type { StatusTone } from '../status.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { SITE_MESH_CELL_PX, SITE_MESH_COLS } from '../tokens/mesh.ts';
 import { text } from '../tokens/text.stylex.ts';
@@ -54,12 +55,24 @@ export function SiteShell({
 export function SitePanel({
   children,
   as: Tag = 'section',
+  tone,
+  density = 'default',
 }: {
   children: ReactNode;
-  as?: 'section' | 'article' | 'div';
+  as?: 'section' | 'article' | 'div' | 'li';
+  /** Tints the block with the status's muted colour; for the banner when things are not operational. */
+  tone?: StatusTone;
+  /** `row` shrinks the vertical inset so a one-line block fits in a single cell. */
+  density?: 'default' | 'row';
 }) {
+  const toned = tone ? stylex.props(panelTone[tone]) : null;
   return (
-    <Tag className="tf-site-panel">
+    <Tag
+      className={`tf-site-panel ${toned?.className ?? ''}`.trim()}
+      style={toned?.style}
+      data-tone={tone}
+      data-density={density === 'row' ? 'row' : undefined}
+    >
       <div className="tf-site-content">{children}</div>
     </Tag>
   );
@@ -73,11 +86,17 @@ export function SitePanel({
 export function SiteHeading({
   children,
   as: Tag = 'h2',
+  tone = 'section',
 }: {
   children: ReactNode;
   as?: 'h1' | 'h2' | 'h3';
+  /** `group` is the quieter title for a run of blocks inside a section. */
+  tone?: 'section' | 'group';
 }) {
-  const { className, style } = stylex.props(styles.heading);
+  const { className, style } = stylex.props(
+    styles.heading,
+    tone === 'group' && styles.headingGroup,
+  );
   return (
     <Tag className={`tf-site-heading ${className ?? ''}`.trim()} style={style}>
       {children}
@@ -89,8 +108,21 @@ export function SiteHeading({
  * Blocks that belong together — one per service group, one per incident —
  * stacked on one another so they read as a run of like things.
  */
-export function SiteGroup({ children }: { children: ReactNode }) {
-  return <div className="tf-site-group">{children}</div>;
+export function SiteGroup({
+  children,
+  as: Tag = 'div',
+  spacing = 'shared',
+}: {
+  children: ReactNode;
+  as?: 'div' | 'ul';
+  /** `shared`: the blocks share a grid line. `cell`: a cell of canvas between them. */
+  spacing?: 'shared' | 'cell';
+}) {
+  return (
+    <Tag className="tf-site-group" data-spacing={spacing === 'cell' ? 'cell' : undefined}>
+      {children}
+    </Tag>
+  );
 }
 
 const styles = stylex.create({
@@ -102,4 +134,18 @@ const styles = stylex.create({
     lineHeight: text.lineTitle,
     margin: 0,
   },
+  headingGroup: {
+    color: color.textMuted,
+    fontSize: text.sizeBodySmall,
+    fontWeight: text.weightMedium,
+    lineHeight: text.lineBodySmall,
+  },
+});
+
+const panelTone = stylex.create({
+  operational: { backgroundColor: color.operationalMuted },
+  degraded: { backgroundColor: color.degradedMuted },
+  partialOutage: { backgroundColor: color.partialOutageMuted },
+  majorOutage: { backgroundColor: color.majorOutageMuted },
+  maintenance: { backgroundColor: color.maintenanceMuted },
 });

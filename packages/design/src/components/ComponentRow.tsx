@@ -20,6 +20,12 @@ const styles = stylex.create({
   last: {
     borderBlockEndWidth: 0,
   },
+  // Inside a block of its own: the block draws the box, the row just lays out.
+  bare: {
+    alignItems: 'center',
+    borderBlockEndWidth: 0,
+    paddingBlock: 0,
+  },
   copy: {
     flex: '1 1 auto',
   },
@@ -30,14 +36,20 @@ export function ComponentRow({
   description,
   status,
   last = false,
+  as: Tag = 'li',
+  bare = false,
 }: {
   displayName: string;
   description?: string | null;
   status: ComponentStatus;
   last?: boolean;
+  /** `div` when the row is not in a list, e.g. alone in a public-site block. */
+  as?: 'li' | 'div';
+  /** No divider and no vertical padding: the surface around it draws the box. */
+  bare?: boolean;
 }) {
   return (
-    <li {...stylex.props(styles.row, last && styles.last)}>
+    <Tag {...stylex.props(styles.row, last && styles.last, bare && styles.bare)}>
       <div {...stylex.props(styles.copy)}>
         <Text as="h3" tone="title">
           {displayName}
@@ -45,6 +57,6 @@ export function ComponentRow({
         {description ? <Text tone="caption">{description}</Text> : null}
       </div>
       <StatusPill status={status} />
-    </li>
+    </Tag>
   );
 }
