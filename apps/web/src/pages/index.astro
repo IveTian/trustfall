@@ -114,8 +114,6 @@ const recent: Recent[] = [
   .sort((a, b) => b.at - a.at)
   .slice(0, RECENT_LIMIT);
 
-const hasComponents =
-  summary.componentGroups.length > 0 || summary.ungroupedComponents.length > 0;
 const toComponents = (components: Summary['ungroupedComponents']) =>
   components.map((component) => ({
     id: component.id,
@@ -123,15 +121,16 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
     description: component.description,
     status: component.status as ComponentStatus,
   }));
-// Every service in one run, in the console's order: the ungrouped ones
+// Only what is affected, in the console's order: the ungrouped services
 // first, then each group's, groups and services as the operators arranged
-// them (`position`, then name — the queries already sort so).
+// them (`position`, then name — the queries already sort so). When every
+// service is operational the banner has said it all and the run is skipped.
 const services = [
   ...toComponents(summary.ungroupedComponents).map((component) => ({ ...component, group: null })),
   ...summary.componentGroups.flatMap((group) =>
     toComponents(group.components).map((component) => ({ ...component, group: group.displayName })),
   ),
-];
+].filter((service) => service.status !== 'OPERATIONAL');
 ---
 
 {
@@ -154,14 +153,11 @@ const services = [
         />
       </SitePanel>
 
-      <SiteHeading>Current status</SiteHeading>
-      {hasComponents ? null : (
-        <SitePanel density="row">
-          <Text tone="muted">No components have been published yet.</Text>
-        </SitePanel>
-      )}
-      <SiteGroup as="ul">
-        {services.map((service) => (
+      {services.length > 0 ? (
+        <>
+          <SiteHeading>Current status</SiteHeading>
+          <SiteGroup as="ul">
+            {services.map((service) => (
           <SitePanel as="li" density="row">
             <ComponentRow
               as="div"
@@ -174,6 +170,8 @@ const services = [
           </SitePanel>
         ))}
       </SiteGroup>
+        </>
+      ) : null}
 
       <SiteHeading>Active incidents and maintenance</SiteHeading>
       <SiteGroup>
