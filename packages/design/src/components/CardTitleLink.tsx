@@ -28,7 +28,7 @@ export function CardTitleLink({
   return (
     <a href={href} data-tf-card-link="" {...stylex.props(styles.open)}>
       <span {...stylex.props(styles.title)}>{children}</span>
-      {end ? <span {...stylex.props(styles.end)}>{end}</span> : null}
+      {end == null ? null : <span {...stylex.props(styles.end)}>{end}</span>}
       <span {...stylex.props(styles.arrow)}>
         <Icon name="arrow-right" size={16} />
       </span>
