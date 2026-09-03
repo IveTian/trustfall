@@ -1,9 +1,17 @@
 import type { ComponentStatus } from '@trustfall/shared';
-import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustfall/shared';
+import {
+  COMPONENT_STATUSES,
+  INCIDENT_IMPACTS,
+  INCIDENT_STATUSES,
+  MAINTENANCE_STATUSES,
+} from '@trustfall/shared';
 import { useState } from 'react';
 import { Button, IconButton } from './Button.tsx';
 import { Card } from './Card.tsx';
 import { Checkbox } from './Checkbox.tsx';
+import { DateTimePicker } from './DateTimePicker.tsx';
+import { WeekdayPicker } from './WeekdayPicker.tsx';
+import { MaintenanceCard } from './MaintenanceCard.tsx';
 import { DiffBlock } from './Diff.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { Field, Input, Textarea } from './Field.tsx';
@@ -119,6 +127,28 @@ function SandwichDemo() {
   );
 }
 
+/** The scheduling controls, wired to local state so the gallery is live. */
+function ScheduleDemo() {
+  const [at, setAt] = useState<number | null>(null);
+  const [days, setDays] = useState<number[]>([0, 3]);
+  return (
+    <>
+      <Field
+        label="Starts"
+        htmlFor="gallery-starts"
+        hint="A calendar and two clock menus; no native picker."
+      >
+        <DateTimePicker id="gallery-starts" value={at} onChange={setAt} />
+      </Field>
+      <Field label="Repeats on">
+        <WeekdayPicker value={days} onChange={setDays} />
+      </Field>
+    </>
+  );
+}
+
+const SAMPLE_MAINTENANCE_START = Date.UTC(2026, 8, 6, 18, 0);
+
 /** The console's status control, wired to local state so the gallery is live. */
 function StatusRow({ name, description }: { name: string; description: string }) {
   const [status, setStatus] = useState<ComponentStatus>('OPERATIONAL');
@@ -204,6 +234,14 @@ export function DesignGallery() {
               <StatusPill key={impact} status={impact} kind="impact" />
             ))}
           </Stack>
+          <Text as="h2" tone="title">
+            Maintenance status
+          </Text>
+          <Stack direction="horizontal" gap={2} wrap>
+            {MAINTENANCE_STATUSES.map((status) => (
+              <StatusPill key={status} status={status} kind="maintenance" />
+            ))}
+          </Stack>
         </Stack>
       </Card>
 
@@ -242,8 +280,40 @@ export function DesignGallery() {
           </Field>
           <Checkbox label="API" defaultChecked />
           <Checkbox label="Dashboard" />
+          <ScheduleDemo />
         </Stack>
       </Card>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Maintenance card
+        </Text>
+        <Text tone="muted">
+          The public page's word on a planned window: when it runs, in the zone it was promised in,
+          how it repeats, and what it touches.
+        </Text>
+        <MaintenanceCard
+          maintenance={{
+            id: 'mnt_1',
+            title: 'Database upgrade',
+            status: 'SCHEDULED',
+            windowStart: SAMPLE_MAINTENANCE_START,
+            windowEnd: SAMPLE_MAINTENANCE_START + 2 * 60 * 60 * 1000,
+            startTime: SAMPLE_MAINTENANCE_START,
+            recurrence: { frequency: 'WEEKLY', interval: 1, byWeekday: [0] },
+            timeZone: 'Asia/Shanghai',
+            affectedComponents: [{ componentId: 'api', displayName: 'Public API' }],
+            updates: [
+              {
+                id: 'mup_1',
+                status: 'SCHEDULED',
+                body: 'The primary database moves to a new cluster. Writes pause for a few minutes.',
+                createTime: SAMPLE_MAINTENANCE_START - 3 * 24 * 60 * 60 * 1000,
+              },
+            ],
+          }}
+        />
+      </Stack>
 
       <Stack gap={3}>
         <Text as="h2" tone="title">

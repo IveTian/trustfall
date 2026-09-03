@@ -37,7 +37,10 @@ export function ImpactSelect({
   onChange: (status: ImpactStatus) => void;
   disabled?: boolean;
 }) {
-  const currentKey: ImpactStatus = status === 'STATUS_UNSPECIFIED' ? 'OPERATIONAL' : status;
+  // An incident declares impact, not maintenance: a component under
+  // maintenance reads as "No impact" here until the incident says otherwise.
+  const currentKey: ImpactStatus =
+    status === 'STATUS_UNSPECIFIED' || status === 'UNDER_MAINTENANCE' ? 'OPERATIONAL' : status;
   const current = componentStatusPresentation[currentKey];
   return (
     <Menu

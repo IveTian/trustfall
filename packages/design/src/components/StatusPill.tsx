@@ -1,9 +1,15 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentStatus, IncidentImpact, IncidentStatus } from '@trustfall/shared';
+import type {
+  ComponentStatus,
+  IncidentImpact,
+  IncidentStatus,
+  MaintenanceStatus,
+} from '@trustfall/shared';
 import {
   componentStatusPresentation,
   incidentImpactPresentation,
   incidentStatusPresentation,
+  maintenanceStatusPresentation,
 } from '../status.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { Badge } from './Badge.tsx';
@@ -17,19 +23,28 @@ const styles = stylex.create({
   },
 });
 
-export function StatusPill({
-  status,
-  kind = 'component',
-}: {
-  status: ComponentStatus | IncidentStatus | IncidentImpact;
-  kind?: 'component' | 'incident' | 'impact';
-}) {
-  const presentation =
-    kind === 'incident'
-      ? incidentStatusPresentation[status as IncidentStatus]
-      : kind === 'impact'
-        ? incidentImpactPresentation[status as IncidentImpact]
-        : componentStatusPresentation[status as ComponentStatus];
+/** Each kind pairs with its own status vocabulary; a mismatch is a type error. */
+export type StatusPillProps =
+  | { kind?: 'component'; status: ComponentStatus }
+  | { kind: 'incident'; status: IncidentStatus }
+  | { kind: 'impact'; status: IncidentImpact }
+  | { kind: 'maintenance'; status: MaintenanceStatus };
+
+function presentationOf(props: StatusPillProps) {
+  switch (props.kind) {
+    case 'incident':
+      return incidentStatusPresentation[props.status];
+    case 'impact':
+      return incidentImpactPresentation[props.status];
+    case 'maintenance':
+      return maintenanceStatusPresentation[props.status];
+    default:
+      return componentStatusPresentation[props.status];
+  }
+}
+
+export function StatusPill(props: StatusPillProps) {
+  const presentation = presentationOf(props);
 
   return (
     <span {...stylex.props(styles.pill)}>

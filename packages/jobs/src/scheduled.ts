@@ -1,5 +1,5 @@
 import type { Job } from './types.ts';
-import { runJob } from './run.ts';
+import { MAINTENANCE_CLOCK_ID, runJob } from './run.ts';
 
 /**
  * The single cron tick.
@@ -29,9 +29,19 @@ async function tick(env: Env): Promise<void> {
 }
 
 /**
- * Placeholder until `scheduled_tasks` lands with the Stage 1 migration. Keeping
- * the seam here means the cron entry point is already wired end to end.
+ * What every tick runs. The maintenance clock is always on the list: it is
+ * cheap when nothing is due, and it re-arms the precise timer for the next
+ * window in case an earlier alarm was lost. The rest of the table arrives with
+ * `scheduled_tasks` in the Stage 1 migration.
  */
 async function dueTasks(_env: Env): Promise<Job[]> {
-  return [];
+  return [
+    {
+      id: MAINTENANCE_CLOCK_ID,
+      type: 'MAINTENANCE_TRANSITION',
+      payload: {},
+      runAt: Date.now(),
+      attempt: 0,
+    },
+  ];
 }

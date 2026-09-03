@@ -1,10 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentStatus, IncidentStatus } from '@trustfall/shared';
+import type { ComponentStatus, IncidentStatus, MaintenanceStatus } from '@trustfall/shared';
 import type { ReactNode } from 'react';
 import {
   componentStatusPresentation,
   incidentStatusGlyph,
   incidentStatusPresentation,
+  maintenanceStatusGlyph,
+  maintenanceStatusPresentation,
+  type StatusPresentation,
 } from '../status.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { control, mesh } from '../tokens/const.stylex.ts';
@@ -22,14 +25,55 @@ export type TimelineAffectedComponent = {
   status: ComponentStatus;
 };
 
-export type TimelineUpdate = {
+export type TimelineUpdate<S extends IncidentStatus | MaintenanceStatus = IncidentStatus> = {
   id: string;
-  status: IncidentStatus;
+  status: S;
   body: string;
   createTime: number;
   /** The affected set as this update left it. Omitted for entries without one. */
   components?: TimelineAffectedComponent[];
+  /** A caption under the status: "Automatic" for an entry the scheduler wrote. */
+  note?: string;
 };
+
+/** Which status vocabulary the entries speak; it picks the glyph and label. */
+export type TimelineKind = 'incident' | 'maintenance';
+
+/**
+ * `kind` and the entries' status type go together: an incident timeline
+ * takes incident statuses, a maintenance timeline maintenance statuses.
+ */
+export type IncidentTimelineProps = {
+  /** IANA zone the clock times are shown in; the viewer's own when omitted. */
+  timeZone?: string;
+} & (
+  | {
+      kind?: 'incident';
+      /** Newest first. */
+      updates: TimelineUpdate<IncidentStatus>[];
+      renderActions?: (update: TimelineUpdate<IncidentStatus>) => ReactNode;
+    }
+  | {
+      kind: 'maintenance';
+      /** Newest first. */
+      updates: TimelineUpdate<MaintenanceStatus>[];
+      renderActions?: (update: TimelineUpdate<MaintenanceStatus>) => ReactNode;
+    }
+);
+
+type AnyUpdate = TimelineUpdate<IncidentStatus | MaintenanceStatus>;
+
+function presentationFor(
+  props: IncidentTimelineProps,
+  status: AnyUpdate['status'],
+): { presentation: StatusPresentation; glyph: string } {
+  if (props.kind === 'maintenance') {
+    const key = status as MaintenanceStatus;
+    return { presentation: maintenanceStatusPresentation[key], glyph: maintenanceStatusGlyph[key] };
+  }
+  const key = status as IncidentStatus;
+  return { presentation: incidentStatusPresentation[key], glyph: incidentStatusGlyph[key] };
+}
 
 /** "GMT+8" for the zone the times are shown in; the IANA name when unknown. */
 export function timeZoneLabel(timeZone: string | undefined, at: number): string {
@@ -58,17 +102,12 @@ function dayKey(at: number, timeZone: string | undefined): string {
  * a glyph for the step, the message, and the affected set the entry left
  * behind. `renderActions` puts a console's per-entry controls on the end edge.
  */
-export function IncidentTimeline({
-  updates,
-  timeZone,
-  renderActions,
-}: {
-  /** Newest first. */
-  updates: TimelineUpdate[];
-  /** IANA zone the clock times are shown in; the viewer's own when omitted. */
-  timeZone?: string;
-  renderActions?: (update: TimelineUpdate) => ReactNode;
-}) {
+export function IncidentTimeline(props: IncidentTimelineProps) {
+  const { timeZone } = props;
+  // The union is resolved once here; the body only needs "some update" and
+  // the presentation lookup keyed by the kind.
+  const updates: AnyUpdate[] = props.updates;
+  const renderActions = props.renderActions as ((update: AnyUpdate) => ReactNode) | undefined;
   const clock = new Intl.DateTimeFormat(undefined, {
     timeZone,
     hour: '2-digit',
@@ -83,7 +122,7 @@ export function IncidentTimeline({
     year: 'numeric',
   });
 
-  const days: Array<{ key: string; at: number; updates: TimelineUpdate[] }> = [];
+  const days: Array<{ key: string; at: number; updates: AnyUpdate[] }> = [];
   for (const update of updates) {
     const key = dayKey(update.createTime, timeZone);
     const last = days[days.length - 1];
@@ -112,7 +151,7 @@ export function IncidentTimeline({
           </header>
           <ol {...stylex.props(styles.list)}>
             {group.updates.map((update, index) => {
-              const presentation = incidentStatusPresentation[update.status];
+              const { presentation, glyph } = presentationFor(props, update.status);
               const last = groupIndex === days.length - 1 && index === group.updates.length - 1;
               return (
                 <li key={update.id} {...stylex.props(styles.entry)}>
@@ -124,13 +163,18 @@ export function IncidentTimeline({
                   </time>
                   <div {...stylex.props(styles.rail)}>
                     <span aria-hidden {...stylex.props(styles.glyph, glyphTone[presentation.tone])}>
-                      <Icon name={incidentStatusGlyph[update.status]} size={16} />
+                      <Icon name={glyph} size={16} />
                     </span>
                     {last ? null : <span {...stylex.props(styles.line)} />}
                   </div>
                   <div {...stylex.props(styles.content)}>
                     <div {...stylex.props(styles.heading)}>
-                      <span {...stylex.props(styles.status)}>{presentation.label}</span>
+                      <span {...stylex.props(styles.status)}>
+                        {presentation.label}
+                        {update.note ? (
+                          <span {...stylex.props(styles.note)}>{update.note}</span>
+                        ) : null}
+                      </span>
                       {renderActions ? (
                         <span {...stylex.props(styles.actions)}>{renderActions(update)}</span>
                       ) : null}
@@ -255,6 +299,13 @@ const styles = stylex.create({
     fontSize: text.sizeBody,
     fontWeight: text.weightBold,
     lineHeight: text.lineBody,
+  },
+  note: {
+    color: color.textMuted,
+    fontSize: text.sizeCaption,
+    fontWeight: text.weightRegular,
+    lineHeight: text.lineCaption,
+    marginInlineStart: space[2],
   },
   actions: {
     alignItems: 'center',

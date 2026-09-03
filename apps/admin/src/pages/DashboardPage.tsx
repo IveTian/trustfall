@@ -24,8 +24,10 @@ import type { ComponentStatus } from '@trustfall/shared';
 import { COMPONENT_STATUSES } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { api, type Page } from '../lib/api.ts';
+import { api, apiAll, type Page } from '../lib/api.ts';
 import { IncidentSummaryCard, type IncidentSummary } from '../components/IncidentSummaryCard.tsx';
+import { MaintenanceSummaryCard } from '../components/MaintenanceSummaryCard.tsx';
+import type { Maintenance } from '../lib/maintenance.ts';
 import { useToast } from '../lib/toast.ts';
 
 type Group = { id: string; display_name: string; description: string | null; position: number };
@@ -61,6 +63,7 @@ export function DashboardPage() {
   const [components, setComponents] = useState<Component[] | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [incidents, setIncidents] = useState<IncidentSummary[] | null>(null);
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [section, setSection] = useState<Section>('now');
   // Groups fold closed by default; the rail is a glance, not an inventory.
@@ -72,14 +75,16 @@ export function DashboardPage() {
 
   async function refresh() {
     try {
-      const [groupPage, componentPage, incidentPage] = await Promise.all([
+      const [groupPage, componentPage, incidentPage, activeMaintenances] = await Promise.all([
         api<Page<Group>>('/api/component-groups'),
         api<Page<Component>>('/api/components'),
         api<Page<IncidentSummary>>('/api/incidents'),
+        apiAll<Maintenance>('/api/maintenances?state=ACTIVE'),
       ]);
       setGroups(groupPage.items);
       setComponents(componentPage.items);
       setIncidents(incidentPage.items);
+      setMaintenances(activeMaintenances);
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load the dashboard.');
@@ -211,11 +216,31 @@ export function DashboardPage() {
         <Text as="h2" tone="label">
           Maintenance
         </Text>
-        <EmptyState
-          icon="hammer-line"
-          title="No scheduled maintenance"
-          description="Planned maintenance windows will appear here."
-        />
+        {maintenances.length === 0 ? (
+          <EmptyState
+            icon="hammer-line"
+            title="No scheduled maintenance"
+            description="Plan a window and it shows on the status page ahead of time."
+            actions={
+              <Button
+                startEnhancer={<Icon name="add-fill" />}
+                onClick={() => navigate('/maintenance')}
+              >
+                Schedule maintenance
+              </Button>
+            }
+          />
+        ) : (
+          [...maintenances]
+            .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))
+            .map((maintenance) => (
+              <MaintenanceSummaryCard
+                key={maintenance.id}
+                maintenance={maintenance}
+                onOpen={() => navigate(`/maintenance/${maintenance.id}`)}
+              />
+            ))
+        )}
       </Stack>
     );
 

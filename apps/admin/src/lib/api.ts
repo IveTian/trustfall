@@ -35,6 +35,40 @@ type Problem = {
 };
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  return (await request<T>(path, init)).data;
+}
+
+/**
+ * A read that keeps the entity tag alongside the body, for a screen that
+ * will write the resource back: sending the tag as `If-Match` makes the
+ * server refuse to overwrite an edit that landed in between.
+ */
+export async function apiRead<T>(path: string): Promise<{ data: T; etag?: string }> {
+  const { data, res } = await request<T>(path);
+  return { data, etag: res.headers.get('etag') ?? undefined };
+}
+
+/**
+ * Every item of a collection, following `next_cursor` to the end. For the
+ * console's pickers and lists, which need the whole set rather than a page.
+ */
+export async function apiAll<T>(path: string, pageSize = 100): Promise<T[]> {
+  const items: T[] = [];
+  let cursor: string | undefined;
+  do {
+    const url = new URL(path, window.location.origin);
+    url.searchParams.set('page_size', String(pageSize));
+    if (cursor) {
+      url.searchParams.set('cursor', cursor);
+    }
+    const page = await api<Page<T>>(`${url.pathname}${url.search}`);
+    items.push(...page.items);
+    cursor = page.next_cursor;
+  } while (cursor);
+  return items;
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<{ data: T; res: Response }> {
   const res = await fetch(path, {
     ...init,
     credentials: 'include',
@@ -58,5 +92,5 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
 
-  return data as T;
+  return { data: data as T, res };
 }

@@ -163,6 +163,9 @@ importers:
       '@trustfall/db':
         specifier: workspace:*
         version: link:../db
+      '@trustfall/jobs':
+        specifier: workspace:*
+        version: link:../jobs
       '@trustfall/shared':
         specifier: workspace:*
         version: link:../shared
