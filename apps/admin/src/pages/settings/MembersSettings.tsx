@@ -57,15 +57,26 @@ function MembersPanel({ onToast }: { onToast: (message: string) => void }) {
   const [removing, setRemoving] = useState<Member | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // The list is every member, not the first page of them: keep asking until
+  // the pages add up to the total the server reports.
   async function load() {
-    const result = await authClient.admin.listUsers({
-      query: { limit: MEMBERS_PAGE_SIZE, sortBy: 'createdAt', sortDirection: 'asc' },
-    });
-    if (result.error) {
-      setLoadError(result.error.message ?? 'Could not load members.');
-      return;
+    const all: Member[] = [];
+    let offset = 0;
+    for (;;) {
+      const result = await authClient.admin.listUsers({
+        query: { limit: MEMBERS_PAGE_SIZE, offset, sortBy: 'createdAt', sortDirection: 'asc' },
+      });
+      if (result.error) {
+        setLoadError(result.error.message ?? 'Could not load members.');
+        return;
+      }
+      all.push(...result.data.users);
+      offset += result.data.users.length;
+      if (result.data.users.length === 0 || offset >= result.data.total) {
+        break;
+      }
     }
-    setMembers(result.data.users);
+    setMembers(all);
     setLoadError(null);
   }
 

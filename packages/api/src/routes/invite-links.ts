@@ -88,6 +88,12 @@ function mapCreateUserError(error: unknown): ApiError {
  * returns already-exists rather than failed-precondition, which is the answer
  * a client should treat as success after a timeout.
  */
+/**
+ * Every operator-facing invite-link response carries the raw token and the
+ * registration URL. A browser or proxy cache must never keep a copy.
+ */
+const NO_STORE = { 'Cache-Control': 'no-store' } as const;
+
 export function inviteLinkRoutes() {
   const app = new OpenAPIHono<AppEnv>();
 
@@ -188,6 +194,10 @@ export function inviteLinkRoutes() {
         unusableInvite(state);
       }
 
+      // Better Auth may persist a generated secret on first use. Do that before
+      // the slot is reserved: a failure here must not cost the invite a use.
+      const auth = await getAuth();
+
       const consumed = await consumeInviteLinkByToken(db(), body.token);
       if (!consumed) {
         const latest = await getInviteLinkByToken(db(), body.token);
@@ -202,7 +212,6 @@ export function inviteLinkRoutes() {
 
       const reserved = consumed;
 
-      const auth = await getAuth();
       try {
         await auth.api.createUser({
           body: {
@@ -254,6 +263,7 @@ export function inviteLinkRoutes() {
           next_cursor: page.nextCursor,
         },
         200,
+        NO_STORE,
       );
     },
   );
@@ -311,6 +321,7 @@ export function inviteLinkRoutes() {
         createdBy: session.user.id,
       });
       return c.json(presentInviteLink(row, publicOrigin(c)), 201, {
+        ...NO_STORE,
         Location: createdLocation(c, row.id),
       });
     },
@@ -339,7 +350,7 @@ export function inviteLinkRoutes() {
       if (!row) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Invite link not found.');
       }
-      return c.json(presentInviteLink(row, publicOrigin(c)), 200);
+      return c.json(presentInviteLink(row, publicOrigin(c)), 200, NO_STORE);
     },
   );
 
@@ -367,7 +378,7 @@ export function inviteLinkRoutes() {
       if (!row) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Invite link not found.');
       }
-      return c.json(presentInviteLink(row, publicOrigin(c)), 200);
+      return c.json(presentInviteLink(row, publicOrigin(c)), 200, NO_STORE);
     },
   );
 
