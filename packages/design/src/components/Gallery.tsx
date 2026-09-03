@@ -22,6 +22,7 @@ import { RichTextBody } from './RichTextBody.tsx';
 import { RichTextEditor } from './RichTextEditor.tsx';
 import { Panel, PanelHeader, PanelList, PanelRow } from './Panel.tsx';
 import { SectionNav, SectionNavItem } from './SectionNav.tsx';
+import { SidebarClock } from './SidebarClock.tsx';
 import { SiteNav } from './SiteNav.tsx';
 import { componentStatusPresentation } from '../status.ts';
 import { StatusIcon } from './StatusIcon.tsx';
@@ -498,6 +499,17 @@ export function DesignGallery() {
           endTime={SAMPLE_START + 50 * 60 * 1000}
           now={SAMPLE_START + 50 * 60 * 1000}
         />
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Sidebar clock
+        </Text>
+        <Text tone="muted">
+          The console rail&apos;s live clock: the offset and city the times are shown in, then
+          HH:MM:ss in that zone, left-aligned.
+        </Text>
+        <SidebarClock />
       </Stack>
 
       <Stack gap={3}>

@@ -1,5 +1,6 @@
 import {
   Button,
+  DateTime,
   Dialog,
   Field,
   type ImpactStatus,
@@ -33,6 +34,7 @@ import {
   membersOf,
 } from '../components/AffectedComponentsField.tsx';
 import { IncidentSummaryCard, type IncidentSummary } from '../components/IncidentSummaryCard.tsx';
+import { WhenField, whenError, type WhenMode } from '../components/WhenField.tsx';
 import { useToast } from '../lib/toast.ts';
 
 export function IncidentsPage() {
@@ -52,7 +54,15 @@ export function IncidentsPage() {
   // will see, then publish. The form stays mounted (hidden) during review so
   // Back returns to it untouched.
   const [step, setStep] = useState<'edit' | 'review'>('edit');
-  const [draft, setDraft] = useState<{ title: string; status: string; body: string } | null>(null);
+  const [draft, setDraft] = useState<{
+    title: string;
+    status: string;
+    body: string;
+    startedAt: number | null;
+  } | null>(null);
+  // When the incident began: right away, or a chosen instant in the past.
+  const [when, setWhen] = useState<WhenMode>('NOW');
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const [toast, showToast] = useToast();
 
   async function refresh() {
@@ -81,6 +91,8 @@ export function IncidentsPage() {
     setImpacts({});
     setStep('edit');
     setDraft(null);
+    setWhen('NOW');
+    setStartedAt(null);
     setCreating(true);
   }
 
@@ -103,11 +115,17 @@ export function IncidentsPage() {
       setFormError('Message is required.');
       return;
     }
+    const timeError = whenError(when, startedAt, 'Start now');
+    if (timeError) {
+      setFormError(timeError);
+      return;
+    }
     setFormError(null);
     setDraft({
       title: String(form.get('title')),
       status: String(form.get('status')),
       body: String(form.get('body')),
+      startedAt: when === 'CUSTOM' ? startedAt : null,
     });
     setStep('review');
   }
@@ -133,6 +151,9 @@ export function IncidentsPage() {
           body: draft.body,
           component_ids: affected.map(([id]) => id),
           component_statuses: Object.fromEntries(affected),
+          ...(draft.startedAt != null
+            ? { started_at: new Date(draft.startedAt).toISOString() }
+            : {}),
         }),
       });
     } catch (err) {
@@ -238,6 +259,16 @@ export function IncidentsPage() {
                     <StatusPill status={draft.status as IncidentStatus} kind="incident" />
                   </Stack>
                 </Stack>
+                <Stack gap={2}>
+                  <Text tone="caption">Started</Text>
+                  {draft.startedAt == null ? (
+                    <Text>Right now</Text>
+                  ) : (
+                    <Text>
+                      <DateTime value={draft.startedAt} />
+                    </Text>
+                  )}
+                </Stack>
                 <RichTextBody markdown={draft.body} />
                 {affectedInOrder().length === 0 ? (
                   <Text tone="caption">No components affected.</Text>
@@ -295,6 +326,14 @@ export function IncidentsPage() {
                   <Field label="Message" htmlFor="body">
                     <RichTextEditor id="body" name="body" disabled={submitting} />
                   </Field>
+                  <WhenField
+                    id="started-at"
+                    mode={when}
+                    at={startedAt}
+                    disabled={submitting}
+                    onModeChange={setWhen}
+                    onAtChange={setStartedAt}
+                  />
                   <AffectedComponentsField
                     components={components}
                     groups={groups}

@@ -20,6 +20,7 @@ import {
   settings,
 } from './schema.ts';
 import type { Database } from './client.ts';
+import { incidentTimesForUpdate } from './incident-times.ts';
 import { listActiveMaintenances, restoreComponentsFromIncident } from './maintenances.ts';
 
 export type ComponentGroupRow = typeof componentGroups.$inferSelect;
@@ -380,16 +381,19 @@ export async function createIncident(
     body: string;
     componentIds: string[];
     componentStatuses?: Record<string, ComponentStatus>;
+    /** When the incident began. Omit to start at the moment of publishing. */
+    startTime?: number;
   },
 ): Promise<IncidentWithRelations> {
   const now = nowMs();
+  const startTime = input.startTime ?? now;
   const status = input.status ?? 'INVESTIGATING';
   const incident: IncidentRow = {
     id: createId('inc'),
     title: input.title,
     status,
     impact: input.impact,
-    startTime: now,
+    startTime,
     resolveTime: null,
     createTime: now,
     updateTime: now,
@@ -403,7 +407,7 @@ export async function createIncident(
       incidentId: incident.id,
       status,
       body: input.body,
-      createTime: now,
+      createTime: startTime,
     }),
     ...(input.componentIds.length
       ? [
@@ -495,6 +499,8 @@ export async function addIncidentUpdate(
      * not mentioned are left alone.
      */
     componentStatuses?: Record<string, ComponentStatus>;
+    /** When the update was posted. Omit to stamp the moment of publishing. */
+    createTime?: number;
   },
 ): Promise<{ incident: IncidentWithRelations; update: IncidentUpdateWithComponents } | undefined> {
   const existing = await getIncident(db, incidentId);
@@ -502,13 +508,15 @@ export async function addIncidentUpdate(
     return undefined;
   }
   const now = nowMs();
+  const createTime = input.createTime ?? now;
   const resolved = input.status === 'RESOLVED';
+  const times = incidentTimesForUpdate(existing, createTime, resolved);
   const update: IncidentUpdateRow = {
     id: createId('upd'),
     incidentId,
     status: input.status,
     body: input.body,
-    createTime: now,
+    createTime,
   };
   await db.batch([
     db.insert(incidentUpdates).values(update),
@@ -516,7 +524,8 @@ export async function addIncidentUpdate(
       .update(incidents)
       .set({
         status: input.status,
-        resolveTime: resolved ? now : existing.resolveTime,
+        startTime: times.startTime,
+        resolveTime: times.resolveTime,
         updateTime: now,
       })
       .where(eq(incidents.id, incidentId)),

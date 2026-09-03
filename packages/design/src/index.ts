@@ -37,6 +37,7 @@ export {
   readTimeZonePreference,
   resolveTimeZone,
   subscribeTimeZone,
+  timeZoneCity,
   timeZoneLabel,
   useTimeZone,
   LOCAL_TIME_ZONE,
@@ -135,6 +136,7 @@ export { MeshScreen } from './components/MeshScreen.tsx';
 export { AppShell } from './components/AppShell.tsx';
 export type { SidebarRail } from './components/AppShell.tsx';
 export { SidebarHeader, SidebarNavItem, SidebarNavSection } from './components/SidebarNav.tsx';
+export { SidebarClock } from './components/SidebarClock.tsx';
 export { ProfileMenu } from './components/ProfileMenu.tsx';
 export type { ProfileMenuItem } from './components/ProfileMenu.tsx';
 export { Icon } from './components/Icon.tsx';

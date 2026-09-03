@@ -25,6 +25,7 @@ const ZONES: Array<{ id: string; label: string }> = [
   { id: 'Asia/Singapore', label: 'Singapore' },
   { id: 'Asia/Shanghai', label: 'Shanghai' },
   { id: 'Asia/Tokyo', label: 'Tokyo' },
+  { id: 'Australia/Perth', label: 'Perth' },
   { id: 'Australia/Sydney', label: 'Sydney' },
 ];
 

@@ -1,4 +1,10 @@
-import { ProfileMenu, SidebarNavItem, SidebarNavSection, Stack } from '@trustfall/design';
+import {
+  ProfileMenu,
+  SidebarClock,
+  SidebarNavItem,
+  SidebarNavSection,
+  Stack,
+} from '@trustfall/design';
 import { useLocation, useNavigate } from 'react-router';
 import { signOut, useSession } from '../lib/auth.ts';
 import { SETTINGS_ROOT } from '../lib/settings-sections.ts';
@@ -60,6 +66,7 @@ export function ConsoleSidebar() {
         </SidebarNavSection>
       </Stack>
       <Stack gap={3}>
+        <SidebarClock />
         <SidebarNavItem icon="external-link-fill" label="View status page" href="/" />
       </Stack>
     </Stack>
