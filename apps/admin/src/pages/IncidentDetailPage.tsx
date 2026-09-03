@@ -1,6 +1,7 @@
 import {
   AffectedComponentsChart,
   type ChartComponent,
+  DateTime,
   DiffBlock,
   type DiffLine,
   Icon,
@@ -36,6 +37,7 @@ import {
   byPosition,
   membersOf,
 } from '../components/AffectedComponentsField.tsx';
+import { WhenField, whenError, type WhenMode } from '../components/WhenField.tsx';
 import { useToast } from '../lib/toast.ts';
 
 type Affected = { component_id: string; display_name: string; status: ComponentStatus };
@@ -135,7 +137,13 @@ export function IncidentDetailPage() {
   // makes, then publish. The form stays mounted (hidden) during review so
   // Back returns to it untouched.
   const [step, setStep] = useState<'edit' | 'review'>('edit');
-  const [draft, setDraft] = useState<{ status: string; body: string } | null>(null);
+  const [draft, setDraft] = useState<{
+    status: string;
+    body: string;
+    createdAt: number | null;
+  } | null>(null);
+  const [when, setWhen] = useState<WhenMode>('NOW');
+  const [createdAt, setCreatedAt] = useState<number | null>(null);
   const [toast, showToast] = useToast();
   // When the incident was last loaded: the open chart's "now" edge.
   const [loadedAt, setLoadedAt] = useState(() => Date.now());
@@ -181,6 +189,8 @@ export function IncidentDetailPage() {
     setFormError(null);
     setStep('edit');
     setDraft(null);
+    setWhen('NOW');
+    setCreatedAt(null);
     setUpdating(true);
   }
 
@@ -209,6 +219,7 @@ export function IncidentDetailPage() {
   async function postUpdate(body: {
     status: string;
     body: string;
+    created_at?: string;
     component_statuses?: Record<string, ImpactStatus>;
   }): Promise<boolean> {
     if (!incidentId) {
@@ -239,10 +250,16 @@ export function IncidentDetailPage() {
       setFormError('Message is required.');
       return;
     }
+    const timeError = whenError(when, createdAt, 'Post now');
+    if (timeError) {
+      setFormError(timeError);
+      return;
+    }
     setFormError(null);
     setDraft({
       status: String(form.get('status')),
       body: String(form.get('body')),
+      createdAt: when === 'CUSTOM' ? createdAt : null,
     });
     setStep('review');
   }
@@ -256,6 +273,7 @@ export function IncidentDetailPage() {
       status: draft.status,
       body: draft.body,
       ...(Object.keys(changed).length > 0 ? { component_statuses: changed } : {}),
+      ...(draft.createdAt != null ? { created_at: new Date(draft.createdAt).toISOString() } : {}),
     });
     if (!posted) {
       return;
@@ -506,6 +524,19 @@ export function IncidentDetailPage() {
                   <DiffBlock lines={statusDiff()} />
                 </Stack>
                 <Stack gap={2}>
+                  <Text tone="caption">Posted</Text>
+                  {draft.createdAt == null ? (
+                    <Text>Right now</Text>
+                  ) : (
+                    <Text>
+                      <DateTime value={draft.createdAt} />
+                    </Text>
+                  )}
+                  {draft.createdAt != null && draft.createdAt < Date.parse(incident.started_at) ? (
+                    <Text tone="caption">The incident start moves to this time.</Text>
+                  ) : null}
+                </Stack>
+                <Stack gap={2}>
                   <Text tone="caption">Message</Text>
                   <RichTextBody markdown={draft.body} />
                 </Stack>
@@ -540,6 +571,16 @@ export function IncidentDetailPage() {
                   <Field label="Message" htmlFor="body">
                     <RichTextEditor id="body" name="body" disabled={submitting} />
                   </Field>
+                  <WhenField
+                    id="posted-at"
+                    mode={when}
+                    at={createdAt}
+                    disabled={submitting}
+                    nowLabel="Post now"
+                    customLabel="Posted"
+                    onModeChange={setWhen}
+                    onAtChange={setCreatedAt}
+                  />
                   {resolved ? null : (
                     <AffectedComponentsField
                       components={components}

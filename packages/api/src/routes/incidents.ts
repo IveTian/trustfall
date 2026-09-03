@@ -313,7 +313,7 @@ export function incidentRoutes() {
       tags: ['Incidents'],
       summary: 'Post a timeline update',
       description:
-        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational. `component_statuses` corrects the affected set as the update lands: OPERATIONAL detaches a component, anything else attaches or re-declares it.',
+        'The only way an incident changes status. Posting RESOLVED closes the incident and returns every affected component to operational. `component_statuses` corrects the affected set as the update lands: OPERATIONAL detaches a component, anything else attaches or re-declares it. Omit `created_at` to stamp the moment of publishing; send it to backdate. If `created_at` is earlier than the incident start, the start moves to that instant.',
       request: {
         params: incidentParam,
         body: {
@@ -322,6 +322,9 @@ export function incidentRoutes() {
               schema: z.object({
                 status: incidentStatusSchema,
                 body: z.string().min(1),
+                created_at: timestampInput(
+                  'When this update was posted. Omit to use the moment of publishing. Must be now or in the past. Earlier than the incident start moves the start to this instant.',
+                ).optional(),
                 component_statuses: z.record(z.string(), componentStatusSchema).optional(),
               }),
             },
@@ -342,10 +345,19 @@ export function incidentRoutes() {
     async (c) => {
       const { incident_id: incidentId } = c.req.valid('param');
       const body = c.req.valid('json');
+      const createTime = body.created_at
+        ? parseTimestamp(body.created_at, 'created_at')
+        : undefined;
+      if (createTime != null && createTime > Date.now()) {
+        throw new ApiError(ProblemType.VALIDATION_FAILED, 'created_at must not be in the future.', [
+          { name: 'created_at', reason: 'Must be now or in the past.' },
+        ]);
+      }
       const result = await addIncidentUpdate(db(), incidentId, {
         status: body.status,
         body: body.body,
         componentStatuses: body.component_statuses,
+        createTime,
       });
       if (!result) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Incident not found.');

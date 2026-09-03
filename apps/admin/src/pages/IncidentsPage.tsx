@@ -1,7 +1,6 @@
 import {
   Button,
   DateTime,
-  DateTimePicker,
   Dialog,
   Field,
   type ImpactStatus,
@@ -13,7 +12,6 @@ import {
   Skeleton,
   Stack,
   StatusPill,
-  Tabs,
   Text,
   RichTextBody,
   StatusIcon,
@@ -22,8 +20,6 @@ import {
   TreeRow,
   impactStatusPresentation,
   incidentStatusPresentation,
-  localTimeZone,
-  timeZoneLabel,
 } from '@trustfall/design';
 import type { IncidentStatus } from '@trustfall/shared';
 import { INCIDENT_STATUSES } from '@trustfall/shared';
@@ -38,6 +34,7 @@ import {
   membersOf,
 } from '../components/AffectedComponentsField.tsx';
 import { IncidentSummaryCard, type IncidentSummary } from '../components/IncidentSummaryCard.tsx';
+import { WhenField, whenError, type WhenMode } from '../components/WhenField.tsx';
 import { useToast } from '../lib/toast.ts';
 
 export function IncidentsPage() {
@@ -64,9 +61,8 @@ export function IncidentsPage() {
     startedAt: number | null;
   } | null>(null);
   // When the incident began: right away, or a chosen instant in the past.
-  const [when, setWhen] = useState<'NOW' | 'CUSTOM'>('NOW');
+  const [when, setWhen] = useState<WhenMode>('NOW');
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [openedAt] = useState(() => Date.now());
   const [toast, showToast] = useToast();
 
   async function refresh() {
@@ -100,13 +96,6 @@ export function IncidentsPage() {
     setCreating(true);
   }
 
-  function setWhenMode(mode: 'NOW' | 'CUSTOM') {
-    setWhen(mode);
-    if (mode === 'CUSTOM' && startedAt == null) {
-      setStartedAt(Date.now());
-    }
-  }
-
   function setImpact(componentIds: string[], status: ImpactStatus) {
     setImpacts((prev) => {
       const next = { ...prev };
@@ -126,15 +115,10 @@ export function IncidentsPage() {
       setFormError('Message is required.');
       return;
     }
-    if (when === 'CUSTOM') {
-      if (startedAt == null) {
-        setFormError('Pick when the incident started.');
-        return;
-      }
-      if (startedAt > Date.now()) {
-        setFormError('The start cannot be in the future. Use "Start now" to begin right away.');
-        return;
-      }
+    const timeError = whenError(when, startedAt, 'Start now');
+    if (timeError) {
+      setFormError(timeError);
+      return;
     }
     setFormError(null);
     setDraft({
@@ -342,31 +326,14 @@ export function IncidentsPage() {
                   <Field label="Message" htmlFor="body">
                     <RichTextEditor id="body" name="body" disabled={submitting} />
                   </Field>
-                  <Stack gap={2}>
-                    <Text tone="caption">When</Text>
-                    <Tabs
-                      items={[
-                        { id: 'NOW', label: 'Start now' },
-                        { id: 'CUSTOM', label: 'Custom time' },
-                      ]}
-                      value={when}
-                      onChange={(id) => setWhenMode(id as 'NOW' | 'CUSTOM')}
-                    />
-                  </Stack>
-                  {when === 'CUSTOM' ? (
-                    <Field
-                      label="Started"
-                      htmlFor="started-at"
-                      hint={`Times are in ${localTimeZone()} (${timeZoneLabel(localTimeZone(), startedAt ?? openedAt)}).`}
-                    >
-                      <DateTimePicker
-                        id="started-at"
-                        value={startedAt}
-                        disabled={submitting}
-                        onChange={setStartedAt}
-                      />
-                    </Field>
-                  ) : null}
+                  <WhenField
+                    id="started-at"
+                    mode={when}
+                    at={startedAt}
+                    disabled={submitting}
+                    onModeChange={setWhen}
+                    onAtChange={setStartedAt}
+                  />
                   <AffectedComponentsField
                     components={components}
                     groups={groups}
