@@ -28,10 +28,15 @@ export async function runJob(env: Env, job: Job): Promise<void> {
 /**
  * Point the precise timer at the next window boundary. Creates and edits call
  * this so a newly scheduled window does not wait for the cron heartbeat.
- * Inline delivery has no timer, so there is nothing to arm.
+ *
+ * Only the Durable Object can hold a single re-armable timer: scheduling the
+ * same id again replaces the pending alarm. A Queue message cannot be replaced
+ * or withdrawn once sent, so arming there on every write would pile up
+ * delayed messages; queue and inline deployments rely on the heartbeat, which
+ * reconciles every tick, and on reads reconciling.
  */
 export async function armMaintenanceClock(env: Env): Promise<void> {
-  if (deliveryMode(env) === 'inline') {
+  if (deliveryMode(env) !== 'durable-object') {
     return;
   }
   const boundary = await nextMaintenanceBoundary(createDb(env.DB));

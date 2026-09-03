@@ -35,6 +35,11 @@ function sameDay(a: Wall, b: Wall): boolean {
   return a.year === b.year && a.month === b.month && a.day === b.day;
 }
 
+/** A usable step: a whole number of minutes from 1 to 60, whatever was passed. */
+function clampStep(step: number): number {
+  return Number.isFinite(step) ? Math.min(60, Math.max(1, Math.floor(step))) : 5;
+}
+
 function todayWall(): Wall {
   return wallOf(Date.now());
 }
@@ -79,7 +84,7 @@ export function DateTimePicker({
   label?: string;
   disabled?: boolean;
   placeholder?: string;
-  /** Minute granularity of the clock menu. */
+  /** Minute granularity of the clock menu, 1 to 60; anything else is clamped. */
   minuteStep?: number;
 }) {
   const panelId = useId();
@@ -91,10 +96,12 @@ export function DateTimePicker({
   // The month on show, and the day the arrow keys are on; both start from
   // the value (or the default the picker will hand out).
   const [view, setView] = useState<{ year: number; month: number }>(() => {
-    const wall = wallOf(value ?? defaultValue(minuteStep));
+    const wall = wallOf(value ?? defaultValue(clampStep(minuteStep)));
     return { year: wall.year, month: wall.month };
   });
-  const [cursor, setCursor] = useState<Wall>(() => wallOf(value ?? defaultValue(minuteStep)));
+  const [cursor, setCursor] = useState<Wall>(() =>
+    wallOf(value ?? defaultValue(clampStep(minuteStep))),
+  );
   const focusCursor = useRef(false);
 
   const current = value == null ? null : wallOf(value);
@@ -142,7 +149,7 @@ export function DateTimePicker({
     if (!trigger || disabled) {
       return;
     }
-    const start = wallOf(value ?? defaultValue(minuteStep));
+    const start = wallOf(value ?? defaultValue(clampStep(minuteStep)));
     setView({ year: start.year, month: start.month });
     setCursor(start);
     focusCursor.current = fromKeyboard;
@@ -162,20 +169,26 @@ export function DateTimePicker({
   }
 
   function pickDay(day: number) {
-    const base = current ?? wallOf(defaultValue(minuteStep));
+    const base = current ?? wallOf(defaultValue(clampStep(minuteStep)));
     const next = { ...base, year: view.year, month: view.month, day };
     setCursor(next);
     commit(next);
   }
 
   function pickTime(patch: Partial<Pick<Wall, 'hour' | 'minute'>>) {
-    const base = current ?? wallOf(defaultValue(minuteStep));
+    const base = current ?? wallOf(defaultValue(clampStep(minuteStep)));
     commit({ ...base, ...patch });
   }
 
+  // The cursor follows the month on show, so the grid always has one day in
+  // the tab order; its day clamps to the shorter month's last day.
   function shiftMonth(delta: number) {
     const date = new Date(view.year, view.month + delta, 1);
-    setView({ year: date.getFullYear(), month: date.getMonth() });
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    setView({ year, month });
+    setCursor((prev) => ({ ...prev, year, month, day: Math.min(prev.day, lastDay) }));
   }
 
   function moveCursor(days: number, months = 0) {
@@ -254,11 +267,12 @@ export function DateTimePicker({
   }
 
   const shown = current ?? cursor;
+  const step = clampStep(minuteStep);
   const hours = Array.from({ length: 24 }, (_, hour) => hour);
-  const minutes = Array.from({ length: Math.ceil(60 / minuteStep) }, (_, i) => i * minuteStep);
+  const minutes = Array.from({ length: Math.ceil(60 / step) }, (_, i) => i * step);
   const minuteShown = minutes.includes(shown.minute)
     ? shown.minute
-    : Math.min(59, Math.round(shown.minute / minuteStep) * minuteStep);
+    : Math.min(59, Math.round(shown.minute / step) * step);
 
   return (
     // The handler sits on the wrapper so Escape works from the trigger and from

@@ -35,7 +35,11 @@ type WallClock = {
 
 const MINUTE = 60_000;
 
-/** Hard stop on schedule walks: a series never needs more windows than this at once. */
+/**
+ * Hard stop on a schedule walk, counted from where the walk starts. The walk
+ * fast-forwards to the requested instant first, so this only bounds how far
+ * past that instant a caller may look — never how old a series may be.
+ */
 const MAX_CANDIDATES = 5_000;
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -141,18 +145,51 @@ function dateKey(wall: WallClock): number {
   return Date.UTC(wall.year, wall.month - 1, wall.day);
 }
 
+const DAY_MS = 86_400_000;
+
+/**
+ * Where to pick up a series so the first candidates land just before
+ * `from`: the step index whose window would start a step or so earlier. An
+ * unbounded daily series is still cheap to read twenty years in. Off by a
+ * step early is harmless — callers filter on the window end.
+ */
+function stepsBefore(anchor: WallClock, recurrence: MaintenanceRecurrence, from: number): number {
+  const interval = Math.max(1, Math.floor(recurrence.interval));
+  const fromWall = toWallClock(from, 'UTC');
+  const elapsedDays = Math.floor((dateKey(fromWall) - dateKey(anchor)) / DAY_MS);
+  let steps: number;
+  switch (recurrence.frequency) {
+    case 'DAILY':
+      steps = Math.floor(elapsedDays / interval);
+      break;
+    case 'WEEKLY':
+      steps = Math.floor(elapsedDays / (7 * interval));
+      break;
+    case 'MONTHLY': {
+      const months = (fromWall.year - anchor.year) * 12 + (fromWall.month - anchor.month);
+      steps = Math.floor(months / interval);
+      break;
+    }
+  }
+  // Two steps of slack: one for the wall clock reading a day off across
+  // zones, one for a window that started before `from` and is still open.
+  return Math.max(0, steps - 2);
+}
+
 /**
  * Every window start of the series in order, as wall-clock times, starting at
- * the anchor. Infinite for a series without `until`; callers bound it.
+ * the anchor or, with `fromStep`, that many steps in. Infinite for a series
+ * without `until`; callers bound it.
  */
 function* wallClockStarts(
   anchor: WallClock,
   recurrence: MaintenanceRecurrence,
+  fromStep = 0,
 ): Generator<WallClock> {
   const interval = Math.max(1, Math.floor(recurrence.interval));
   switch (recurrence.frequency) {
     case 'DAILY': {
-      for (let n = 0; ; n += 1) {
+      for (let n = fromStep; ; n += 1) {
         yield shiftDays(anchor, n * interval);
       }
     }
@@ -167,7 +204,7 @@ function* wallClockStarts(
       // days in it before the anchor are not part of the series.
       const weekStart = shiftDays(anchor, -weekdayOf(anchor));
       const anchorKey = dateKey(anchor);
-      for (let week = 0; ; week += 1) {
+      for (let week = fromStep; ; week += 1) {
         for (const weekday of weekdays) {
           const candidate = shiftDays(weekStart, week * interval * 7 + weekday);
           if (dateKey(candidate) >= anchorKey) {
@@ -179,7 +216,7 @@ function* wallClockStarts(
     case 'MONTHLY': {
       // A day the month does not have clamps to its last day: "the 31st of
       // every month" fires on the 30th of April rather than skipping it.
-      for (let n = 0; ; n += 1) {
+      for (let n = fromStep; ; n += 1) {
         const monthIndex = anchor.month - 1 + n * interval;
         const year = anchor.year + Math.floor(monthIndex / 12);
         const month = (monthIndex % 12) + 1;
@@ -191,9 +228,14 @@ function* wallClockStarts(
 
 /**
  * The series' windows in order, bounded by `until` and by the candidate cap.
- * A one-off schedule yields its single window.
+ * A one-off schedule yields its single window. `from` skips ahead so the
+ * first windows yielded are the ones around that instant; a window or two
+ * before it may still come out, so callers filter on what they need.
  */
-export function* maintenanceWindows(schedule: MaintenanceSchedule): Generator<MaintenanceWindow> {
+export function* maintenanceWindows(
+  schedule: MaintenanceSchedule,
+  from?: number,
+): Generator<MaintenanceWindow> {
   const duration = Math.max(MINUTE, schedule.endTime - schedule.startTime);
   if (!schedule.recurrence) {
     yield { start: schedule.startTime, end: schedule.startTime + duration };
@@ -201,8 +243,12 @@ export function* maintenanceWindows(schedule: MaintenanceSchedule): Generator<Ma
   }
   const anchor = toWallClock(schedule.startTime, schedule.timeZone);
   const until = schedule.recurrence.until ?? null;
+  const fromStep =
+    from === undefined || from <= schedule.startTime
+      ? 0
+      : stepsBefore(anchor, schedule.recurrence, from);
   let seen = 0;
-  for (const wall of wallClockStarts(anchor, schedule.recurrence)) {
+  for (const wall of wallClockStarts(anchor, schedule.recurrence, fromStep)) {
     if (seen >= MAX_CANDIDATES) {
       return;
     }
@@ -217,7 +263,7 @@ export function* maintenanceWindows(schedule: MaintenanceSchedule): Generator<Ma
 
 /** The window under way at `at`, if any. */
 export function windowAt(schedule: MaintenanceSchedule, at: number): MaintenanceWindow | undefined {
-  for (const window of maintenanceWindows(schedule)) {
+  for (const window of maintenanceWindows(schedule, at)) {
     if (window.start > at) {
       return undefined;
     }
@@ -241,7 +287,7 @@ export function upcomingWindows(
   const limit = options.limit ?? 1;
   const afterStart = options.afterStart ?? Number.NEGATIVE_INFINITY;
   const result: MaintenanceWindow[] = [];
-  for (const window of maintenanceWindows(schedule)) {
+  for (const window of maintenanceWindows(schedule, Math.max(at, afterStart))) {
     if (window.end <= at || window.start <= afterStart) {
       continue;
     }

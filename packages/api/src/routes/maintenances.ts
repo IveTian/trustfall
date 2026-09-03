@@ -10,7 +10,7 @@ import {
 import { armMaintenanceClock } from '@trustfall/jobs';
 import { isValidTimeZone, type MaintenanceRecurrence } from '@trustfall/shared';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { db } from '../bindings.ts';
+import { bindings, db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
 import { ApiError, ProblemType } from '../errors.ts';
 import { checkIfMatch, createdLocation, etagFor, ifMatchHeader, problems } from '../http.ts';
@@ -22,6 +22,7 @@ import {
   maintenanceStatusSchema,
   maintenanceUpdateSchema,
   pageQuery,
+  timestampInput,
 } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
 
@@ -66,6 +67,7 @@ const timeZoneField = z
     example: 'Asia/Shanghai',
   });
 
+/** The schema has already insisted on RFC 3339; this only turns it into ms. */
 function parseTimestamp(value: string, name: string): number {
   const ms = Date.parse(value);
   if (Number.isNaN(ms)) {
@@ -74,6 +76,35 @@ function parseTimestamp(value: string, name: string): number {
     ]);
   }
   return ms;
+}
+
+/**
+ * The revision a conditional write must find. `If-Match` carries the ETag,
+ * which is the row's `updateTime` in base 36; absent, the write is
+ * unconditional (last write wins), as the rest of the API allows.
+ */
+function expectedRevision(c: { req: { header: (name: string) => string | undefined } }) {
+  const header = c.req.header('if-match');
+  if (!header || header.trim() === '*') {
+    return undefined;
+  }
+  const tag = header.split(',')[0]?.trim().replace(/^W\//, '').replace(/"/g, '') ?? '';
+  const revision = Number.parseInt(tag, 36);
+  return Number.isNaN(revision) ? undefined : revision;
+}
+
+/**
+ * Re-aims the precise timer after a write. Best effort: the timer is a
+ * convenience over the heartbeat and the reads that reconcile, so a
+ * deployment without a working Dispatcher (local dev, say) must not fail the
+ * write over it.
+ */
+async function armClock() {
+  try {
+    await armMaintenanceClock(bindings());
+  } catch (error) {
+    console.error('could not arm the maintenance clock', error);
+  }
 }
 
 function toRecurrence(
@@ -167,7 +198,9 @@ export function maintenanceRoutes() {
                 title: z.string().min(1),
                 body: z.string().min(1).openapi({ description: 'The announcement.' }),
                 component_ids: z.array(z.string()).default([]),
-                starts_at: timestampInput('When the first window opens. Omitted means now.'),
+                starts_at: timestampInput(
+                  'When the first window opens. Omitted means now.',
+                ).optional(),
                 duration_minutes: durationField,
                 recurrence: maintenanceRecurrenceSchema.nullable().optional(),
                 time_zone: timeZoneField.optional().openapi({ description: 'Defaults to UTC.' }),
@@ -198,7 +231,7 @@ export function maintenanceRoutes() {
         recurrence: toRecurrence(body.recurrence),
         timeZone: body.time_zone ?? 'UTC',
       });
-      await armMaintenanceClock(c.env);
+      await armClock();
       return c.json(presentMaintenance(maintenance), 201, {
         Location: createdLocation(c, maintenance.id),
       });
@@ -252,7 +285,7 @@ export function maintenanceRoutes() {
                 title: z.string().min(1).optional(),
                 body: z.string().min(1).optional(),
                 component_ids: z.array(z.string()).optional(),
-                starts_at: timestampInput('When the first window opens.'),
+                starts_at: timestampInput('When the first window opens.').optional(),
                 duration_minutes: durationField.optional(),
                 recurrence: maintenanceRecurrenceSchema
                   .nullable()
@@ -294,7 +327,7 @@ export function maintenanceRoutes() {
       if (!maintenance) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Maintenance not found.');
       }
-      await armMaintenanceClock(c.env);
+      await armClock();
       return c.json(presentMaintenance(maintenance), 200, {
         ETag: etagFor(maintenance.updateTime),
       });
@@ -322,8 +355,8 @@ export function maintenanceRoutes() {
       const { maintenance_id: maintenanceId } = c.req.valid('param');
       const existing = await loadMaintenance(maintenanceId);
       checkIfMatch(c, etagFor(existing.updateTime));
-      await deleteMaintenance(db(), maintenanceId);
-      await armMaintenanceClock(c.env);
+      await deleteMaintenance(db(), maintenanceId, expectedRevision(c));
+      await armClock();
       return c.body(null, 204);
     },
   );
@@ -410,7 +443,7 @@ export function maintenanceRoutes() {
       if (!result) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Maintenance not found.');
       }
-      await armMaintenanceClock(c.env);
+      await armClock();
       return c.json(presentMaintenanceUpdate(result.update), 201, {
         Location: createdLocation(c, result.update.id),
       });
@@ -445,12 +478,4 @@ export function maintenanceRoutes() {
   );
 
   return app;
-}
-
-function timestampInput(description: string) {
-  return z.string().optional().openapi({
-    description,
-    format: 'date-time',
-    example: '2026-09-06T02:00:00Z',
-  });
 }

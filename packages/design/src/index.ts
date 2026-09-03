@@ -52,6 +52,7 @@ export { Tabs, TabPanel } from './components/Tabs.tsx';
 export { Skeleton } from './components/Skeleton.tsx';
 export { StatusIcon } from './components/StatusIcon.tsx';
 export { StatusPill } from './components/StatusPill.tsx';
+export type { StatusPillProps } from './components/StatusPill.tsx';
 export { StatusSelect } from './components/StatusSelect.tsx';
 export { ImpactSelect, impactStatusLabels } from './components/ImpactSelect.tsx';
 export { DiffBlock } from './components/Diff.tsx';
@@ -73,6 +74,7 @@ export type {
   TimelineUpdate,
   TimelineAffectedComponent,
   TimelineKind,
+  IncidentTimelineProps,
 } from './components/IncidentTimeline.tsx';
 export { MaintenanceCard } from './components/MaintenanceCard.tsx';
 export type { PublicMaintenance } from './components/MaintenanceCard.tsx';

@@ -25,9 +25,9 @@ export type TimelineAffectedComponent = {
   status: ComponentStatus;
 };
 
-export type TimelineUpdate = {
+export type TimelineUpdate<S extends IncidentStatus | MaintenanceStatus = IncidentStatus> = {
   id: string;
-  status: IncidentStatus | MaintenanceStatus;
+  status: S;
   body: string;
   createTime: number;
   /** The affected set as this update left it. Omitted for entries without one. */
@@ -39,11 +39,35 @@ export type TimelineUpdate = {
 /** Which status vocabulary the entries speak; it picks the glyph and label. */
 export type TimelineKind = 'incident' | 'maintenance';
 
+/**
+ * `kind` and the entries' status type go together: an incident timeline
+ * takes incident statuses, a maintenance timeline maintenance statuses.
+ */
+export type IncidentTimelineProps = {
+  /** IANA zone the clock times are shown in; the viewer's own when omitted. */
+  timeZone?: string;
+} & (
+  | {
+      kind?: 'incident';
+      /** Newest first. */
+      updates: TimelineUpdate<IncidentStatus>[];
+      renderActions?: (update: TimelineUpdate<IncidentStatus>) => ReactNode;
+    }
+  | {
+      kind: 'maintenance';
+      /** Newest first. */
+      updates: TimelineUpdate<MaintenanceStatus>[];
+      renderActions?: (update: TimelineUpdate<MaintenanceStatus>) => ReactNode;
+    }
+);
+
+type AnyUpdate = TimelineUpdate<IncidentStatus | MaintenanceStatus>;
+
 function presentationFor(
-  kind: TimelineKind,
-  status: TimelineUpdate['status'],
+  props: IncidentTimelineProps,
+  status: AnyUpdate['status'],
 ): { presentation: StatusPresentation; glyph: string } {
-  if (kind === 'maintenance') {
+  if (props.kind === 'maintenance') {
     const key = status as MaintenanceStatus;
     return { presentation: maintenanceStatusPresentation[key], glyph: maintenanceStatusGlyph[key] };
   }
@@ -78,19 +102,12 @@ function dayKey(at: number, timeZone: string | undefined): string {
  * a glyph for the step, the message, and the affected set the entry left
  * behind. `renderActions` puts a console's per-entry controls on the end edge.
  */
-export function IncidentTimeline({
-  updates,
-  timeZone,
-  renderActions,
-  kind = 'incident',
-}: {
-  /** Newest first. */
-  updates: TimelineUpdate[];
-  /** IANA zone the clock times are shown in; the viewer's own when omitted. */
-  timeZone?: string;
-  renderActions?: (update: TimelineUpdate) => ReactNode;
-  kind?: TimelineKind;
-}) {
+export function IncidentTimeline(props: IncidentTimelineProps) {
+  const { timeZone } = props;
+  // The union is resolved once here; the body only needs "some update" and
+  // the presentation lookup keyed by the kind.
+  const updates: AnyUpdate[] = props.updates;
+  const renderActions = props.renderActions as ((update: AnyUpdate) => ReactNode) | undefined;
   const clock = new Intl.DateTimeFormat(undefined, {
     timeZone,
     hour: '2-digit',
@@ -105,7 +122,7 @@ export function IncidentTimeline({
     year: 'numeric',
   });
 
-  const days: Array<{ key: string; at: number; updates: TimelineUpdate[] }> = [];
+  const days: Array<{ key: string; at: number; updates: AnyUpdate[] }> = [];
   for (const update of updates) {
     const key = dayKey(update.createTime, timeZone);
     const last = days[days.length - 1];
@@ -134,7 +151,7 @@ export function IncidentTimeline({
           </header>
           <ol {...stylex.props(styles.list)}>
             {group.updates.map((update, index) => {
-              const { presentation, glyph } = presentationFor(kind, update.status);
+              const { presentation, glyph } = presentationFor(props, update.status);
               const last = groupIndex === days.length - 1 && index === group.updates.length - 1;
               return (
                 <li key={update.id} {...stylex.props(styles.entry)}>

@@ -24,7 +24,7 @@ import type { ComponentStatus } from '@trustfall/shared';
 import { COMPONENT_STATUSES } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { api, type Page } from '../lib/api.ts';
+import { api, apiAll, type Page } from '../lib/api.ts';
 import { IncidentSummaryCard, type IncidentSummary } from '../components/IncidentSummaryCard.tsx';
 import { MaintenanceSummaryCard } from '../components/MaintenanceSummaryCard.tsx';
 import type { Maintenance } from '../lib/maintenance.ts';
@@ -75,16 +75,16 @@ export function DashboardPage() {
 
   async function refresh() {
     try {
-      const [groupPage, componentPage, incidentPage, maintenancePage] = await Promise.all([
+      const [groupPage, componentPage, incidentPage, activeMaintenances] = await Promise.all([
         api<Page<Group>>('/api/component-groups'),
         api<Page<Component>>('/api/components'),
         api<Page<IncidentSummary>>('/api/incidents'),
-        api<Page<Maintenance>>('/api/maintenances?state=ACTIVE'),
+        apiAll<Maintenance>('/api/maintenances?state=ACTIVE'),
       ]);
       setGroups(groupPage.items);
       setComponents(componentPage.items);
       setIncidents(incidentPage.items);
-      setMaintenances(maintenancePage.items);
+      setMaintenances(activeMaintenances);
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load the dashboard.');

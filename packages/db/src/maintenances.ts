@@ -35,6 +35,22 @@ export class MaintenanceStateError extends Error {
   }
 }
 
+/**
+ * The row changed between the caller's read and its write: the revision it
+ * sent as `If-Match` no longer matches. The API reports it as 412.
+ */
+export class MaintenanceConflictError extends Error {
+  constructor() {
+    super('The maintenance changed since you read it. Fetch it again and retry.');
+    this.name = 'MaintenanceConflictError';
+  }
+}
+
+/** A write's timestamp; strictly after the row's last one so the ETag always moves. */
+function advance(updateTime: number, now: number): number {
+  return Math.max(now, updateTime + 1);
+}
+
 const ACTIVE_STATUSES: MaintenanceStatus[] = ['SCHEDULED', 'IN_PROGRESS'];
 const PAST_STATUSES: MaintenanceStatus[] = ['COMPLETED', 'CANCELLED'];
 
@@ -134,7 +150,7 @@ export async function listMaintenances(
   };
 }
 
-/** What the public page shows: windows under way, then the next to open. */
+/** What the public page shows: windows under way, then those still to open, soonest first. */
 export async function listActiveMaintenances(
   db: Database,
   limit = 20,
@@ -393,6 +409,10 @@ async function cancel(
   at: number,
   body: string,
 ): Promise<MaintenanceUpdateRow> {
+  const claimed = await claimWindow(db, row, { status: 'CANCELLED', updateTime: at });
+  if (!claimed) {
+    throw new MaintenanceStateError('The maintenance moved on before it could be cancelled.');
+  }
   if (row.status === 'IN_PROGRESS') {
     await releaseComponents(
       db,
@@ -401,10 +421,6 @@ async function cancel(
       at,
     );
   }
-  await db
-    .update(maintenances)
-    .set({ status: 'CANCELLED', updateTime: at })
-    .where(eq(maintenances.id, row.id));
   return insertUpdate(db, row.id, 'CANCELLED', body, false, at);
 }
 
@@ -544,12 +560,20 @@ export async function updateMaintenance(
     recurrence?: MaintenanceRecurrence | null;
     timeZone?: string;
   },
+  /**
+   * The `updateTime` the caller read (its ETag). When given, the write only
+   * lands if the row still carries it; otherwise it is a conflict.
+   */
+  expectedUpdateTime?: number,
 ): Promise<MaintenanceWithRelations | undefined> {
   const existing = await getMaintenance(db, id);
   if (!existing) {
     return undefined;
   }
-  const now = nowMs();
+  if (expectedUpdateTime !== undefined && existing.updateTime !== expectedUpdateTime) {
+    throw new MaintenanceConflictError();
+  }
+  const now = advance(existing.updateTime, nowMs());
   const scheduleChanged =
     patch.startTime !== undefined || patch.recurrence !== undefined || patch.timeZone !== undefined;
   const existingDuration = existing.endTime - existing.startTime;
@@ -593,7 +617,15 @@ export async function updateMaintenance(
       next.windowEnd = window.end;
     }
   }
-  await db.update(maintenances).set(next).where(eq(maintenances.id, id));
+  // Compare-and-swap on the revision: a write racing this one moved
+  // updateTime, so the predicate misses and nothing here is applied.
+  const written = await db
+    .update(maintenances)
+    .set(next)
+    .where(and(eq(maintenances.id, id), eq(maintenances.updateTime, existing.updateTime)));
+  if ((written.meta.changes ?? 0) === 0) {
+    throw new MaintenanceConflictError();
+  }
 
   if (patch.componentIds !== undefined) {
     const wanted = [...new Set(patch.componentIds)];
@@ -640,12 +672,29 @@ export async function updateMaintenance(
  * Removes a maintenance. A window under way releases its components first,
  * so the page does not keep an unexplained "under maintenance".
  */
-export async function deleteMaintenance(db: Database, id: string): Promise<boolean> {
+export async function deleteMaintenance(
+  db: Database,
+  id: string,
+  expectedUpdateTime?: number,
+): Promise<boolean> {
   const existing = await getMaintenance(db, id);
   if (!existing) {
     return false;
   }
+  if (expectedUpdateTime !== undefined && existing.updateTime !== expectedUpdateTime) {
+    throw new MaintenanceConflictError();
+  }
+  // Delete first, on the revision we read: a concurrent write moves
+  // updateTime and the delete misses instead of removing a newer record.
+  const result = await db
+    .delete(maintenances)
+    .where(and(eq(maintenances.id, id), eq(maintenances.updateTime, existing.updateTime)));
+  if ((result.meta.changes ?? 0) === 0) {
+    throw new MaintenanceConflictError();
+  }
   if (existing.status === 'IN_PROGRESS') {
+    // The join rows are gone with the row, so nothing else claims these
+    // components on this maintenance's behalf.
     await releaseComponents(
       db,
       id,
@@ -653,8 +702,7 @@ export async function deleteMaintenance(db: Database, id: string): Promise<boole
       nowMs(),
     );
   }
-  const result = await db.delete(maintenances).where(eq(maintenances.id, id));
-  return (result.meta.changes ?? 0) > 0;
+  return true;
 }
 
 /**

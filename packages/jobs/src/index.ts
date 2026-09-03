@@ -13,9 +13,11 @@ export type EnqueueOptions = {
   attempt?: number;
   ctx?: ExecutionContext;
   /**
-   * A fixed id makes the job a singleton: scheduling it again replaces the
-   * pending copy instead of adding a second one. For timers that re-arm
-   * themselves, such as the maintenance clock.
+   * A fixed id makes the job a singleton on the Durable Object: scheduling
+   * it again replaces the pending copy instead of adding a second one. For
+   * timers that re-arm themselves, such as the maintenance clock. Queues
+   * assign their own message ids and never deduplicate on the body, so a
+   * caller must not rely on this there.
    */
   id?: string;
 };

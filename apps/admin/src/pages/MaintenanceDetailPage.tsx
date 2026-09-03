@@ -26,7 +26,7 @@ import {
 import type { ComponentStatus, MaintenanceStatus } from '@trustfall/shared';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { api, type Page } from '../lib/api.ts';
+import { api, apiAll, apiRead } from '../lib/api.ts';
 import type { AffectedComponent, AffectedGroup } from '../components/AffectedComponentsField.tsx';
 import {
   MaintenanceForm,
@@ -103,6 +103,9 @@ export function MaintenanceDetailPage() {
   const { maintenanceId } = useParams();
   const navigate = useNavigate();
   const [maintenance, setMaintenance] = useState<Maintenance | null>(null);
+  // The tag of the maintenance as last read; edits and deletes send it back
+  // so a concurrent change is refused rather than overwritten.
+  const [etag, setEtag] = useState<string | undefined>(undefined);
   // With their live status: a component an incident has degraded keeps
   // that status through a window, and the page must say so.
   const [components, setComponents] = useState<
@@ -125,14 +128,15 @@ export function MaintenanceDetailPage() {
       return;
     }
     try {
-      const [loaded, componentPage, groupPage] = await Promise.all([
-        api<Maintenance>(`/api/maintenances/${maintenanceId}`),
-        api<Page<AffectedComponent & { status: ComponentStatus }>>('/api/components'),
-        api<Page<AffectedGroup>>('/api/component-groups'),
+      const [loaded, allComponents, allGroups] = await Promise.all([
+        apiRead<Maintenance>(`/api/maintenances/${maintenanceId}`),
+        apiAll<AffectedComponent & { status: ComponentStatus }>('/api/components'),
+        apiAll<AffectedGroup>('/api/component-groups'),
       ]);
-      setMaintenance(loaded);
-      setComponents(componentPage.items);
-      setGroups(groupPage.items);
+      setMaintenance(loaded.data);
+      setEtag(loaded.etag);
+      setComponents(allComponents);
+      setGroups(allGroups);
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load the maintenance.');
@@ -209,6 +213,7 @@ export function MaintenanceDetailPage() {
     try {
       await api(`/api/maintenances/${maintenanceId}`, {
         method: 'PATCH',
+        headers: etag ? { 'if-match': etag } : {},
         body: JSON.stringify(payload),
       });
     } catch (err) {
@@ -228,7 +233,10 @@ export function MaintenanceDetailPage() {
     }
     setSubmitting(true);
     try {
-      await api(`/api/maintenances/${maintenanceId}`, { method: 'DELETE' });
+      await api(`/api/maintenances/${maintenanceId}`, {
+        method: 'DELETE',
+        headers: etag ? { 'if-match': etag } : {},
+      });
     } catch (err) {
       setSubmitting(false);
       setConfirmingDelete(false);

@@ -186,6 +186,24 @@ describe('windowAt and nextWindow', () => {
     ]);
   });
 
+  it('reads an unbounded series decades in without walking every window', () => {
+    const twentyYears = start + 20 * 365 * DAY;
+    const next = nextWindow(schedule, twentyYears);
+    expect(next).toBeDefined();
+    expect(next!.start).toBeGreaterThanOrEqual(twentyYears - 2 * HOUR);
+    expect(next!.end).toBeGreaterThan(twentyYears);
+    expect(toWallClock(next!.start, 'UTC').hour).toBe(2);
+  });
+
+  it('fast-forwards a monthly series without skipping its window', () => {
+    const monthly: MaintenanceSchedule = {
+      ...schedule,
+      recurrence: { frequency: 'MONTHLY', interval: 1 },
+    };
+    const later = Date.UTC(2031, 8, 6, 1, 0);
+    expect(nextWindow(monthly, later)?.start).toBe(Date.UTC(2031, 8, 6, 2, 0));
+  });
+
   it('runs out for a one-off whose window has passed', () => {
     const once: MaintenanceSchedule = { ...schedule, recurrence: null };
     expect(nextWindow(once, start + 3 * HOUR)).toBeUndefined();

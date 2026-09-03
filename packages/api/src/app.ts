@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { getAuth } from './auth.ts';
 import type { AppEnv } from './env.ts';
-import { MaintenanceStateError } from '@trustfall/db';
+import { MaintenanceConflictError, MaintenanceStateError } from '@trustfall/db';
 import { ApiError, invalidParamsFromIssues, mapDatabaseError, ProblemType } from './errors.ts';
 import { respondWithProblem } from './http.ts';
 import { componentRoutes } from './routes/components.ts';
@@ -34,6 +34,9 @@ api.onError((err, c) => {
   }
   if (err instanceof MaintenanceStateError) {
     return respondWithProblem(c, new ApiError(ProblemType.FAILED_PRECONDITION, err.message));
+  }
+  if (err instanceof MaintenanceConflictError) {
+    return respondWithProblem(c, new ApiError(ProblemType.PRECONDITION_FAILED, err.message));
   }
   // A constraint the caller can fix must not be reported as a server fault.
   const mapped = mapDatabaseError(err);

@@ -18,7 +18,7 @@ import {
 import { upcomingWindows } from '@trustfall/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { api, type Page } from '../lib/api.ts';
+import { api, apiAll } from '../lib/api.ts';
 import type { AffectedComponent, AffectedGroup } from '../components/AffectedComponentsField.tsx';
 import {
   defaultSchedule,
@@ -91,14 +91,14 @@ export function MaintenancePage() {
 
   async function refresh() {
     try {
-      const [maintenancePage, componentPage, groupPage] = await Promise.all([
-        api<Page<Maintenance>>('/api/maintenances?page_size=100'),
-        api<Page<AffectedComponent>>('/api/components'),
-        api<Page<AffectedGroup>>('/api/component-groups'),
+      const [allMaintenances, allComponents, allGroups] = await Promise.all([
+        apiAll<Maintenance>('/api/maintenances'),
+        apiAll<AffectedComponent>('/api/components'),
+        apiAll<AffectedGroup>('/api/component-groups'),
       ]);
-      setMaintenances(maintenancePage.items);
-      setComponents(componentPage.items);
-      setGroups(groupPage.items);
+      setMaintenances(allMaintenances);
+      setComponents(allComponents);
+      setGroups(allGroups);
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Could not load maintenance.');
@@ -122,8 +122,12 @@ export function MaintenancePage() {
     }
     setSubmitting(true);
     setFormError(null);
+    // "Start now" means the moment of publishing, which the server knows
+    // better than the form did when it was reviewed.
+    const { starts_at: _startsAt, ...rest } = draft.payload;
+    const payload = draft.view.mode === 'NOW' ? rest : draft.payload;
     try {
-      await api('/api/maintenances', { method: 'POST', body: JSON.stringify(draft.payload) });
+      await api('/api/maintenances', { method: 'POST', body: JSON.stringify(payload) });
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Could not schedule the maintenance.');
       return;

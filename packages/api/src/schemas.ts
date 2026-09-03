@@ -17,6 +17,17 @@ const timestamp = (description: string) =>
     example: '2026-09-01T12:30:00Z',
   });
 
+/**
+ * A timestamp the caller sends. Strict RFC 3339 with `Z` or a numeric
+ * offset; a bare date or a locale string is refused rather than guessed at.
+ */
+export const timestampInput = (description: string) =>
+  z.iso.datetime({ offset: true }).openapi({
+    description,
+    format: 'date-time',
+    example: '2026-09-06T02:00:00Z',
+  });
+
 export const componentStatusSchema = z.enum(COMPONENT_STATUSES).openapi({
   description:
     'Health of a component. The set grows over time; clients should tolerate values they do not know.',
@@ -134,7 +145,7 @@ export const maintenanceRecurrenceSchema = z
       description:
         'WEEKLY only: days of the week, 0 = Sunday. Defaults to the weekday of the first window.',
     }),
-    until: timestamp('Last instant a window may start. Omit or null for a series with no end.')
+    until: timestampInput('Last instant a window may start. Omit or null for a series with no end.')
       .nullable()
       .optional(),
   })
@@ -208,7 +219,8 @@ export const statusSchema = z
     ungrouped_components: z.array(componentSchema),
     active_incidents: z.array(incidentSchema),
     active_maintenances: z.array(maintenanceSchema).openapi({
-      description: 'Windows under way, then the next to open, soonest first.',
+      description:
+        'Every maintenance that is IN_PROGRESS or SCHEDULED, by tracked window start ascending: windows under way first, then those still to open.',
     }),
   })
   .openapi('Status');
