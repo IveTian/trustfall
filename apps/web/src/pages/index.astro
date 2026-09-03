@@ -14,8 +14,9 @@ import {
   OverallStatusBanner,
   type PublicIncident,
   type PublicMaintenance,
+  SiteGroup,
+  SiteHeading,
   SitePanel,
-  Stack,
   Text,
 } from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
@@ -132,79 +133,93 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
       current="overview"
     >
       <SitePanel>
-        <Stack gap={5}>
-          <OverallStatusBanner
-            status={summary.overallStatus}
-            siteName={summary.siteName}
-            description={summary.siteDescription}
-          />
-          {hasComponents ? null : <Text tone="muted">No components have been published yet.</Text>}
-          {summary.componentGroups.map((group) => (
+        <OverallStatusBanner
+          status={summary.overallStatus}
+          siteName={summary.siteName}
+          description={summary.siteDescription}
+        />
+      </SitePanel>
+
+      <SiteHeading>Current status</SiteHeading>
+      <SiteGroup>
+        {hasComponents ? null : (
+          <SitePanel>
+            <Text tone="muted">No components have been published yet.</Text>
+          </SitePanel>
+        )}
+        {summary.componentGroups.map((group) => (
+          <SitePanel>
             <ComponentGroupSection
+              surface="plain"
               displayName={group.displayName}
               description={group.description}
               components={toComponents(group.components)}
             />
-          ))}
-          {summary.ungroupedComponents.length > 0 ? (
+          </SitePanel>
+        ))}
+        {summary.ungroupedComponents.length > 0 ? (
+          <SitePanel>
             <ComponentGroupSection
+              surface="plain"
               displayName="Other"
               components={toComponents(summary.ungroupedComponents)}
             />
-          ) : null}
-        </Stack>
-      </SitePanel>
+          </SitePanel>
+        ) : null}
+      </SiteGroup>
 
-      <SitePanel>
-        <Stack gap={3}>
-          <Text as="h2" tone="title">
-            Active incidents and maintenance
-          </Text>
-          {summary.activeIncidents.length === 0 && underWay.length === 0 ? (
+      <SiteHeading>Active incidents and maintenance</SiteHeading>
+      <SiteGroup>
+        {summary.activeIncidents.length === 0 && underWay.length === 0 ? (
+          <SitePanel>
             <Text tone="muted">Nothing is under way.</Text>
-          ) : null}
-          {summary.activeIncidents.map((incident) => (
-            <IncidentCard incident={toIncident(incident)} />
-          ))}
-          {underWay.map((maintenance) => (
-            <MaintenanceCard maintenance={toMaintenance(maintenance)} />
-          ))}
-        </Stack>
-      </SitePanel>
+          </SitePanel>
+        ) : null}
+        {summary.activeIncidents.map((incident) => (
+          <SitePanel as="article">
+            <IncidentCard surface="plain" incident={toIncident(incident)} />
+          </SitePanel>
+        ))}
+        {underWay.map((maintenance) => (
+          <SitePanel as="article">
+            <MaintenanceCard surface="plain" maintenance={toMaintenance(maintenance)} />
+          </SitePanel>
+        ))}
+      </SiteGroup>
 
-      <SitePanel>
-        <Stack gap={3}>
-          <Text as="h2" tone="title">
-            Recent incidents and maintenance
-          </Text>
-          {recent.length === 0 ? (
+      <SiteHeading>Recent incidents and maintenance</SiteHeading>
+      <SiteGroup>
+        {recent.length === 0 ? (
+          <SitePanel>
             <Text tone="muted">Nothing has happened lately.</Text>
-          ) : (
-            recent.map((item) =>
-              item.kind === 'incident' ? (
-                <IncidentCard incident={item.incident} />
+          </SitePanel>
+        ) : (
+          recent.map((item) => (
+            <SitePanel as="article">
+              {item.kind === 'incident' ? (
+                <IncidentCard surface="plain" incident={item.incident} />
               ) : (
-                <MaintenanceCard maintenance={item.maintenance} />
-              ),
-            )
-          )}
-        </Stack>
-      </SitePanel>
+                <MaintenanceCard surface="plain" maintenance={item.maintenance} />
+              )}
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
 
-      <SitePanel>
-        <Stack gap={3}>
-          <Text as="h2" tone="title">
-            Scheduled maintenance
-          </Text>
-          {scheduled.length === 0 ? (
+      <SiteHeading>Scheduled maintenance</SiteHeading>
+      <SiteGroup>
+        {scheduled.length === 0 ? (
+          <SitePanel>
             <Text tone="muted">No maintenance is scheduled.</Text>
-          ) : (
-            scheduled.map((maintenance) => (
-              <MaintenanceCard maintenance={toMaintenance(maintenance)} />
-            ))
-          )}
-        </Stack>
-      </SitePanel>
+          </SitePanel>
+        ) : (
+          scheduled.map((maintenance) => (
+            <SitePanel as="article">
+              <MaintenanceCard surface="plain" maintenance={toMaintenance(maintenance)} />
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
     </Site>
   ) : (
     <UninitializedNotice />

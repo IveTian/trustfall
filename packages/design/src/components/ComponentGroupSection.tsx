@@ -1,5 +1,5 @@
 import type { ComponentStatus } from '@trustfall/shared';
-import { Card } from './Card.tsx';
+import { Card, type CardSurface } from './Card.tsx';
 import { ComponentRow } from './ComponentRow.tsx';
 import { Stack } from './Stack.tsx';
 import { Text } from './Text.tsx';
@@ -15,13 +15,15 @@ export function ComponentGroupSection({
   displayName,
   description,
   components,
+  surface,
 }: {
   displayName: string;
   description?: string | null;
   components: PublicComponent[];
+  surface?: CardSurface;
 }) {
   return (
-    <Card as="section">
+    <Card as="section" surface={surface}>
       <Stack gap={3}>
         <div>
           <Text as="h2" tone="title">

@@ -1,4 +1,4 @@
-import { MESH_CELL_PX, MESH_LINE_PX } from './tokens/mesh.ts';
+import { MESH_LINE_PX, SITE_MESH_CELL_PX, SITE_MESH_COLS } from './tokens/mesh.ts';
 
 /**
  * Snaps the public site's reading panels to the mesh: as many whole columns
@@ -21,8 +21,8 @@ function readNumber(element: HTMLElement, attr: string, fallback: number): numbe
 }
 
 function measure(main: HTMLElement, session: Session): void {
-  const cell = readNumber(main, 'data-cell', MESH_CELL_PX);
-  const maxCols = readNumber(main, 'data-cols', 9);
+  const cell = readNumber(main, 'data-cell', SITE_MESH_CELL_PX);
+  const maxCols = readNumber(main, 'data-cols', SITE_MESH_COLS);
   const panels = Array.from(main.querySelectorAll<HTMLElement>('.tf-site-panel'));
 
   // Watch every panel's content; drop what the page no longer has.

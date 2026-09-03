@@ -1,6 +1,6 @@
 import type { MaintenanceRecurrence, MaintenanceStatus } from '@trustfall/shared';
 import { describeRecurrence, formatInstant, formatWindow } from '../maintenance-copy.ts';
-import { Card } from './Card.tsx';
+import { Card, type CardSurface } from './Card.tsx';
 import { Link } from './Link.tsx';
 import { RichTextBody } from './RichTextBody.tsx';
 import { Stack } from './Stack.tsx';
@@ -29,11 +29,17 @@ export type PublicMaintenance = {
  * runs (in the schedule's own zone, since that is the zone it was promised
  * in), how it repeats, what it touches, and the latest word.
  */
-export function MaintenanceCard({ maintenance }: { maintenance: PublicMaintenance }) {
+export function MaintenanceCard({
+  maintenance,
+  surface,
+}: {
+  maintenance: PublicMaintenance;
+  surface?: CardSurface;
+}) {
   const latest = maintenance.updates[0];
   const underWay = maintenance.status === 'IN_PROGRESS';
   return (
-    <Card as="article">
+    <Card as="article" surface={surface}>
       <Stack gap={3}>
         <Stack direction="horizontal" gap={2}>
           <StatusPill status={maintenance.status} kind="maintenance" />

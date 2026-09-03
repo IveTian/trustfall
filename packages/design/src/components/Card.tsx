@@ -22,6 +22,13 @@ const styles = stylex.create({
     borderWidth: mesh.line,
     padding: space[4],
   },
+  // No chrome of its own: for a card that sits inside a surface which already
+  // draws the box, such as a public-site block.
+  plain: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    padding: 0,
+  },
   // The whole card is the control: quiet at rest, a soft shadow lift on
   // hover, the standard ring on focus. Nested links keep their own click.
   clickable: {
@@ -57,20 +64,26 @@ const styles = stylex.create({
   },
 });
 
+export type CardSurface = 'card' | 'plain';
+
 export function Card({
   children,
   as: Tag = 'div',
+  surface = 'card',
   onClick,
 }: {
   children: ReactNode;
   as?: 'div' | 'section' | 'li' | 'article';
+  /** `plain` drops the border, fill and padding: the surface around it draws the box. */
+  surface?: CardSurface;
   /** Makes the whole card the control. Nested links keep their own activation. */
   onClick?: () => void;
 }) {
+  const plain = surface === 'plain' && styles.plain;
   if (onClick != null) {
     return (
       <Tag
-        {...stylex.props(styles.card, styles.clickable)}
+        {...stylex.props(styles.card, styles.clickable, plain)}
         tabIndex={0}
         onClick={(event: MouseEvent<HTMLElement>) => {
           if (isInteractiveTarget(event.target)) return;
@@ -87,5 +100,5 @@ export function Card({
       </Tag>
     );
   }
-  return <Tag {...stylex.props(styles.card)}>{children}</Tag>;
+  return <Tag {...stylex.props(styles.card, plain)}>{children}</Tag>;
 }

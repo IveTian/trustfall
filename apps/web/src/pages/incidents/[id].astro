@@ -6,6 +6,7 @@ import {
   type ChartComponent,
   DateTime,
   IncidentTimeline,
+  SiteHeading,
   SitePanel,
   Stack,
   StatusPill,
@@ -76,21 +77,15 @@ if (incident) {
         </Stack>
       </SitePanel>
 
+      <SiteHeading>Updates</SiteHeading>
       <SitePanel>
-        <Stack gap={3}>
-          <Text as="h2" tone="title">
-            Updates
-          </Text>
-          <IncidentTimeline client:load updates={incident.updates} locale="en" />
-        </Stack>
+        <IncidentTimeline client:load updates={incident.updates} locale="en" />
       </SitePanel>
 
       {affected.length > 0 ? (
-        <SitePanel>
-          <Stack gap={3}>
-            <Text as="h2" tone="title">
-              Affected components
-            </Text>
+        <>
+          <SiteHeading>Affected components</SiteHeading>
+          <SitePanel>
             <AffectedComponentsChart
               components={affected}
               updates={incident.updates}
@@ -100,8 +95,8 @@ if (incident) {
               now={Date.now()}
               client:load
             />
-          </Stack>
-        </SitePanel>
+          </SitePanel>
+        </>
       ) : null}
     </Site>
   ) : (

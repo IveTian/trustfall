@@ -1,7 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, isSiteInitialized, listIncidents } from '@trustfall/db';
-import { IncidentCard, SitePanel, Stack, Text } from '@trustfall/design';
+import { IncidentCard, SiteGroup, SiteHeading, SitePanel, Text } from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
 import Site from '../../layouts/Site.astro';
 
@@ -32,31 +32,32 @@ if (initialized) {
 {
   initialized ? (
     <Site title={`Incident history · ${siteName}`} siteName={siteName} current="history">
-      <SitePanel>
-        <Stack gap={4}>
-          <Text as="h1" tone="display">Incident history</Text>
-          {
-            incidents.length === 0 ? (
-              <Text tone="muted">No incidents have been published.</Text>
-            ) : (
-              incidents.map((incident) => (
-                <IncidentCard
-                  incident={{
-                    id: incident.id,
-                    title: incident.title,
-                    status: incident.status,
-                    impact: incident.impact,
-                    startTime: incident.startTime,
-                    resolveTime: incident.resolveTime,
-                    updates: incident.updates,
-                    href: `/incidents/${incident.id}`,
-                  }}
-                />
-              ))
-            )
-          }
-        </Stack>
-      </SitePanel>
+      <SiteHeading as="h1">Incident history</SiteHeading>
+      <SiteGroup>
+        {incidents.length === 0 ? (
+          <SitePanel>
+            <Text tone="muted">No incidents have been published.</Text>
+          </SitePanel>
+        ) : (
+          incidents.map((incident) => (
+            <SitePanel as="article">
+              <IncidentCard
+                surface="plain"
+                incident={{
+                  id: incident.id,
+                  title: incident.title,
+                  status: incident.status,
+                  impact: incident.impact,
+                  startTime: incident.startTime,
+                  resolveTime: incident.resolveTime,
+                  updates: incident.updates,
+                  href: `/incidents/${incident.id}`,
+                }}
+              />
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
     </Site>
   ) : (
     <UninitializedNotice />

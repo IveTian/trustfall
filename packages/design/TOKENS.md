@@ -53,7 +53,7 @@ Saturated status hues are for degradation. An all-operational page should read a
 | `gutter` | 28px                                    | Console page inset     |
 | `prose`  | 40rem                                   | Dialog max width       |
 
-Mesh cell size is `MESH_CELL_PX` (96) in `tokens/mesh.ts`, with the CSS length in `mesh.cell`.
+Mesh cell size is `MESH_CELL_PX` (96) in `tokens/mesh.ts`, with the CSS length in `mesh.cell`. The public site draws a finer grid, `SITE_MESH_CELL_PX` (64), and its blocks are at most `SITE_MESH_COLS` (13) cells wide.
 
 ## Text — `text.stylex.ts`
 

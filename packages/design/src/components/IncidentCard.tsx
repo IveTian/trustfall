@@ -1,5 +1,5 @@
 import type { IncidentImpact, IncidentStatus } from '@trustfall/shared';
-import { Card } from './Card.tsx';
+import { Card, type CardSurface } from './Card.tsx';
 import { Link } from './Link.tsx';
 import { RelativeTime } from './RelativeTime.tsx';
 import { RichTextBody } from './RichTextBody.tsx';
@@ -25,11 +25,17 @@ export type PublicIncident = {
   href?: string;
 };
 
-export function IncidentCard({ incident }: { incident: PublicIncident }) {
+export function IncidentCard({
+  incident,
+  surface,
+}: {
+  incident: PublicIncident;
+  surface?: CardSurface;
+}) {
   const latest = incident.updates[0];
 
   return (
-    <Card as="article">
+    <Card as="article" surface={surface}>
       <Stack gap={3}>
         <Stack direction="horizontal" gap={2}>
           <StatusPill status={incident.status} kind="incident" />

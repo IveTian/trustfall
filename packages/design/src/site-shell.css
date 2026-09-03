@@ -9,16 +9,17 @@
 
 /*
  * The mesh starts half a cell under the bar, which is exactly where the first
- * panel's top edge sits, so that horizontal line is the panel's own border.
- * Panels stack a whole cell apart (less the line each one's bottom border
- * already covers), so every panel's edges land on lines once its height is
- * snapped. Horizontally, until site-shell-runtime measures, a tile is centred
- * on the page: with an odd number of columns the edges then land on lines.
+ * block's top edge sits, so that horizontal line is the block's own border.
+ * Vertical rhythm is in whole cells: a panel is rows × cell plus the line its
+ * bottom border covers; a lone panel or group stands a cell apart from the
+ * one before it; a heading is a cell and a run of grouped panels share a
+ * line. Horizontally, until site-shell-runtime measures, a tile is centred on
+ * the page: with an odd number of columns the edges then land on lines.
  */
 .tf-site-main {
-  --tf-site-cell: 96px;
+  --tf-site-cell: 64px;
   --tf-site-line: 1px;
-  --tf-site-cols: 9;
+  --tf-site-cols: 13;
   --tf-site-origin-x: 50%;
   position: relative;
   box-sizing: border-box;
@@ -26,7 +27,6 @@
   flex-direction: column;
   flex-grow: 1;
   align-items: center;
-  gap: calc(var(--tf-site-cell) - var(--tf-site-line));
   width: 100%;
   padding-block: calc(var(--tf-site-cell) / 2);
   background-image:
@@ -42,6 +42,42 @@
     );
   background-size: var(--tf-site-cell) var(--tf-site-cell);
   background-position: var(--tf-site-origin-x) calc(var(--tf-site-cell) / 2);
+}
+
+.tf-site-group {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  width: 100%;
+}
+
+/* A cell apart from the block before, less the line that block's bottom border covers. */
+:is(.tf-site-panel, .tf-site-group) + :is(.tf-site-panel, .tf-site-group) {
+  margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
+}
+
+/* Grouped panels share the line between them. */
+.tf-site-group > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-line) * -1);
+}
+
+/*
+ * One cell, the words at its foot, over the group it names. Starting on the
+ * line the previous block ends on keeps the next block on a line too.
+ */
+.tf-site-heading {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
+  max-width: 100%;
+  height: var(--tf-site-cell);
+  padding: 0 32px 16px;
+}
+
+:is(.tf-site-panel, .tf-site-group) + .tf-site-heading {
+  margin-block-start: calc(var(--tf-site-line) * -1);
 }
 
 /* A whole number of cells, plus one line so the border sits on the grid. */
@@ -67,6 +103,12 @@
 .tf-site-main[data-tf-site-ready] {
   --tf-site-origin-x: var(--tf-site-panel-left);
   align-items: flex-start;
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-heading {
+  width: calc(var(--tf-site-panel-width) + var(--tf-site-line));
+  max-width: none;
+  margin-inline-start: var(--tf-site-panel-left);
 }
 
 .tf-site-main[data-tf-site-ready] .tf-site-panel {

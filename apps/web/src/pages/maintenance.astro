@@ -1,7 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, getSetting, isSiteInitialized, listMaintenances } from '@trustfall/db';
-import { MaintenanceCard, SitePanel, Stack, Text } from '@trustfall/design';
+import { MaintenanceCard, SiteGroup, SiteHeading, SitePanel, Text } from '@trustfall/design';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
 
@@ -31,33 +31,34 @@ if (initialized) {
 {
   initialized ? (
     <Site title={`Maintenance · ${siteName}`} siteName={siteName} current="maintenance">
-      <SitePanel>
-        <Stack gap={4}>
-        <Text as="h1" tone="display">
-          Maintenance
-        </Text>
+      <SiteHeading as="h1">Maintenance</SiteHeading>
+      <SiteGroup>
         {maintenances.length === 0 ? (
-          <Text tone="muted">No maintenance windows have been published.</Text>
+          <SitePanel>
+            <Text tone="muted">No maintenance windows have been published.</Text>
+          </SitePanel>
         ) : (
           maintenances.map((maintenance) => (
-            <MaintenanceCard
-              maintenance={{
-                id: maintenance.id,
-                title: maintenance.title,
-                status: maintenance.status,
-                windowStart: maintenance.windowStart,
-                windowEnd: maintenance.windowEnd,
-                startTime: maintenance.startTime,
-                recurrence: maintenance.recurrence ?? null,
-                timeZone: maintenance.timeZone,
-                affectedComponents: maintenance.components,
-                updates: maintenance.updates,
-              }}
-            />
+            <SitePanel as="article">
+              <MaintenanceCard
+                surface="plain"
+                maintenance={{
+                  id: maintenance.id,
+                  title: maintenance.title,
+                  status: maintenance.status,
+                  windowStart: maintenance.windowStart,
+                  windowEnd: maintenance.windowEnd,
+                  startTime: maintenance.startTime,
+                  recurrence: maintenance.recurrence ?? null,
+                  timeZone: maintenance.timeZone,
+                  affectedComponents: maintenance.components,
+                  updates: maintenance.updates,
+                }}
+              />
+            </SitePanel>
           ))
         )}
-        </Stack>
-      </SitePanel>
+      </SiteGroup>
     </Site>
   ) : (
     <UninitializedNotice />
