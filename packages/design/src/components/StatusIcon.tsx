@@ -2,6 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { color } from '../tokens/color.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import type { StatusIconKind, StatusTone } from '../status.ts';
+import { Icon } from './Icon.tsx';
 
 const styles = stylex.create({
   svg: {
@@ -10,6 +11,21 @@ const styles = stylex.create({
     width: space[4],
   },
   lg: {
+    height: space[5],
+    width: space[5],
+  },
+  // A Remix glyph follows the font size, so the box sets it to the mark's size.
+  remix: {
+    alignItems: 'center',
+    display: 'inline-flex',
+    flexShrink: 0,
+    fontSize: space[4],
+    height: space[4],
+    justifyContent: 'center',
+    width: space[4],
+  },
+  remixLg: {
+    fontSize: space[5],
     height: space[5],
     width: space[5],
   },
@@ -32,6 +48,18 @@ export function StatusIcon({
   /** `lg` for the one glyph a page leads with; everything else stays `md`. */
   size?: 'md' | 'lg';
 }) {
+  if (typeof icon === 'object') {
+    return (
+      <span
+        role="img"
+        aria-label={title}
+        title={title}
+        {...stylex.props(styles.remix, styles[tone], size === 'lg' && styles.remixLg)}
+      >
+        <Icon name={icon.remix} />
+      </span>
+    );
+  }
   return (
     <svg
       viewBox="0 0 16 16"

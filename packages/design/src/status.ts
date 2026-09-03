@@ -12,7 +12,19 @@ export type StatusTone =
   | 'majorOutage'
   | 'maintenance';
 
-export type StatusIconKind = 'check' | 'diamond' | 'triangle' | 'stop' | 'wrench' | 'dot';
+/**
+ * A status's glyph: one of the geometric marks a component's status wears,
+ * drawn by `StatusIcon` itself, or a Remix icon by name for a phase or an
+ * impact, where the mark should say what is happening rather than how bad.
+ */
+export type StatusIconKind =
+  | 'check'
+  | 'diamond'
+  | 'triangle'
+  | 'stop'
+  | 'wrench'
+  | 'dot'
+  | { remix: string };
 
 export type StatusPresentation = {
   tone: StatusTone;
@@ -29,17 +41,10 @@ export const componentStatusPresentation: Record<ComponentStatus, StatusPresenta
   MAJOR_OUTAGE: { tone: 'majorOutage', icon: 'stop', label: 'Major outage' },
 };
 
-export const incidentStatusPresentation: Record<IncidentStatus, StatusPresentation> = {
-  INVESTIGATING: { tone: 'partialOutage', icon: 'triangle', label: 'Investigating' },
-  IDENTIFIED: { tone: 'degraded', icon: 'diamond', label: 'Identified' },
-  MONITORING: { tone: 'maintenance', icon: 'wrench', label: 'Monitoring' },
-  RESOLVED: { tone: 'operational', icon: 'check', label: 'Resolved' },
-};
-
 /**
- * The timeline's glyph for each incident status: what the responders were
- * doing at that step, drawn from the Remix set. The pill keeps the geometric
- * status icon; the timeline gets a verb.
+ * The glyph for each incident status: what the responders were doing at that
+ * step, drawn from the Remix set. The pill and the timeline wear the same
+ * one, so a phase reads alike wherever it is named.
  */
 export const incidentStatusGlyph: Record<IncidentStatus, string> = {
   INVESTIGATING: 'search-line',
@@ -48,20 +53,36 @@ export const incidentStatusGlyph: Record<IncidentStatus, string> = {
   RESOLVED: 'check-line',
 };
 
+export const incidentStatusPresentation: Record<IncidentStatus, StatusPresentation> = {
+  INVESTIGATING: {
+    tone: 'partialOutage',
+    icon: { remix: incidentStatusGlyph.INVESTIGATING },
+    label: 'Investigating',
+  },
+  IDENTIFIED: {
+    tone: 'degraded',
+    icon: { remix: incidentStatusGlyph.IDENTIFIED },
+    label: 'Identified',
+  },
+  MONITORING: {
+    tone: 'maintenance',
+    icon: { remix: incidentStatusGlyph.MONITORING },
+    label: 'Monitoring',
+  },
+  RESOLVED: {
+    tone: 'operational',
+    icon: { remix: incidentStatusGlyph.RESOLVED },
+    label: 'Resolved',
+  },
+};
+
 /**
  * A maintenance's status wears the maintenance tone until it is over: the
  * wrench for a window under way, a dot for one still ahead. COMPLETED reads as
  * operational, which is what it left the components as; CANCELLED stays
  * neutral rather than alarming.
  */
-export const maintenanceStatusPresentation: Record<MaintenanceStatus, StatusPresentation> = {
-  SCHEDULED: { tone: 'maintenance', icon: 'dot', label: 'Scheduled' },
-  IN_PROGRESS: { tone: 'maintenance', icon: 'wrench', label: 'In progress' },
-  COMPLETED: { tone: 'operational', icon: 'check', label: 'Completed' },
-  CANCELLED: { tone: 'operational', icon: 'dot', label: 'Cancelled' },
-};
-
-/** The timeline's verb for each maintenance status, drawn from the Remix set. */
+/** The glyph for each maintenance status, drawn from the Remix set; the pill and the timeline share it. */
 export const maintenanceStatusGlyph: Record<MaintenanceStatus, string> = {
   SCHEDULED: 'calendar-event-line',
   IN_PROGRESS: 'tools-line',
@@ -69,10 +90,37 @@ export const maintenanceStatusGlyph: Record<MaintenanceStatus, string> = {
   CANCELLED: 'close-line',
 };
 
+export const maintenanceStatusPresentation: Record<MaintenanceStatus, StatusPresentation> = {
+  SCHEDULED: {
+    tone: 'maintenance',
+    icon: { remix: maintenanceStatusGlyph.SCHEDULED },
+    label: 'Scheduled',
+  },
+  IN_PROGRESS: {
+    tone: 'maintenance',
+    icon: { remix: maintenanceStatusGlyph.IN_PROGRESS },
+    label: 'In progress',
+  },
+  COMPLETED: {
+    tone: 'operational',
+    icon: { remix: maintenanceStatusGlyph.COMPLETED },
+    label: 'Completed',
+  },
+  CANCELLED: {
+    tone: 'operational',
+    icon: { remix: maintenanceStatusGlyph.CANCELLED },
+    label: 'Cancelled',
+  },
+};
+
+/**
+ * How hard an incident hits, as a warning sign that escalates with it: a
+ * note in a circle, a warning triangle, a siren.
+ */
 export const incidentImpactPresentation: Record<IncidentImpact, StatusPresentation> = {
-  MINOR: { tone: 'degraded', icon: 'diamond', label: 'Minor' },
-  MAJOR: { tone: 'partialOutage', icon: 'triangle', label: 'Major' },
-  CRITICAL: { tone: 'majorOutage', icon: 'stop', label: 'Critical' },
+  MINOR: { tone: 'degraded', icon: { remix: 'error-warning-line' }, label: 'Minor' },
+  MAJOR: { tone: 'partialOutage', icon: { remix: 'alert-line' }, label: 'Major' },
+  CRITICAL: { tone: 'majorOutage', icon: { remix: 'alarm-warning-line' }, label: 'Critical' },
 };
 
 export function overallStatusCopy(status: ComponentStatus, siteName: string): string {

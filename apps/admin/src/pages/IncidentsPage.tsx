@@ -17,8 +17,7 @@ import {
   Toast,
   TreeList,
   TreeRow,
-  componentStatusPresentation,
-  impactStatusLabels,
+  impactStatusPresentation,
   incidentStatusPresentation,
 } from '@trustfall/design';
 import type { IncidentStatus } from '@trustfall/shared';
@@ -247,7 +246,7 @@ export function IncidentsPage() {
                     <Text tone="caption">Affected components</Text>
                     <TreeList>
                       {affectedInOrder().map(({ component, status }) => {
-                        const presentation = componentStatusPresentation[status];
+                        const presentation = impactStatusPresentation[status];
                         return (
                           <TreeRow
                             key={component.id}
@@ -257,10 +256,10 @@ export function IncidentsPage() {
                                 <StatusIcon
                                   icon={presentation.icon}
                                   tone={presentation.tone}
-                                  title={impactStatusLabels[status]}
+                                  title={presentation.label}
                                 />
                                 <Text tone="caption" as="span">
-                                  {impactStatusLabels[status]}
+                                  {presentation.label}
                                 </Text>
                               </>
                             }
