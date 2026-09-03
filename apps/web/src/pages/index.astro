@@ -15,6 +15,7 @@ import {
   overallStatusTone,
   type PublicIncident,
   type PublicMaintenance,
+  RecentRow,
   SiteGroup,
   SiteHeading,
   SitePanel,
@@ -187,17 +188,13 @@ const services = [
           </SitePanel>
         ) : (
           recent.map((item) => (
-            <SitePanel as="article" minRows={2.5} step={0.5}>
-              {item.kind === 'incident' ? (
-                <IncidentCard client:load surface="plain" incident={item.incident} />
-              ) : (
-                <MaintenanceCard
-                  client:load
-                  surface="plain"
-                  locale="en"
-                  maintenance={item.maintenance}
-                />
-              )}
+            <SitePanel as="article" density="row">
+              <RecentRow
+                client:load
+                title={item.kind === 'incident' ? item.incident.title : item.maintenance.title}
+                at={item.at}
+                href={item.kind === 'incident' ? item.incident.href : item.maintenance.href}
+              />
             </SitePanel>
           ))
         )}
