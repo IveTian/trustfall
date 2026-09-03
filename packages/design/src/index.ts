@@ -90,6 +90,7 @@ export { ServiceGroupList } from './components/ServiceGroupList.tsx';
 export type { PublicServiceGroup } from './components/ServiceGroupList.tsx';
 export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { CardKind } from './components/CardKind.tsx';
+export { CardTitleLink } from './components/CardTitleLink.tsx';
 export type { CardKindName } from './components/CardKind.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';

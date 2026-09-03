@@ -4,6 +4,7 @@ import { createDb, isSiteInitialized, listIncidents } from '@trustfall/db';
 import { IncidentCard, SiteGroup, SiteHeading, SitePanel, Text } from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
 import Site from '../../layouts/Site.astro';
+import { toIncident } from '../../public-cards.ts';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -41,20 +42,7 @@ if (initialized) {
         ) : (
           incidents.map((incident) => (
             <SitePanel as="article" minRows={2.5} step={0.5}>
-              <IncidentCard
-                client:load
-                surface="plain"
-                incident={{
-                  id: incident.id,
-                  title: incident.title,
-                  status: incident.status,
-                  impact: incident.impact,
-                  startTime: incident.startTime,
-                  resolveTime: incident.resolveTime,
-                  updates: incident.updates,
-                  href: `/incidents/${incident.id}`,
-                }}
-              />
+              <IncidentCard client:load surface="plain" incident={toIncident(incident)} />
             </SitePanel>
           ))
         )}

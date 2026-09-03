@@ -162,8 +162,10 @@
   margin-block-start: calc(var(--tf-site-line) * -1);
 }
 
-/* A whole number of cells, plus one line so the border sits on the grid. */
+/* A whole number of cells, plus one line so the border sits on the grid.
+   Positioned so a card's stretched title link can cover the whole block. */
 .tf-site-panel {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -171,6 +173,23 @@
   width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
   max-width: 100%;
   border: var(--tf-site-line) solid light-dark(#dcdcdc, #333);
+}
+
+/* A block whose card is a link lifts a little under the pointer, wherever on
+   the block it rests. Shadow and timing mirror tokens/shadow.stylex.ts and
+   tokens/const.stylex.ts. */
+.tf-site-panel:has([data-tf-card-link]:hover) {
+  box-shadow: 0 2px 8px light-dark(rgb(0 0 0 / 0.07), rgb(0 0 0 / 0.3));
+}
+
+.tf-site-panel:has([data-tf-card-link]) {
+  transition: box-shadow 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tf-site-panel:has([data-tf-card-link]) {
+    transition: none;
+  }
 }
 
 /* Nested under another block: a cell of canvas open on the start edge. */

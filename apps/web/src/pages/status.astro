@@ -21,6 +21,7 @@ import {
 import { type ComponentStatus, rollupOverallStatus } from '@trustfall/shared';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
+import { incidentHref, maintenanceHref } from '../public-cards.ts';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -63,11 +64,11 @@ if (summary != null) {
         {
           incidents: incidents.map((incident) => ({
             ...incident,
-            href: `/incidents/${incident.id}`,
+            href: incidentHref(incident.id),
           })),
           maintenances: maintenances.map((maintenance) => ({
             ...maintenance,
-            href: '/maintenance',
+            href: maintenanceHref(maintenance.id),
           })),
         },
         now,

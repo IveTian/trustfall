@@ -23,6 +23,7 @@ import {
 import type { ComponentStatus } from '@trustfall/shared';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
+import { toIncident, toMaintenance } from '../public-cards.ts';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -67,29 +68,6 @@ try {
   };
 }
 
-const toIncident = (incident: Incident): PublicIncident => ({
-  id: incident.id,
-  title: incident.title,
-  status: incident.status,
-  impact: incident.impact,
-  startTime: incident.startTime,
-  resolveTime: incident.resolveTime,
-  updates: incident.updates,
-  href: `/incidents/${incident.id}`,
-});
-
-const toMaintenance = (maintenance: Maintenance): PublicMaintenance => ({
-  id: maintenance.id,
-  title: maintenance.title,
-  status: maintenance.status,
-  windowStart: maintenance.windowStart,
-  windowEnd: maintenance.windowEnd,
-  startTime: maintenance.startTime,
-  recurrence: maintenance.recurrence ?? null,
-  timeZone: maintenance.timeZone,
-  affectedComponents: maintenance.components,
-  updates: maintenance.updates,
-});
 
 // Under way now, versus still to open.
 const underWay = summary.activeMaintenances.filter((item) => item.status === 'IN_PROGRESS');
