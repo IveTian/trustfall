@@ -1,0 +1,63 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getSetting, isSiteInitialized, listMaintenances } from '@trustfall/db';
+import { MaintenanceCard, Stack, Text } from '@trustfall/design';
+import UninitializedNotice from '../components/UninitializedNotice.astro';
+import Site from '../layouts/Site.astro';
+
+const db = createDb(env.DB);
+const initialized = await isSiteInitialized(db);
+
+if (initialized) {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+
+let maintenances: Awaited<ReturnType<typeof listMaintenances>>['maintenances'] = [];
+let siteName = 'TrustFall';
+if (initialized) {
+  try {
+    const listed = await listMaintenances(db, { pageSize: 50 });
+    maintenances = listed.maintenances;
+    siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  } catch {
+    maintenances = [];
+  }
+}
+---
+
+{
+  initialized ? (
+    <Site title={`Maintenance · ${siteName}`} siteName={siteName} current="maintenance">
+      <Stack gap={4}>
+        <Text as="h1" tone="display">
+          Maintenance
+        </Text>
+        {maintenances.length === 0 ? (
+          <Text tone="muted">No maintenance windows have been published.</Text>
+        ) : (
+          maintenances.map((maintenance) => (
+            <MaintenanceCard
+              maintenance={{
+                id: maintenance.id,
+                title: maintenance.title,
+                status: maintenance.status,
+                windowStart: maintenance.windowStart,
+                windowEnd: maintenance.windowEnd,
+                startTime: maintenance.startTime,
+                recurrence: maintenance.recurrence ?? null,
+                timeZone: maintenance.timeZone,
+                affectedComponents: maintenance.components,
+                updates: maintenance.updates,
+              }}
+            />
+          ))
+        )}
+      </Stack>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

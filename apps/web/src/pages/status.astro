@@ -1,0 +1,33 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getSetting, isSiteInitialized } from '@trustfall/db';
+import { EmptyState } from '@trustfall/design';
+import UninitializedNotice from '../components/UninitializedNotice.astro';
+import Site from '../layouts/Site.astro';
+
+const db = createDb(env.DB);
+const initialized = await isSiteInitialized(db);
+
+let siteName = 'TrustFall';
+if (initialized) {
+  siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+---
+
+{
+  initialized ? (
+    <Site title={`Status · ${siteName}`} siteName={siteName} current="status">
+      <EmptyState
+        icon="pulse-line"
+        title="Status is on its way"
+        description="Per-component status will live here. Until then, the overview shows the current state."
+      />
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

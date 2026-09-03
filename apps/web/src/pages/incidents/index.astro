@@ -1,9 +1,9 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, isSiteInitialized, listIncidents } from '@trustfall/db';
-import { IncidentCard, SiteChrome, Stack, Text } from '@trustfall/design';
+import { IncidentCard, Stack, Text } from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
-import Base from '../../layouts/Base.astro';
+import Site from '../../layouts/Site.astro';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -29,10 +29,9 @@ if (initialized) {
 }
 ---
 
-<Base title={initialized ? `Incident history · ${siteName}` : siteName}>
-  {
-    initialized ? (
-      <SiteChrome siteName={siteName}>
+{
+  initialized ? (
+    <Site title={`Incident history · ${siteName}`} siteName={siteName} current="history">
         <Stack gap={4}>
           <Text as="h1" tone="display">Incident history</Text>
           {
@@ -56,9 +55,8 @@ if (initialized) {
             )
           }
         </Stack>
-      </SiteChrome>
-    ) : (
-      <UninitializedNotice />
-    )
-  }
-</Base>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

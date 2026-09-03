@@ -6,13 +6,12 @@ import {
   IncidentCard,
   MaintenanceCard,
   OverallStatusBanner,
-  SiteChrome,
   Stack,
   Text,
 } from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
-import Base from '../layouts/Base.astro';
+import Site from '../layouts/Site.astro';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -40,10 +39,14 @@ try {
 }
 ---
 
-<Base title={summary.siteName} description={summary.siteDescription}>
-  {
-    initialized ? (
-      <SiteChrome siteName={summary.siteName}>
+{
+  initialized ? (
+    <Site
+      title={summary.siteName}
+      description={summary.siteDescription}
+      siteName={summary.siteName}
+      current="overview"
+    >
         <Stack gap={5}>
           <OverallStatusBanner
             status={summary.overallStatus}
@@ -131,9 +134,8 @@ try {
             ) : null
           }
         </Stack>
-      </SiteChrome>
-    ) : (
-      <UninitializedNotice />
-    )
-  }
-</Base>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

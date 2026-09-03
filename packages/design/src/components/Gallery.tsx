@@ -22,6 +22,7 @@ import { RichTextBody } from './RichTextBody.tsx';
 import { RichTextEditor } from './RichTextEditor.tsx';
 import { Panel, PanelHeader, PanelList, PanelRow } from './Panel.tsx';
 import { SectionNav, SectionNavItem } from './SectionNav.tsx';
+import { SiteNav } from './SiteNav.tsx';
 import { componentStatusPresentation } from '../status.ts';
 import { StatusIcon } from './StatusIcon.tsx';
 import { TreeChevron, TreeEmpty, TreeList, TreeNest, TreeRow } from './TreeList.tsx';
@@ -496,6 +497,28 @@ export function DesignGallery() {
           startTime={SAMPLE_START}
           endTime={SAMPLE_START + 50 * 60 * 1000}
           now={SAMPLE_START + 50 * 60 * 1000}
+        />
+      </Stack>
+
+      <Stack gap={3}>
+        <Text as="h2" tone="title">
+          Site nav
+        </Text>
+        <Text tone="muted">
+          The bar every public page wears, in the canvas&apos;s own color: the site name, the pages,
+          and the reader&apos;s clock and appearance controls. Shown here as a specimen, so it does
+          not stick.
+        </Text>
+        <SiteNav
+          sticky={false}
+          siteName="TrustFall"
+          current="overview"
+          items={[
+            { id: 'overview', label: 'Overview', href: '#' },
+            { id: 'status', label: 'Status', href: '#' },
+            { id: 'history', label: 'History', href: '#' },
+            { id: 'maintenance', label: 'Maintenance', href: '#' },
+          ]}
         />
       </Stack>
 

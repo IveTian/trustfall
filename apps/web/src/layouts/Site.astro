@@ -1,0 +1,30 @@
+---
+import { SiteShell } from '@trustfall/design';
+import { SiteNavIsland } from '../components/SiteNavIsland.tsx';
+import { SITE_NAV, type SiteNavId } from '../nav.ts';
+import Base from './Base.astro';
+
+type Props = {
+  title: string;
+  description?: string;
+  siteName: string;
+  /** Which bar item the page is; omitted for pages the bar does not list. */
+  current?: SiteNavId;
+};
+
+const { title, description, siteName, current } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <SiteShell>
+    <SiteNavIsland
+      slot="nav"
+      client:load
+      transition:persist="site-nav"
+      siteName={siteName}
+      items={SITE_NAV}
+      current={current}
+    />
+    <slot />
+  </SiteShell>
+</Base>

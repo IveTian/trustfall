@@ -1,5 +1,5 @@
 import type { MaintenanceRecurrence } from '@trustfall/shared';
-import { timeZoneLabel } from './components/IncidentTimeline.tsx';
+import { timeZoneLabel } from './time-zone.ts';
 
 /**
  * Words for a maintenance schedule, shared by the public card and the

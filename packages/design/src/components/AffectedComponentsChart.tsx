@@ -9,6 +9,7 @@ import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
 import { StatusIcon } from './StatusIcon.tsx';
+import { useTimeZone } from '../time-zone.ts';
 
 export type ChartComponent = {
   id: string;
@@ -36,17 +37,22 @@ export function AffectedComponentsChart({
   updates,
   startTime,
   endTime,
-  timeZone,
+  timeZone: pinnedTimeZone,
+  locale,
   now,
 }: {
   components: ChartComponent[];
   updates: ChartUpdate[];
   startTime: number;
   endTime?: number | null;
+  /** IANA zone the axis is stamped in; the reader's preference when omitted. */
   timeZone?: string;
+  /** Formatting locale; the viewer's own when omitted. A cached page pins it. */
+  locale?: string;
   /** The clock the open bar runs to. Captured by the caller: render stays pure. */
   now: number;
 }) {
+  const timeZone = useTimeZone(pinnedTimeZone);
   const end = endTime ?? Math.max(now, startTime);
   const span = Math.max(end - startTime, MIN_SPAN_MS);
   const chartStart = startTime - span * LEAD_RATIO;
@@ -54,7 +60,7 @@ export function AffectedComponentsChart({
   const total = chartEnd - chartStart;
   const percent = (at: number) => `${((at - chartStart) / total) * 100}%`;
 
-  const stamp = new Intl.DateTimeFormat(undefined, {
+  const stamp = new Intl.DateTimeFormat(locale, {
     timeZone,
     month: 'short',
     day: '2-digit',

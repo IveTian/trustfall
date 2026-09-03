@@ -14,6 +14,7 @@ import { control, mesh } from '../tokens/const.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
+import { timeZoneLabel, useTimeZone } from '../time-zone.ts';
 import { Icon } from './Icon.tsx';
 import { RichTextBody } from './RichTextBody.tsx';
 import { StatusIcon } from './StatusIcon.tsx';
@@ -44,8 +45,10 @@ export type TimelineKind = 'incident' | 'maintenance';
  * takes incident statuses, a maintenance timeline maintenance statuses.
  */
 export type IncidentTimelineProps = {
-  /** IANA zone the clock times are shown in; the viewer's own when omitted. */
+  /** IANA zone the clock times are shown in; the reader's preference when omitted. */
   timeZone?: string;
+  /** Formatting locale; the viewer's own when omitted. A cached page pins it. */
+  locale?: string;
 } & (
   | {
       kind?: 'incident';
@@ -75,18 +78,6 @@ function presentationFor(
   return { presentation: incidentStatusPresentation[key], glyph: incidentStatusGlyph[key] };
 }
 
-/** "GMT+8" for the zone the times are shown in; the IANA name when unknown. */
-export function timeZoneLabel(timeZone: string | undefined, at: number): string {
-  try {
-    const part = new Intl.DateTimeFormat('en', { timeZone, timeZoneName: 'shortOffset' })
-      .formatToParts(new Date(at))
-      .find((item) => item.type === 'timeZoneName');
-    return part?.value ?? timeZone ?? 'local time';
-  } catch {
-    return timeZone ?? 'local time';
-  }
-}
-
 function dayKey(at: number, timeZone: string | undefined): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -103,18 +94,19 @@ function dayKey(at: number, timeZone: string | undefined): string {
  * behind. `renderActions` puts a console's per-entry controls on the end edge.
  */
 export function IncidentTimeline(props: IncidentTimelineProps) {
-  const { timeZone } = props;
+  const timeZone = useTimeZone(props.timeZone);
+  const { locale } = props;
   // The union is resolved once here; the body only needs "some update" and
   // the presentation lookup keyed by the kind.
   const updates: AnyUpdate[] = props.updates;
   const renderActions = props.renderActions as ((update: AnyUpdate) => ReactNode) | undefined;
-  const clock = new Intl.DateTimeFormat(undefined, {
+  const clock = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
-  const day = new Intl.DateTimeFormat(undefined, {
+  const day = new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: 'long',
     day: 'numeric',

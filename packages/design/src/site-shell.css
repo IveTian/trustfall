@@ -1,0 +1,102 @@
+/* Must stay in lockstep with tokens/color.stylex.ts, tokens/mesh.ts and tokens/space.stylex.ts. */
+
+.tf-site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background-color: light-dark(#efefef, #141414);
+}
+
+/*
+ * The mesh starts half a cell under the bar, which is exactly where the panel's
+ * top edge sits, so the first horizontal line is the panel's own border.
+ * Horizontally, until site-shell-runtime measures, a tile is centred on the
+ * page: with an odd number of columns the panel's edges then land on lines.
+ */
+.tf-site-main {
+  --tf-site-cell: 96px;
+  --tf-site-line: 1px;
+  --tf-site-cols: 9;
+  --tf-site-origin-x: 50%;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  align-items: center;
+  width: 100%;
+  padding-block: calc(var(--tf-site-cell) / 2);
+  background-image:
+    linear-gradient(
+      to right,
+      light-dark(#dcdcdc, #333) var(--tf-site-line),
+      transparent var(--tf-site-line)
+    ),
+    linear-gradient(
+      to bottom,
+      light-dark(#dcdcdc, #333) var(--tf-site-line),
+      transparent var(--tf-site-line)
+    );
+  background-size: var(--tf-site-cell) var(--tf-site-cell);
+  background-position: var(--tf-site-origin-x) calc(var(--tf-site-cell) / 2);
+}
+
+/* A whole number of cells, plus one line so the border sits on the grid. */
+.tf-site-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
+  max-width: 100%;
+  background-color: light-dark(#fff, #1a1a1a);
+  border: var(--tf-site-line) solid light-dark(#dcdcdc, #333);
+}
+
+.tf-site-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 32px;
+}
+
+/* After site-shell-runtime measures: the mesh origins at the panel's left edge. */
+.tf-site-main[data-tf-site-ready] {
+  --tf-site-origin-x: var(--tf-site-panel-left);
+  align-items: flex-start;
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-panel {
+  width: calc(var(--tf-site-panel-width) + var(--tf-site-line));
+  max-width: none;
+  min-height: calc(var(--tf-site-panel-height) + var(--tf-site-line));
+  margin-inline-start: var(--tf-site-panel-left);
+}
+
+/*
+ * Crossing from one public page to another is a view transition (the web app
+ * runs Astro's client router). Only the bar's active pill, named in
+ * SiteNav.tsx, travels from where it was to where it now is; the labels are
+ * lifted with it so they stay legible on top. Duration and easing mirror
+ * `motion.slow` and `motion.ease` in tokens/const.stylex.ts.
+ */
+[data-tf-site-nav-label] {
+  view-transition-class: tf-site-nav-label;
+}
+
+::view-transition-group(tf-site-nav-active) {
+  z-index: 1;
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+::view-transition-group(.tf-site-nav-label) {
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(tf-site-nav-active),
+  ::view-transition-old(tf-site-nav-active),
+  ::view-transition-new(tf-site-nav-active) {
+    animation: none;
+  }
+}
