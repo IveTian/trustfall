@@ -278,15 +278,7 @@ function InviteLinksPanel({ onToast }: { onToast: (message: string) => void }) {
                     }
                     end={
                       <Stack direction="horizontal" gap={2} wrap>
-                        <Badge
-                          tone={
-                            link.state === 'ACTIVE'
-                              ? 'operational'
-                              : link.state === 'EXHAUSTED'
-                                ? 'degraded'
-                                : 'neutral'
-                          }
-                        >
+                        <Badge>
                           {link.state === 'ACTIVE'
                             ? 'Active'
                             : link.state === 'EXHAUSTED'
