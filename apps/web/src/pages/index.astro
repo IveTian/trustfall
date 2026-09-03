@@ -123,14 +123,12 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
     description: component.description,
     status: component.status as ComponentStatus,
   }));
-// Every group with something in it, the ungrouped rest last as "Other".
+// Every service in one run, grouped ones first under their group's name.
 const services = [
-  ...summary.componentGroups
-    .filter((group) => group.components.length > 0)
-    .map((group) => ({ displayName: group.displayName, components: toComponents(group.components) })),
-  ...(summary.ungroupedComponents.length > 0
-    ? [{ displayName: 'Other', components: toComponents(summary.ungroupedComponents) }]
-    : []),
+  ...summary.componentGroups.flatMap((group) =>
+    toComponents(group.components).map((component) => ({ ...component, group: group.displayName })),
+  ),
+  ...toComponents(summary.ungroupedComponents).map((component) => ({ ...component, group: null })),
 ];
 ---
 
@@ -160,26 +158,20 @@ const services = [
           <Text tone="muted">No components have been published yet.</Text>
         </SitePanel>
       )}
-      {services.map((group) => (
-        <>
-          <SiteHeading as="h3" tone="group">
-            {group.displayName}
-          </SiteHeading>
-          <SiteGroup as="ul" spacing="cell">
-            {group.components.map((component) => (
-              <SitePanel as="li" density="row">
-                <ComponentRow
-                  as="div"
-                  bare
-                  displayName={component.displayName}
-                  description={component.description}
-                  status={component.status}
-                />
-              </SitePanel>
-            ))}
-          </SiteGroup>
-        </>
-      ))}
+      <SiteGroup as="ul" spacing="cell">
+        {services.map((service) => (
+          <SitePanel as="li" density="row">
+            <ComponentRow
+              as="div"
+              bare
+              group={service.group}
+              displayName={service.displayName}
+              description={service.description}
+              status={service.status}
+            />
+          </SitePanel>
+        ))}
+      </SiteGroup>
 
       <SiteHeading>Active incidents and maintenance</SiteHeading>
       <SiteGroup>

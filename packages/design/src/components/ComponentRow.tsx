@@ -3,6 +3,7 @@ import type { ComponentStatus } from '@trustfall/shared';
 import { color } from '../tokens/color.stylex.ts';
 import { mesh } from '../tokens/const.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
+import { Icon } from './Icon.tsx';
 import { StatusPill } from './StatusPill.tsx';
 import { Text } from './Text.tsx';
 
@@ -29,10 +30,28 @@ const styles = stylex.create({
   copy: {
     flex: '1 1 auto',
   },
+  // "Group › Service" on one line: the group quiet, the service the name.
+  name: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: space[1],
+  },
+  group: {
+    color: color.textMuted,
+    fontWeight: 'inherit',
+  },
+  chevron: {
+    alignItems: 'center',
+    color: color.textMuted,
+    display: 'flex',
+    flexShrink: 0,
+  },
 });
 
 export function ComponentRow({
   displayName,
+  group,
   description,
   status,
   last = false,
@@ -40,6 +59,8 @@ export function ComponentRow({
   bare = false,
 }: {
   displayName: string;
+  /** The group the service belongs to, written before its name as "Group › Service". */
+  group?: string | null;
   description?: string | null;
   status: ComponentStatus;
   last?: boolean;
@@ -52,7 +73,17 @@ export function ComponentRow({
     <Tag {...stylex.props(styles.row, last && styles.last, bare && styles.bare)}>
       <div {...stylex.props(styles.copy)}>
         <Text as="h3" tone="title">
-          {displayName}
+          {group ? (
+            <span {...stylex.props(styles.name)}>
+              <span {...stylex.props(styles.group)}>{group}</span>
+              <span {...stylex.props(styles.chevron)} aria-hidden="true">
+                <Icon name="arrow-right-s-line" size={16} />
+              </span>
+              <span>{displayName}</span>
+            </span>
+          ) : (
+            displayName
+          )}
         </Text>
         {description ? <Text tone="caption">{description}</Text> : null}
       </div>
