@@ -150,7 +150,7 @@ export async function listActiveMaintenances(
   return attachMaintenanceRelations(db, rows);
 }
 
-export async function getMaintenance(
+async function readMaintenance(
   db: Database,
   id: string,
 ): Promise<MaintenanceWithRelations | undefined> {
@@ -162,8 +162,16 @@ export async function getMaintenance(
   return withRelations;
 }
 
+export async function getMaintenance(
+  db: Database,
+  id: string,
+): Promise<MaintenanceWithRelations | undefined> {
+  await reconcileMaintenances(db);
+  return readMaintenance(db, id);
+}
+
 async function loadOrThrow(db: Database, id: string): Promise<MaintenanceWithRelations> {
-  const row = await getMaintenance(db, id);
+  const row = await readMaintenance(db, id);
   if (!row) {
     throw new Error('Failed to load maintenance.');
   }
@@ -226,6 +234,46 @@ async function releaseComponents(
     .where(and(inArray(components.id, release), eq(components.status, 'UNDER_MAINTENANCE')));
 }
 
+/**
+ * After an incident lets go of components, a live window takes them back;
+ * anything else returns to operational.
+ */
+export async function restoreComponentsFromIncident(
+  db: Database,
+  componentIds: string[],
+  at: number,
+): Promise<void> {
+  if (componentIds.length === 0) {
+    return;
+  }
+  const stillCovered = await db
+    .select({ componentId: maintenanceComponents.componentId })
+    .from(maintenanceComponents)
+    .innerJoin(maintenances, eq(maintenances.id, maintenanceComponents.maintenanceId))
+    .where(
+      and(
+        inArray(maintenanceComponents.componentId, componentIds),
+        eq(maintenances.status, 'IN_PROGRESS'),
+      ),
+    )
+    .all();
+  const covered = new Set(stillCovered.map((row) => row.componentId));
+  const maintain = componentIds.filter((id) => covered.has(id));
+  const release = componentIds.filter((id) => !covered.has(id));
+  if (maintain.length) {
+    await db
+      .update(components)
+      .set({ status: 'UNDER_MAINTENANCE', updateTime: at })
+      .where(inArray(components.id, maintain));
+  }
+  if (release.length) {
+    await db
+      .update(components)
+      .set({ status: 'OPERATIONAL', updateTime: at })
+      .where(inArray(components.id, release));
+  }
+}
+
 async function insertUpdate(
   db: Database,
   maintenanceId: string,
@@ -247,6 +295,37 @@ async function insertUpdate(
 }
 
 /**
+ * Writes a window transition only if this occurrence is still in the status
+ * we observed. Overlapping reconciles otherwise each insert a timeline row.
+ */
+async function claimWindow(
+  db: Database,
+  row: MaintenanceWithRelations,
+  values: Partial<MaintenanceRow>,
+): Promise<boolean> {
+  const result = await db
+    .update(maintenances)
+    .set(values)
+    .where(
+      and(
+        eq(maintenances.id, row.id),
+        eq(maintenances.status, row.status),
+        eq(maintenances.windowStart, row.windowStart),
+      ),
+    );
+  return (result.meta.changes ?? 0) > 0;
+}
+
+async function latestUpdate(db: Database, id: string): Promise<MaintenanceUpdateRow> {
+  const current = await readMaintenance(db, id);
+  const update = current?.updates[0];
+  if (!update) {
+    throw new Error('Failed to load maintenance.');
+  }
+  return update;
+}
+
+/**
  * Opens the tracked window. Started by hand ahead of time, the window keeps
  * its planned start — that is what identifies the occurrence, so closing it
  * moves a series past it rather than back onto it — and the timeline entry
@@ -262,10 +341,10 @@ async function openWindow(
 ): Promise<MaintenanceUpdateRow> {
   const duration = row.endTime - row.startTime;
   const windowEnd = row.windowEnd > at ? row.windowEnd : at + duration;
-  await db
-    .update(maintenances)
-    .set({ status: 'IN_PROGRESS', windowEnd, updateTime: at })
-    .where(eq(maintenances.id, row.id));
+  const claimed = await claimWindow(db, row, { status: 'IN_PROGRESS', windowEnd, updateTime: at });
+  if (!claimed) {
+    return latestUpdate(db, row.id);
+  }
   await coverComponents(
     db,
     row.components.map((item) => item.componentId),
@@ -286,6 +365,17 @@ async function closeWindow(
   body: string,
   automatic: boolean,
 ): Promise<MaintenanceUpdateRow> {
+  const next = row.recurrence ? nextWindow(scheduleOf(row), at, row.windowStart) : undefined;
+  const claimed = await claimWindow(
+    db,
+    row,
+    next
+      ? { status: 'SCHEDULED', windowStart: next.start, windowEnd: next.end, updateTime: at }
+      : { status: 'COMPLETED', updateTime: at },
+  );
+  if (!claimed) {
+    return latestUpdate(db, row.id);
+  }
   if (row.status === 'IN_PROGRESS') {
     await releaseComponents(
       db,
@@ -294,15 +384,6 @@ async function closeWindow(
       at,
     );
   }
-  const next = row.recurrence ? nextWindow(scheduleOf(row), at, row.windowStart) : undefined;
-  await db
-    .update(maintenances)
-    .set(
-      next
-        ? { status: 'SCHEDULED', windowStart: next.start, windowEnd: next.end, updateTime: at }
-        : { status: 'COMPLETED', updateTime: at },
-    )
-    .where(eq(maintenances.id, row.id));
   return insertUpdate(db, row.id, 'COMPLETED', body, automatic, at);
 }
 
@@ -471,7 +552,8 @@ export async function updateMaintenance(
   const now = nowMs();
   const scheduleChanged =
     patch.startTime !== undefined || patch.recurrence !== undefined || patch.timeZone !== undefined;
-  const durationChanged = patch.durationMs !== undefined;
+  const existingDuration = existing.endTime - existing.startTime;
+  const durationChanged = patch.durationMs !== undefined && patch.durationMs !== existingDuration;
 
   if (!isActiveMaintenanceStatus(existing.status) && (scheduleChanged || durationChanged)) {
     throw new MaintenanceStateError('A finished maintenance cannot be rescheduled.');
@@ -497,7 +579,8 @@ export async function updateMaintenance(
     next.recurrence = recurrence;
     next.timeZone = timeZone;
     if (existing.status === 'IN_PROGRESS') {
-      next.windowEnd = existing.windowStart + duration;
+      const plannedEnd = existing.windowStart + duration;
+      next.windowEnd = plannedEnd > now ? plannedEnd : now + duration;
     } else {
       const window = nextWindow(
         { startTime, endTime: startTime + duration, recurrence, timeZone },
@@ -593,10 +676,17 @@ export async function addMaintenanceUpdate(
   let update: MaintenanceUpdateRow;
 
   if (input.status === existing.status) {
-    if (!input.body) {
-      throw new MaintenanceStateError('A note needs a message.');
+    if (input.body) {
+      update = await insertUpdate(db, id, input.status, input.body, false, now);
+    } else {
+      // getMaintenance reconciles first, so Start/Complete against a window
+      // the clock already moved lands here with no message.
+      const latest = existing.updates[0];
+      if (!latest?.automatic || latest.status !== input.status) {
+        throw new MaintenanceStateError('A note needs a message.');
+      }
+      update = latest;
     }
-    update = await insertUpdate(db, id, input.status, input.body, false, now);
   } else if (input.status === 'CANCELLED' && isActiveMaintenanceStatus(existing.status)) {
     update = await cancel(db, existing, now, input.body || MAINTENANCE_COPY.cancelled);
   } else if (input.status === 'IN_PROGRESS' && existing.status === 'SCHEDULED') {

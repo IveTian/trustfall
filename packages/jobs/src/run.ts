@@ -26,20 +26,28 @@ export async function runJob(env: Env, job: Job): Promise<void> {
 }
 
 /**
+ * Point the precise timer at the next window boundary. Creates and edits call
+ * this so a newly scheduled window does not wait for the cron heartbeat.
+ * Inline delivery has no timer, so there is nothing to arm.
+ */
+export async function armMaintenanceClock(env: Env): Promise<void> {
+  if (deliveryMode(env) === 'inline') {
+    return;
+  }
+  const boundary = await nextMaintenanceBoundary(createDb(env.DB));
+  if (boundary === undefined) {
+    return;
+  }
+  await enqueue(env, 'MAINTENANCE_TRANSITION', {}, { runAt: boundary, id: MAINTENANCE_CLOCK_ID });
+}
+
+/**
  * Opens and closes maintenance windows whose time has come, then re-arms
  * itself for the next boundary. Reads reconcile too, so this is what keeps the
  * page right when nobody is looking. Inline delivery cannot wait, so there it
  * runs once and leaves the cron sweep to call again.
  */
 async function runMaintenanceClock(env: Env): Promise<void> {
-  const db = createDb(env.DB);
-  await reconcileMaintenances(db);
-  if (deliveryMode(env) === 'inline') {
-    return;
-  }
-  const boundary = await nextMaintenanceBoundary(db);
-  if (boundary === undefined) {
-    return;
-  }
-  await enqueue(env, 'MAINTENANCE_TRANSITION', {}, { runAt: boundary, id: MAINTENANCE_CLOCK_ID });
+  await reconcileMaintenances(createDb(env.DB));
+  await armMaintenanceClock(env);
 }

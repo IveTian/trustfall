@@ -200,7 +200,9 @@ export function MaintenanceForm({
             until: recurrence.until == null ? null : new Date(recurrence.until).toISOString(),
           }
         : null;
-      if (value.mode !== 'NOW' && value.startsAt != null) {
+      if (value.mode === 'NOW') {
+        payload.starts_at = new Date().toISOString();
+      } else if (value.startsAt != null) {
         payload.starts_at = new Date(value.startsAt).toISOString();
       }
     }

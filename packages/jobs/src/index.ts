@@ -1,8 +1,9 @@
 import { type DeliveryMode, deliveryMode, type Job, type JobType } from './types.ts';
-import { runJob } from './run.ts';
+import { armMaintenanceClock, runJob } from './run.ts';
 
 export { deliveryMode } from './types.ts';
 export type { DeliveryMode, Job, JobType } from './types.ts';
+export { armMaintenanceClock };
 
 const DISPATCHER_KEY = 'singleton';
 

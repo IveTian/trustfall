@@ -20,7 +20,7 @@ import {
   settings,
 } from './schema.ts';
 import type { Database } from './client.ts';
-import { listActiveMaintenances } from './maintenances.ts';
+import { listActiveMaintenances, restoreComponentsFromIncident } from './maintenances.ts';
 
 export type ComponentGroupRow = typeof componentGroups.$inferSelect;
 export type ComponentRow = typeof components.$inferSelect;
@@ -545,13 +545,11 @@ export async function resolveIncident(
 }
 
 async function restoreIncidentComponents(db: Database, incident: IncidentWithRelations) {
-  const now = nowMs();
-  for (const affected of incident.components) {
-    await db
-      .update(components)
-      .set({ status: 'OPERATIONAL', updateTime: now })
-      .where(eq(components.id, affected.componentId));
-  }
+  await restoreComponentsFromIncident(
+    db,
+    incident.components.map((affected) => affected.componentId),
+    nowMs(),
+  );
 }
 
 export async function getSummary(db: Database) {

@@ -7,6 +7,7 @@ import {
   paginate,
   updateMaintenance,
 } from '@trustfall/db';
+import { armMaintenanceClock } from '@trustfall/jobs';
 import { isValidTimeZone, type MaintenanceRecurrence } from '@trustfall/shared';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { db } from '../bindings.ts';
@@ -197,6 +198,7 @@ export function maintenanceRoutes() {
         recurrence: toRecurrence(body.recurrence),
         timeZone: body.time_zone ?? 'UTC',
       });
+      await armMaintenanceClock(c.env);
       return c.json(presentMaintenance(maintenance), 201, {
         Location: createdLocation(c, maintenance.id),
       });
@@ -292,6 +294,7 @@ export function maintenanceRoutes() {
       if (!maintenance) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Maintenance not found.');
       }
+      await armMaintenanceClock(c.env);
       return c.json(presentMaintenance(maintenance), 200, {
         ETag: etagFor(maintenance.updateTime),
       });
@@ -320,6 +323,7 @@ export function maintenanceRoutes() {
       const existing = await loadMaintenance(maintenanceId);
       checkIfMatch(c, etagFor(existing.updateTime));
       await deleteMaintenance(db(), maintenanceId);
+      await armMaintenanceClock(c.env);
       return c.body(null, 204);
     },
   );
@@ -406,6 +410,7 @@ export function maintenanceRoutes() {
       if (!result) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Maintenance not found.');
       }
+      await armMaintenanceClock(c.env);
       return c.json(presentMaintenanceUpdate(result.update), 201, {
         Location: createdLocation(c, result.update.id),
       });

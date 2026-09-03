@@ -90,11 +90,13 @@ export function describeRecurrence(
 
   let on = '';
   if (recurrence.frequency === 'WEEKLY') {
-    const weekday = new Intl.DateTimeFormat(undefined, { timeZone, weekday: 'long' });
+    const weekday = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', weekday: 'long' });
     const days = recurrence.byWeekday?.length
       ? recurrence.byWeekday
       : [weekdayIndex(anchor, timeZone)];
-    on = ` on ${joinNames(days.map((day) => weekday.format(new Date(2026, 8, 6 + day))))}`;
+    // Samples are UTC midnights of a week that starts on Sunday, so the
+    // weekday is the index itself and does not follow the viewer's zone.
+    on = ` on ${joinNames(days.map((day) => weekday.format(new Date(Date.UTC(2026, 8, 6 + day)))))}`;
   } else if (recurrence.frequency === 'MONTHLY') {
     const day = Number(
       new Intl.DateTimeFormat('en-US', { timeZone, day: 'numeric' }).format(anchor),
