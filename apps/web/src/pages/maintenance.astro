@@ -41,7 +41,9 @@ if (initialized) {
           maintenances.map((maintenance) => (
             <SitePanel as="article">
               <MaintenanceCard
+                client:load
                 surface="plain"
+                locale="en"
                 maintenance={{
                   id: maintenance.id,
                   title: maintenance.title,

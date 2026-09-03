@@ -158,7 +158,7 @@ const services = [
           <Text tone="muted">No components have been published yet.</Text>
         </SitePanel>
       )}
-      <SiteGroup as="ul" spacing="half">
+      <SiteGroup as="ul">
         {services.map((service) => (
           <SitePanel as="li" density="row">
             <ComponentRow
@@ -182,12 +182,17 @@ const services = [
         ) : null}
         {summary.activeIncidents.map((incident) => (
           <SitePanel as="article">
-            <IncidentCard surface="plain" incident={toIncident(incident)} />
+            <IncidentCard client:load surface="plain" incident={toIncident(incident)} />
           </SitePanel>
         ))}
         {underWay.map((maintenance) => (
           <SitePanel as="article">
-            <MaintenanceCard surface="plain" maintenance={toMaintenance(maintenance)} />
+            <MaintenanceCard
+              client:load
+              surface="plain"
+              locale="en"
+              maintenance={toMaintenance(maintenance)}
+            />
           </SitePanel>
         ))}
       </SiteGroup>
@@ -202,9 +207,14 @@ const services = [
           recent.map((item) => (
             <SitePanel as="article">
               {item.kind === 'incident' ? (
-                <IncidentCard surface="plain" incident={item.incident} />
+                <IncidentCard client:load surface="plain" incident={item.incident} />
               ) : (
-                <MaintenanceCard surface="plain" maintenance={item.maintenance} />
+                <MaintenanceCard
+                  client:load
+                  surface="plain"
+                  locale="en"
+                  maintenance={item.maintenance}
+                />
               )}
             </SitePanel>
           ))
@@ -220,7 +230,12 @@ const services = [
         ) : (
           scheduled.map((maintenance) => (
             <SitePanel as="article">
-              <MaintenanceCard surface="plain" maintenance={toMaintenance(maintenance)} />
+              <MaintenanceCard
+                client:load
+                surface="plain"
+                locale="en"
+                maintenance={toMaintenance(maintenance)}
+              />
             </SitePanel>
           ))
         )}

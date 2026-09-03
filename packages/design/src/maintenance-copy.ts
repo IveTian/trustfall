@@ -7,8 +7,13 @@ import { timeZoneLabel } from './time-zone.ts';
  */
 
 /** "Sep 6, 2026, 02:00 – 04:00 (GMT+8)": one window, in the schedule's zone. */
-export function formatWindow(start: number, end: number, timeZone?: string): string {
-  const formatter = new Intl.DateTimeFormat(undefined, {
+export function formatWindow(
+  start: number,
+  end: number,
+  timeZone?: string,
+  locale?: string,
+): string {
+  const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -21,8 +26,8 @@ export function formatWindow(start: number, end: number, timeZone?: string): str
 }
 
 /** "Sep 6, 2026, 04:00 (GMT+8)": one instant, in the schedule's zone. */
-export function formatInstant(at: number, timeZone?: string): string {
-  const formatter = new Intl.DateTimeFormat(undefined, {
+export function formatInstant(at: number, timeZone?: string, locale?: string): string {
+  const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -82,6 +87,7 @@ export function describeRecurrence(
   recurrence: MaintenanceRecurrence,
   anchor: number,
   timeZone?: string,
+  locale?: string,
 ): string {
   const interval = Math.max(1, recurrence.interval);
   const unit =
@@ -90,7 +96,7 @@ export function describeRecurrence(
 
   let on = '';
   if (recurrence.frequency === 'WEEKLY') {
-    const weekday = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', weekday: 'long' });
+    const weekday = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'long' });
     const days = recurrence.byWeekday?.length
       ? recurrence.byWeekday
       : [weekdayIndex(anchor, timeZone)];
@@ -104,7 +110,7 @@ export function describeRecurrence(
     on = ` on the ${ordinal(day)}`;
   }
 
-  const clock = new Intl.DateTimeFormat(undefined, {
+  const clock = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
@@ -114,7 +120,7 @@ export function describeRecurrence(
   const until =
     recurrence.until == null
       ? ''
-      : ` until ${new Intl.DateTimeFormat(undefined, { timeZone, dateStyle: 'medium' }).format(recurrence.until)}`;
+      : ` until ${new Intl.DateTimeFormat(locale, { timeZone, dateStyle: 'medium' }).format(recurrence.until)}`;
 
   return `${every}${on}${at}${until}`;
 }

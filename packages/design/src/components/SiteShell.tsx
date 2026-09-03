@@ -111,14 +111,15 @@ export function SiteHeading({
 export function SiteGroup({
   children,
   as: Tag = 'div',
-  spacing = 'shared',
+  spacing = 'half',
 }: {
   children: ReactNode;
   as?: 'div' | 'ul';
   /**
-   * `shared`: the blocks share a grid line. `cell`: a cell of canvas between
-   * them. `half`: half a cell — every second block then sits half a cell off
-   * the lines, and the run is padded so what follows is back on one.
+   * `half`: half a cell of canvas between the blocks — every second block
+   * then sits half a cell off the lines, and the run is padded so what
+   * follows is back on one. `cell`: a whole cell. `shared`: the blocks share
+   * a grid line.
    */
   spacing?: 'shared' | 'cell' | 'half';
 }) {

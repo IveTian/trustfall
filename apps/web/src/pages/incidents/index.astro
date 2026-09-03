@@ -42,6 +42,7 @@ if (initialized) {
           incidents.map((incident) => (
             <SitePanel as="article">
               <IncidentCard
+                client:load
                 surface="plain"
                 incident={{
                   id: incident.id,
