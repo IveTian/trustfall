@@ -3,6 +3,7 @@ import {
   createInviteLink,
   getInviteLink,
   getInviteLinkByToken,
+  hasUserWithEmail,
   inviteLinkState,
   listInviteLinks,
   paginate,
@@ -55,6 +56,10 @@ function unusableInvite(state: ReturnType<typeof inviteLinkState>): never {
   throw new ApiError(ProblemType.FAILED_PRECONDITION, detail);
 }
 
+function accountAlreadyExists(): never {
+  throw new ApiError(ProblemType.ALREADY_EXISTS, 'An account with this email already exists.');
+}
+
 function mapCreateUserError(error: unknown): ApiError {
   const mapped = error as { status?: number; statusCode?: number; body?: { message?: string } };
   const status = mapped.status ?? mapped.statusCode;
@@ -62,7 +67,7 @@ function mapCreateUserError(error: unknown): ApiError {
     mapped.body?.message ||
     (error instanceof Error ? error.message : 'Could not create the account.');
   if (status === 422 || status === 409 || /already exists/i.test(message)) {
-    return new ApiError(ProblemType.ALREADY_EXISTS, 'An account with this email already exists.');
+    accountAlreadyExists();
   }
   if (status === 400 || /password/i.test(message)) {
     return new ApiError(ProblemType.VALIDATION_FAILED, message, [
@@ -77,6 +82,11 @@ function mapCreateUserError(error: unknown): ApiError {
  * `/sign-up/email` stays closed (`emailAndPassword.disableSignUp`); registration
  * here calls Better Auth's admin `createUser`, the same API setup uses for the
  * owner.
+ *
+ * Creating the account is retry-sensitive: a lost 201 still leaves the user in
+ * Better Auth and the invite slot spent. A repeat request with that email
+ * returns already-exists rather than failed-precondition, which is the answer
+ * a client should treat as success after a timeout.
  */
 export function inviteLinkRoutes() {
   const app = new OpenAPIHono<AppEnv>();
@@ -126,7 +136,7 @@ export function inviteLinkRoutes() {
       tags: ['Invite links'],
       summary: 'Register with an invite link',
       description:
-        'Creates the account through Better Auth `createUser`. Public email sign-up stays disabled.',
+        'Creates the account through Better Auth `createUser`. Public email sign-up stays disabled. Retry-safe: a repeat after a lost 201 returns already-exists when that email is taken.',
       security: [],
       request: {
         body: {
@@ -158,6 +168,10 @@ export function inviteLinkRoutes() {
       if (!existing) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Invite link not found.');
       }
+      if (await hasUserWithEmail(db(), body.email)) {
+        accountAlreadyExists();
+      }
+
       const state = inviteLinkState(existing);
       if (state !== 'ACTIVE') {
         unusableInvite(state);
@@ -168,6 +182,9 @@ export function inviteLinkRoutes() {
         const latest = await getInviteLinkByToken(db(), body.token);
         if (!latest) {
           throw new ApiError(ProblemType.NOT_FOUND, 'Invite link not found.');
+        }
+        if (await hasUserWithEmail(db(), body.email)) {
+          accountAlreadyExists();
         }
         unusableInvite(inviteLinkState(latest));
       }

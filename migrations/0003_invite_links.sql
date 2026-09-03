@@ -1,4 +1,4 @@
--- Migration number: 0002 	 2026-09-02T00:00:00.000Z
+-- Migration number: 0003 	 2026-09-02T00:00:00.000Z
 
 CREATE TABLE invite_links (
   id TEXT PRIMARY KEY NOT NULL,

@@ -1,7 +1,7 @@
 import { Button, Field, Icon, Input, Link, Stack, Text } from '@trustfall/design';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { api } from '../lib/api.ts';
+import { api, ApiRequestError } from '../lib/api.ts';
 import { signIn } from '../lib/auth.ts';
 
 type PublicInvite = { state: 'ACTIVE' | 'EXHAUSTED' | 'REVOKED'; remaining_uses: number };
@@ -54,13 +54,20 @@ export function RegisterPage() {
           display_name: form.get('display_name'),
         }),
       });
+      const signedIn = await signIn.email({ email, password });
+      navigate(signedIn.error ? '/login' : '/', { replace: true });
     } catch (err) {
+      // The account may exist even though this call failed — a lost 201 on a
+      // spent single-use link is the usual cause. already-exists is the
+      // recoverable answer; send them to sign in rather than stranding them.
+      if (err instanceof ApiRequestError && err.type === '/problems/already-exists') {
+        navigate('/login', { replace: true });
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Could not create the account.');
+    } finally {
       setPending(false);
-      return;
     }
-    const signedIn = await signIn.email({ email, password });
-    navigate(signedIn.error ? '/login' : '/', { replace: true });
   }
 
   if (!token) {

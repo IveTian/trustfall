@@ -582,6 +582,14 @@ export async function countUsers(db: Database): Promise<number> {
   return Number(row?.count ?? 0);
 }
 
+/** Better Auth stores emails lowercased; match that so a retry finds the row. */
+export async function hasUserWithEmail(db: Database, email: string): Promise<boolean> {
+  const row = await db.get<{ id: string }>(
+    sql`SELECT id FROM "user" WHERE lower(email) = ${email.trim().toLowerCase()} LIMIT 1`,
+  );
+  return row != null;
+}
+
 /**
  * A site counts as initialized once the owner account exists. Before that the
  * auth tables may not exist yet, so a failed query means "not initialized".
