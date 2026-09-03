@@ -34,12 +34,12 @@ if (initialized) {
       <SiteHeading as="h1">Maintenance</SiteHeading>
       <SiteGroup>
         {maintenances.length === 0 ? (
-          <SitePanel>
+          <SitePanel density="row">
             <Text tone="muted">No maintenance windows have been published.</Text>
           </SitePanel>
         ) : (
           maintenances.map((maintenance) => (
-            <SitePanel as="article">
+            <SitePanel as="article" minRows={2.5} step={0.5}>
               <MaintenanceCard
                 client:load
                 surface="plain"

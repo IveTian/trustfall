@@ -57,6 +57,8 @@ export function SitePanel({
   as: Tag = 'section',
   tone,
   density = 'default',
+  minRows,
+  step = 1,
 }: {
   children: ReactNode;
   as?: 'section' | 'article' | 'div' | 'li';
@@ -64,6 +66,10 @@ export function SitePanel({
   tone?: StatusTone;
   /** `row` shrinks the vertical inset so a one-line block fits in a single cell. */
   density?: 'default' | 'row';
+  /** The block is at least this many cells tall, however little it holds. */
+  minRows?: number;
+  /** Height snaps up to whole cells, or to half cells. */
+  step?: 1 | 0.5;
 }) {
   const toned = tone ? stylex.props(panelTone[tone]) : null;
   return (
@@ -72,6 +78,8 @@ export function SitePanel({
       style={toned?.style}
       data-tone={tone}
       data-density={density === 'row' ? 'row' : undefined}
+      data-min-rows={minRows}
+      data-step={step === 0.5 ? '0.5' : undefined}
     >
       <div className="tf-site-content">{children}</div>
     </Tag>

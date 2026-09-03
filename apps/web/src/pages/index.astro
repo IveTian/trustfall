@@ -154,7 +154,7 @@ const services = [
 
       <SiteHeading>Current status</SiteHeading>
       {hasComponents ? null : (
-        <SitePanel>
+        <SitePanel density="row">
           <Text tone="muted">No components have been published yet.</Text>
         </SitePanel>
       )}
@@ -176,17 +176,17 @@ const services = [
       <SiteHeading>Active incidents and maintenance</SiteHeading>
       <SiteGroup>
         {summary.activeIncidents.length === 0 && underWay.length === 0 ? (
-          <SitePanel>
+          <SitePanel density="row">
             <Text tone="muted">Nothing is under way.</Text>
           </SitePanel>
         ) : null}
         {summary.activeIncidents.map((incident) => (
-          <SitePanel as="article">
+          <SitePanel as="article" minRows={2.5} step={0.5}>
             <IncidentCard client:load surface="plain" incident={toIncident(incident)} />
           </SitePanel>
         ))}
         {underWay.map((maintenance) => (
-          <SitePanel as="article">
+          <SitePanel as="article" minRows={2.5} step={0.5}>
             <MaintenanceCard
               client:load
               surface="plain"
@@ -200,12 +200,12 @@ const services = [
       <SiteHeading>Recent incidents and maintenance</SiteHeading>
       <SiteGroup>
         {recent.length === 0 ? (
-          <SitePanel>
+          <SitePanel density="row">
             <Text tone="muted">Nothing has happened lately.</Text>
           </SitePanel>
         ) : (
           recent.map((item) => (
-            <SitePanel as="article">
+            <SitePanel as="article" minRows={2.5} step={0.5}>
               {item.kind === 'incident' ? (
                 <IncidentCard client:load surface="plain" incident={item.incident} />
               ) : (
@@ -224,12 +224,12 @@ const services = [
       <SiteHeading>Scheduled maintenance</SiteHeading>
       <SiteGroup>
         {scheduled.length === 0 ? (
-          <SitePanel>
+          <SitePanel density="row">
             <Text tone="muted">No maintenance is scheduled.</Text>
           </SitePanel>
         ) : (
           scheduled.map((maintenance) => (
-            <SitePanel as="article">
+            <SitePanel as="article" minRows={2.5} step={0.5}>
               <MaintenanceCard
                 client:load
                 surface="plain"

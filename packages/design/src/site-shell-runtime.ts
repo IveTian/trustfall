@@ -3,8 +3,10 @@ import { MESH_LINE_PX, SITE_MESH_CELL_PX, SITE_MESH_COLS } from './tokens/mesh.t
 /**
  * Snaps the public site's reading panels to the mesh: as many whole columns
  * as fit (up to the main's `data-cols`), centred to the pixel, and each panel
- * as many whole rows as its content needs, so all four edges of every panel
- * sit on grid lines while the page still scrolls. No React hooks — the shell
+ * as many rows as its content needs — whole cells, or half cells where the
+ * panel asks (`data-step`), and never fewer than `data-min-rows`. A group of
+ * half-cell panels can end between lines, so every group is padded to the
+ * next line for whatever follows it. No React hooks — the shell
  * is static markup. A client-router swap replaces the main; a mutation
  * observer picks up the new one and lets go of the old.
  */
@@ -61,12 +63,31 @@ function measure(main: HTMLElement, session: Session): void {
     if (!content) {
       continue;
     }
-    // A panel's outer height is rows × cell + line; its two borders take two
-    // lines of that, so the content must fit in rows × cell − line.
-    const rows = Math.max(1, Math.ceil((content.offsetHeight + MESH_LINE_PX) / cell));
-    panel.style.setProperty('--tf-site-panel-height', `${rows * cell}px`);
+    const step = readNumber(panel, 'data-step', 1) * cell;
+    const minHeight = readNumber(panel, 'data-min-rows', 1) * cell;
+    // A panel's outer height is height + line; its two borders take two
+    // lines of that, so the content must fit in height − line.
+    const needed = Math.ceil((content.offsetHeight + MESH_LINE_PX) / step) * step;
+    panel.style.setProperty('--tf-site-panel-height', `${Math.max(minHeight, needed)}px`);
   }
   main.setAttribute('data-tf-site-ready', '');
+
+  // With the panels sized, pad each group so it ends where a panel would:
+  // one line past a grid line. Measured from its children, so the group's
+  // own padding from the last pass does not count.
+  for (const group of main.querySelectorAll<HTMLElement>('.tf-site-group')) {
+    const children = group.querySelectorAll<HTMLElement>(':scope > .tf-site-panel');
+    const last = children[children.length - 1];
+    if (!last) {
+      group.style.removeProperty('--tf-site-group-pad');
+      continue;
+    }
+    const height = Math.round(
+      last.getBoundingClientRect().bottom - group.getBoundingClientRect().top,
+    );
+    const over = (height - MESH_LINE_PX) % cell;
+    group.style.setProperty('--tf-site-group-pad', `${over === 0 ? 0 : cell - over}px`);
+  }
 }
 
 function bind(main: HTMLElement): void {

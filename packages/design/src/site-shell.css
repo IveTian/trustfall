@@ -73,12 +73,19 @@
 }
 
 /*
- * Half-cell gaps put every second panel half a cell off the lines; an even
- * count would leave the run ending there too, so it is padded back to a line
- * for whatever follows.
+ * Half-cell gaps put every second panel half a cell off the lines, and a
+ * half-cell panel can end between lines. Once site-shell-runtime measures,
+ * each group is padded to the next line for whatever follows; until then,
+ * an even run of whole-cell panels is padded by count.
  */
-.tf-site-group[data-spacing='half'] > .tf-site-panel:nth-child(even):last-child {
+.tf-site-main:not([data-tf-site-ready])
+  .tf-site-group[data-spacing='half']
+  > .tf-site-panel:nth-child(even):last-child {
   margin-block-end: calc(var(--tf-site-cell) / 2);
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-group {
+  padding-block-end: var(--tf-site-group-pad, 0px);
 }
 
 /*

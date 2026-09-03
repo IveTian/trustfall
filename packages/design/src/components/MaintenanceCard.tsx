@@ -51,46 +51,52 @@ export function MaintenanceCard({
   const title = <Text tone="label">{maintenance.title}</Text>;
   return (
     <Card as="article" surface={surface}>
-      <Stack gap={2}>
-        {maintenance.href ? (
-          <a href={maintenance.href} {...stylex.props(styles.open)}>
-            {title}
-            <span {...stylex.props(styles.arrow)}>
-              <Icon name="arrow-right-line" size={16} />
-            </span>
-          </a>
-        ) : (
-          title
-        )}
-        <Stack direction="horizontal" gap={2} wrap>
-          <StatusPill status={maintenance.status} kind="maintenance" />
-        </Stack>
-        <Text tone="caption">
-          {maintenance.status === 'IN_PROGRESS' ? (
-            <>
-              Ends {formatInstant(maintenance.windowEnd, zone, locale)} ·{' '}
-              <RelativeTime value={maintenance.windowEnd} />
-            </>
-          ) : maintenance.status === 'SCHEDULED' ? (
-            <>
-              {formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)} ·{' '}
-              <RelativeTime value={maintenance.windowStart} />
-            </>
+      <Stack gap={3} grow justify="between">
+        <Stack gap={2}>
+          {maintenance.href ? (
+            <a href={maintenance.href} {...stylex.props(styles.open)}>
+              {title}
+              <span {...stylex.props(styles.arrow)}>
+                <Icon name="arrow-right-line" size={16} />
+              </span>
+            </a>
           ) : (
-            formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)
+            title
           )}
-        </Text>
-        {maintenance.recurrence ? (
-          <Text tone="caption">
-            {describeRecurrence(maintenance.recurrence, maintenance.startTime, zone, locale)}
-          </Text>
-        ) : null}
-        {latest ? <RichTextBody markdown={latest.body} size="small" muted /> : null}
-        {maintenance.affectedComponents.length > 0 ? (
-          <Text tone="caption">
-            Affects {maintenance.affectedComponents.map((item) => item.displayName).join(', ')}
-          </Text>
-        ) : null}
+          {latest ? <RichTextBody markdown={latest.body} muted /> : null}
+          {maintenance.recurrence ? (
+            <Text tone="caption">
+              {describeRecurrence(maintenance.recurrence, maintenance.startTime, zone, locale)}
+            </Text>
+          ) : null}
+          {maintenance.affectedComponents.length > 0 ? (
+            <Text tone="caption">
+              Affects {maintenance.affectedComponents.map((item) => item.displayName).join(', ')}
+            </Text>
+          ) : null}
+        </Stack>
+        <div {...stylex.props(styles.foot)}>
+          <Stack direction="horizontal" gap={2} wrap>
+            <StatusPill status={maintenance.status} kind="maintenance" />
+          </Stack>
+          <span {...stylex.props(styles.when)}>
+            <Text tone="caption" as="span">
+              {maintenance.status === 'IN_PROGRESS' ? (
+                <>
+                  Ends {formatInstant(maintenance.windowEnd, zone, locale)} ·{' '}
+                  <RelativeTime value={maintenance.windowEnd} />
+                </>
+              ) : maintenance.status === 'SCHEDULED' ? (
+                <>
+                  {formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)} ·{' '}
+                  <RelativeTime value={maintenance.windowStart} />
+                </>
+              ) : (
+                formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)
+              )}
+            </Text>
+          </span>
+        </div>
       </Stack>
     </Card>
   );
@@ -122,5 +128,16 @@ const styles = stylex.create({
     color: color.textMuted,
     display: 'flex',
     flexShrink: 0,
+  },
+  foot: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: space[3],
+    justifyContent: 'space-between',
+  },
+  when: {
+    marginInlineStart: 'auto',
+    textAlign: 'end',
   },
 });

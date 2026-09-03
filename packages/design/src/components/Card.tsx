@@ -27,6 +27,9 @@ const styles = stylex.create({
   plain: {
     backgroundColor: 'transparent',
     borderWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
     padding: 0,
   },
   // The whole card is the control: quiet at rest, a soft shadow lift on

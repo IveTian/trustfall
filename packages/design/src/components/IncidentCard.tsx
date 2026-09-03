@@ -32,9 +32,10 @@ export type PublicIncident = {
 };
 
 /**
- * The public incident card, laid out like the console's: the title with a
- * trailing arrow when it opens the incident, the status pills, the latest
- * update, and when it landed — in the reader's zone, and relative to now.
+ * The public incident card: the title with a trailing arrow when it opens
+ * the incident, the latest update, and at the foot — pinned there however
+ * tall the block is — the status pills on the start edge and, on the end
+ * edge, when the update landed, in the reader's zone and relative to now.
  */
 export function IncidentCard({
   incident,
@@ -48,29 +49,33 @@ export function IncidentCard({
 
   return (
     <Card as="article" surface={surface}>
-      <Stack gap={2}>
-        {incident.href ? (
-          <a href={incident.href} {...stylex.props(styles.open)}>
-            {title}
-            <span {...stylex.props(styles.arrow)}>
-              <Icon name="arrow-right-line" size={16} />
-            </span>
-          </a>
-        ) : (
-          title
-        )}
-        <Stack direction="horizontal" gap={2}>
-          <StatusPill status={incident.status} kind="incident" />
-          <StatusPill status={incident.impact} kind="impact" />
+      <Stack gap={3} grow justify="between">
+        <Stack gap={2}>
+          {incident.href ? (
+            <a href={incident.href} {...stylex.props(styles.open)}>
+              {title}
+              <span {...stylex.props(styles.arrow)}>
+                <Icon name="arrow-right-line" size={16} />
+              </span>
+            </a>
+          ) : (
+            title
+          )}
+          {latest ? <RichTextBody markdown={latest.body} muted /> : null}
         </Stack>
-        {latest ? (
-          <>
-            <RichTextBody markdown={latest.body} size="small" muted />
-            <Text tone="caption">
-              <DateTime value={latest.createTime} /> · <RelativeTime value={latest.createTime} />
-            </Text>
-          </>
-        ) : null}
+        <div {...stylex.props(styles.foot)}>
+          <Stack direction="horizontal" gap={2} wrap>
+            <StatusPill status={incident.status} kind="incident" />
+            <StatusPill status={incident.impact} kind="impact" />
+          </Stack>
+          {latest ? (
+            <span {...stylex.props(styles.when)}>
+              <Text tone="caption" as="span">
+                <DateTime value={latest.createTime} /> · <RelativeTime value={latest.createTime} />
+              </Text>
+            </span>
+          ) : null}
+        </div>
       </Stack>
     </Card>
   );
@@ -104,5 +109,17 @@ const styles = stylex.create({
     color: color.textMuted,
     display: 'flex',
     flexShrink: 0,
+  },
+  // Pills on the start edge, the clock on the end edge, one baseline.
+  foot: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: space[3],
+    justifyContent: 'space-between',
+  },
+  when: {
+    marginInlineStart: 'auto',
+    textAlign: 'end',
   },
 });
