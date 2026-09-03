@@ -148,7 +148,7 @@ export function RegisterPage() {
             fullWidth
             loading={pending}
             loadingLabel="Creating account"
-            endEnhancer={<Icon name="arrow-right-fill" />}
+            endEnhancer={<Icon name="arrow-right" />}
           >
             Create account
           </Button>

@@ -38,14 +38,19 @@ const { title, description = 'Current service status.' } = Astro.props;
         bindSiteShells,
         startSiteShellRuntime,
       } from '../../../../packages/design/src/site-shell-runtime.ts';
+      import { restoreSiteScroll, startSiteScroll } from '../lib/site-scroll.ts';
       startMeshRuntime();
       startSiteShellRuntime();
+      startSiteScroll();
+      restoreSiteScroll();
       // The runtimes catch a swapped-in page on their own, but a frame later;
       // measuring here, inside the router's swap, puts the panel on the grid
-      // before the view transition captures the new page.
+      // before the view transition captures the new page. The canvas's
+      // scroll is put back once the blocks have their final heights.
       document.addEventListener('astro:after-swap', () => {
         bindMeshScreens();
         bindSiteShells();
+        restoreSiteScroll();
       });
 
       if (import.meta.env.DEV) {

@@ -20,13 +20,13 @@ export function ConsoleSidebar() {
           items={[
             {
               id: 'settings',
-              icon: 'settings-line',
+              icon: 'settings',
               label: 'Settings',
               onSelect: () => navigate(SETTINGS_ROOT),
             },
             {
               id: 'sign-out',
-              icon: 'logout-box-r-line',
+              icon: 'sign-out',
               label: 'Sign out',
               onSelect: () => void signOut(),
             },
@@ -40,7 +40,7 @@ export function ConsoleSidebar() {
             onClick={() => navigate('/')}
           />
           <SidebarNavItem
-            icon="stack-fill"
+            icon="layers-fill"
             label="Components"
             active={location.pathname.startsWith('/components')}
             onClick={() => navigate('/components')}

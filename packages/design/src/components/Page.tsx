@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { control, mesh, zIndex } from '../tokens/const.stylex.ts';
@@ -24,7 +25,7 @@ export function PageHeader({
   trail,
   actions,
 }: {
-  icon?: string;
+  icon?: IconName;
   trail: TrailSegment[];
   actions?: ReactNode;
 }) {
@@ -44,7 +45,7 @@ export function PageHeader({
             <span key={label} {...stylex.props(styles.segment)}>
               {index > 0 ? (
                 <span {...stylex.props(styles.separator)}>
-                  <Icon name="arrow-right-s-line" size={16} />
+                  <Icon name="chevron-right" size={16} />
                 </span>
               ) : null}
               {index === last ? (

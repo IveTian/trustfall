@@ -38,9 +38,9 @@
         "usage": "Canvas at step 3, panel at step 0, hairlines at step 4, muted type at step 7, primary type at step 9. Nine of ten pixels are one of these."
       },
       "semantic": {
-        "success": "#12A150",
-        "warning": "#D48806",
-        "error": "#E11900",
+        "success": "#16A34A",
+        "warning": "#C28A00",
+        "error": "#DC2626",
         "info": "#2E6BE6"
       },
       "surface": {
@@ -115,7 +115,7 @@
       "style": "outline",
       "stroke_weight": "1.5px",
       "size_scale": ["16px", "20px"],
-      "preferred_set": "Remix Icon / Lucide-class line icons, drawn in the muted neutral, never in accent"
+      "preferred_set": "Central Icons (round, outlined, radius 2, stroke 1.5; the filled cut for the console rail), generated on demand into packages/icon, drawn in the muted neutral, never in accent"
     },
     "motion": {
       "easing": "cubic-bezier(0.2, 0, 0, 1)",

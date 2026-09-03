@@ -13,14 +13,24 @@ import { Icon } from './Icon.tsx';
  * single link with the title as its name. Links inside the card's body sit
  * above the stretch (`richtext.css`) and keep their own click. Hovering
  * anywhere on the block lifts it with a soft shadow: the block reads the
- * link's hover through `data-tf-card-link` (`site-shell.css`).
+ * link's hover through `data-tf-card-link` (`site-shell.css`). `end` sits
+ * between the name and the arrow, on the end edge: a row's time.
  */
-export function CardTitleLink({ href, children }: { href: string; children: ReactNode }) {
+export function CardTitleLink({
+  href,
+  end,
+  children,
+}: {
+  href: string;
+  end?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <a href={href} data-tf-card-link="" {...stylex.props(styles.open)}>
       <span {...stylex.props(styles.title)}>{children}</span>
+      {end == null ? null : <span {...stylex.props(styles.end)}>{end}</span>}
       <span {...stylex.props(styles.arrow)}>
-        <Icon name="arrow-right-line" size={16} />
+        <Icon name="arrow-right" size={16} />
       </span>
     </a>
   );
@@ -53,7 +63,12 @@ const styles = stylex.create({
     textDecoration: 'none',
   },
   title: {
+    flexGrow: 1,
     minWidth: 0,
+  },
+  end: {
+    flexShrink: 0,
+    textAlign: 'end',
   },
   arrow: {
     alignItems: 'center',

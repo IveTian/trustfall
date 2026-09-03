@@ -13,9 +13,9 @@ import {
 } from '@trustfall/design';
 
 const THEME_OPTIONS: Array<SelectOption & { value: ThemePreference }> = [
-  { value: 'system', label: 'System', icon: <Icon name="computer-line" size={16} /> },
-  { value: 'light', label: 'Light', icon: <Icon name="sun-line" size={16} /> },
-  { value: 'dark', label: 'Dark', icon: <Icon name="moon-line" size={16} /> },
+  { value: 'system', label: 'System', icon: <Icon name="computer" size={16} /> },
+  { value: 'light', label: 'Light', icon: <Icon name="sun" size={16} /> },
+  { value: 'dark', label: 'Dark', icon: <Icon name="moon" size={16} /> },
 ];
 
 /**

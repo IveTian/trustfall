@@ -30,9 +30,11 @@ plugin, and `@stylexjs/valid-styles` is the only automated enforcement of the
 first design principle. That is the whole reason ESLint is still installed —
 see `eslint.stylex.config.js`.
 
-`packages/design/src/icons.css` is generated. Do not edit it; after upgrading
-remixicon run `pnpm --filter @trustfall/design icons:sync`. It exists so the
-build emits only the woff2 face instead of all five formats, which cost 4.5MB.
+`packages/icon/src/generated` is generated. Do not edit it; to add an icon,
+name it in `packages/icon/icons.config.json` and run
+`pnpm --filter @trustfall/icon icons:build`, which draws it from the sibling
+`central-icon` checkout, then name it for the apps in `packages/icon/src/index.ts`.
+See `packages/icon/README.md`.
 
 ## Migrations
 

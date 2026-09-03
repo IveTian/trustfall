@@ -180,14 +180,11 @@ export function DashboardPage() {
         </Text>
         {openIncidents.length === 0 ? (
           <EmptyState
-            icon="flashlight-line"
+            icon="flashlight"
             title="New incidents will appear here"
             description="When something breaks, open an incident and its timeline lands on this screen."
             actions={
-              <Button
-                startEnhancer={<Icon name="add-fill" />}
-                onClick={() => navigate('/incidents')}
-              >
+              <Button startEnhancer={<Icon name="add" />} onClick={() => navigate('/incidents')}>
                 Open an incident
               </Button>
             }
@@ -203,7 +200,7 @@ export function DashboardPage() {
         </Text>
         {pastIncidents.length === 0 ? (
           <EmptyState
-            icon="history-line"
+            icon="history"
             title="No past incidents"
             description="Resolved incidents land here, newest first."
           />
@@ -218,14 +215,11 @@ export function DashboardPage() {
         </Text>
         {maintenances.length === 0 ? (
           <EmptyState
-            icon="hammer-line"
+            icon="hammer"
             title="No scheduled maintenance"
             description="Plan a window and it shows on the status page ahead of time."
             actions={
-              <Button
-                startEnhancer={<Icon name="add-fill" />}
-                onClick={() => navigate('/maintenance')}
-              >
+              <Button startEnhancer={<Icon name="add" />} onClick={() => navigate('/maintenance')}>
                 Schedule maintenance
               </Button>
             }
@@ -298,7 +292,7 @@ export function DashboardPage() {
             <Button variant="secondary" onClick={() => navigate('/components')}>
               Manage components
             </Button>
-            <Button startEnhancer={<Icon name="add-fill" />} onClick={() => navigate('/incidents')}>
+            <Button startEnhancer={<Icon name="add" />} onClick={() => navigate('/incidents')}>
               Open an incident
             </Button>
           </>
@@ -322,21 +316,21 @@ export function DashboardPage() {
             nav={
               <SectionNav>
                 <SectionNavItem
-                  icon="flashlight-line"
+                  icon="flashlight"
                   active={section === 'now'}
                   onClick={() => setSection('now')}
                 >
                   Happening now
                 </SectionNavItem>
                 <SectionNavItem
-                  icon="history-line"
+                  icon="history"
                   active={section === 'past'}
                   onClick={() => setSection('past')}
                 >
                   Past events
                 </SectionNavItem>
                 <SectionNavItem
-                  icon="hammer-line"
+                  icon="hammer"
                   active={section === 'maintenance'}
                   onClick={() => setSection('maintenance')}
                 >

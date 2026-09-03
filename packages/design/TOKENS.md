@@ -28,14 +28,14 @@ Themed with CSS `light-dark()` inlined via `defineConsts`. `color-scheme` on `<h
 | `accentActive`       | `#384EA6`          | `#4763CE`          | Accent press              |
 | `accentMuted`        | `#EFF2FD`          | `#1B2248`          | Quiet highlight           |
 | `focus`              | `#5F7EEC`          | `#8CA3F2`          | Focus ring                |
-| `operational`        | `#03703C`          | `#5DCAA0`          | All-clear status          |
-| `operationalMuted`   | `#E6F2ED`          | `#143226`          | Operational fill          |
-| `degraded`           | `#996F00`          | `#E3B341`          | Degraded performance      |
-| `degradedMuted`      | `#FFFAF0`          | `#3A2C0A`          | Degraded fill             |
-| `partialOutage`      | `#E11900`          | `#F97066`          | Partial outage            |
-| `partialOutageMuted` | `#FFEFED`          | `#3A1412`          | Partial-outage fill       |
-| `majorOutage`        | `#AB1300`          | `#FF8A80`          | Major outage              |
-| `majorOutageMuted`   | `#FFEFED`          | `#3B0E16`          | Major-outage fill         |
+| `operational`        | `#16A34A`          | `#4ADE80`          | All-clear status          |
+| `operationalMuted`   | `#E7F6EC`          | `#14301F`          | Operational fill          |
+| `degraded`           | `#C28A00`          | `#FACC15`          | Degraded performance      |
+| `degradedMuted`      | `#FFF7DB`          | `#3A2E0A`          | Degraded fill             |
+| `partialOutage`      | `#EA580C`          | `#FB923C`          | Partial outage            |
+| `partialOutageMuted` | `#FFF0E6`          | `#3B1F0E`          | Partial-outage fill       |
+| `majorOutage`        | `#DC2626`          | `#F87171`          | Major outage              |
+| `majorOutageMuted`   | `#FEECEC`          | `#3B1414`          | Major-outage fill         |
 | `maintenance`        | `#5F7EEC`          | `#8CA3F2`          | Maintenance / monitoring  |
 | `maintenanceMuted`   | `#EFF2FD`          | `#1B2248`          | Maintenance fill          |
 | `scrim`              | `rgba(0,0,0,0.45)` | `rgba(0,0,0,0.65)` | Dialog backdrop           |
@@ -97,18 +97,25 @@ Motion durations must collapse to `0ms` under `breakpoints.reduceMotion` in the 
 
 ## Status map — `src/status.ts`
 
-| Kind      | Value                  | Tone          | Icon     | Label                |
-| --------- | ---------------------- | ------------- | -------- | -------------------- |
-| Component | `OPERATIONAL`          | operational   | check    | Operational          |
-| Component | `DEGRADED_PERFORMANCE` | degraded      | diamond  | Degraded performance |
-| Component | `PARTIAL_OUTAGE`       | partialOutage | triangle | Partial outage       |
-| Component | `MAJOR_OUTAGE`         | majorOutage   | stop     | Major outage         |
-| Incident  | `INVESTIGATING`        | partialOutage | triangle | Investigating        |
-| Incident  | `IDENTIFIED`           | degraded      | diamond  | Identified           |
-| Incident  | `MONITORING`           | maintenance   | wrench   | Monitoring           |
-| Incident  | `RESOLVED`             | operational   | check    | Resolved             |
-| Impact    | `MINOR`                | degraded      | diamond  | Minor                |
-| Impact    | `MAJOR`                | partialOutage | triangle | Major                |
-| Impact    | `CRITICAL`             | majorOutage   | stop     | Critical             |
+| Kind        | Value                  | Tone          | Icon              | Label                |
+| ----------- | ---------------------- | ------------- | ----------------- | -------------------- |
+| Component   | `OPERATIONAL`          | operational   | circle-check-fill | Operational          |
+| Component   | `UNDER_MAINTENANCE`    | maintenance   | tools-fill        | Under maintenance    |
+| Component   | `DEGRADED_PERFORMANCE` | degraded      | diamond-fill      | Degraded performance |
+| Component   | `PARTIAL_OUTAGE`       | partialOutage | triangle-fill     | Partial outage       |
+| Component   | `MAJOR_OUTAGE`         | majorOutage   | octagon-fill      | Major outage         |
+| Incident    | `INVESTIGATING`        | partialOutage | search            | Investigating        |
+| Incident    | `IDENTIFIED`           | degraded      | lightbulb         | Identified           |
+| Incident    | `MONITORING`           | maintenance   | eye               | Monitoring           |
+| Incident    | `RESOLVED`             | operational   | check             | Resolved             |
+| Maintenance | `SCHEDULED`            | maintenance   | calendar-event    | Scheduled            |
+| Maintenance | `IN_PROGRESS`          | maintenance   | tools             | In progress          |
+| Maintenance | `COMPLETED`            | operational   | check             | Completed            |
+| Maintenance | `CANCELLED`            | operational   | close             | Cancelled            |
+| Impact      | `MINOR`                | degraded      | error-warning     | Minor                |
+| Impact      | `MAJOR`                | partialOutage | alert             | Major                |
+| Impact      | `CRITICAL`             | majorOutage   | siren             | Critical             |
+
+Icons are names in `@trustfall/icon`; a service's status wears a filled shape, a phase or an impact the sign for what is happening.
 
 Color is never the only signal: every status renders the icon and the label.

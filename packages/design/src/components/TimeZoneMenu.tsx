@@ -74,7 +74,7 @@ export function TimeZoneMenu({ radius }: { radius?: MenuRadius } = {}) {
         })),
       ]}
     >
-      <Icon name="time-zone-line" size={16} />
+      <Icon name="time-zone" size={16} />
       {offset ?? 'Local'}
     </Menu>
   );

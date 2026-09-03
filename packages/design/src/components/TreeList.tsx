@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ReactNode, Ref } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
@@ -56,7 +57,7 @@ export function TreeRow({
 }: {
   title: string;
   description?: string | null;
-  icon?: string;
+  icon?: IconName;
   /** Leading content richer than `icon` allows: a status control, an avatar. */
   start?: ReactNode;
   end?: ReactNode;
@@ -79,7 +80,7 @@ export function TreeRow({
     <>
       {handle ? (
         <span aria-hidden ref={handleRef} {...stylex.props(styles.handle)}>
-          <Icon name="draggable" size={16} />
+          <Icon name="drag-handle" size={16} />
         </span>
       ) : null}
       {icon ? (
@@ -159,7 +160,7 @@ export function TreeNest({
 export function TreeChevron({ open = false }: { open?: boolean }) {
   return (
     <span {...stylex.props(styles.chevron, open && styles.chevronOpen)}>
-      <Icon name="arrow-down-s-line" size={16} />
+      <Icon name="chevron-down" size={16} />
     </span>
   );
 }

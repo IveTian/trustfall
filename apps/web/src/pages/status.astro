@@ -11,6 +11,7 @@ import {
 import {
   HISTORY_DAYS,
   historyIntervals,
+  overallStatusCopy,
   type PublicServiceGroup,
   ServiceGroupList,
   SiteHeading,
@@ -43,6 +44,10 @@ if (initialized) {
   }
 }
 const siteName = summary?.siteName ?? 'TrustFall';
+// The page is titled with the answer itself — the same sentence the Overview
+// banner gives — so a reader has it before the blocks. Without a summary
+// there is nothing to claim, and the page is named for what it is.
+const heading = summary ? overallStatusCopy(summary.overallStatus, siteName) : 'Status';
 
 // The history bars are opt-in (Settings › Appearance). When on, every
 // service carries its non-operational stretches from the last ninety days;
@@ -107,7 +112,7 @@ const ungrouped = toComponents(summary?.ungroupedComponents ?? []);
 {
   initialized ? (
     <Site title={`Status · ${siteName}`} siteName={siteName} current="status">
-      <SiteHeading as="h1">Status</SiteHeading>
+      <SiteHeading as="h1">{heading}</SiteHeading>
       {groups.length === 0 && ungrouped.length === 0 ? (
         <SitePanel density="row">
           <Text tone="muted">No components have been published yet.</Text>

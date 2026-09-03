@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import {
   useEffect,
   useId,
@@ -18,16 +19,16 @@ import { text } from '../tokens/text.stylex.ts';
 import { Avatar } from './Avatar.tsx';
 import { Icon } from './Icon.tsx';
 
-const THEME_OPTIONS: Array<{ id: ThemePreference; label: string; icon: string }> = [
-  { id: 'system', label: 'System', icon: 'computer-line' },
-  { id: 'light', label: 'Light', icon: 'sun-line' },
-  { id: 'dark', label: 'Dark', icon: 'moon-line' },
+const THEME_OPTIONS: Array<{ id: ThemePreference; label: string; icon: IconName }> = [
+  { id: 'system', label: 'System', icon: 'computer' },
+  { id: 'light', label: 'Light', icon: 'sun' },
+  { id: 'dark', label: 'Dark', icon: 'moon' },
 ];
 
 export type ProfileMenuItem = {
   id: string;
   label: string;
-  icon?: string;
+  icon?: IconName;
   onSelect: () => void;
 };
 
@@ -355,7 +356,7 @@ export function ProfileMenu({
           {email ? <span {...stylex.props(styles.email)}>{email}</span> : null}
         </span>
         <span {...stylex.props(styles.trailingIcon)}>
-          <Icon name="expand-up-down-line" size={16} />
+          <Icon name="expand-up-down" size={16} />
         </span>
       </button>
 
@@ -413,12 +414,12 @@ export function ProfileMenu({
             {...stylex.props(styles.row, submenuOpen && styles.rowOpen)}
           >
             <span {...stylex.props(styles.rowIcon)}>
-              <Icon name="contrast-2-line" size={16} />
+              <Icon name="contrast" size={16} />
             </span>
             <span {...stylex.props(styles.rowLabel)}>Appearance</span>
             <span {...stylex.props(styles.rowValue)}>{current.label}</span>
             <span {...stylex.props(styles.rowIcon, styles.rowIconForward)}>
-              <Icon name="arrow-right-s-line" size={16} />
+              <Icon name="chevron-right" size={16} />
             </span>
           </button>
 
@@ -485,7 +486,7 @@ export function ProfileMenu({
               </span>
               <span {...stylex.props(styles.rowLabel)}>{option.label}</span>
               <span {...stylex.props(styles.rowIcon, styles.rowIconAccent)}>
-                {option.id === theme ? <Icon name="check-line" size={16} /> : null}
+                {option.id === theme ? <Icon name="check" size={16} /> : null}
               </span>
             </button>
           ))}

@@ -308,7 +308,7 @@ export function MaintenanceDetailPage() {
           {
             id: 'cancel',
             label: 'Cancel maintenance',
-            icon: <Icon name="close-circle-line" size={16} />,
+            icon: <Icon name="close-circle" size={16} />,
             onSelect: () => openDialog(() => setTransition('cancel')),
           },
         ]
@@ -316,7 +316,7 @@ export function MaintenanceDetailPage() {
     {
       id: 'delete',
       label: 'Delete maintenance',
-      icon: <Icon name="delete-bin-line" size={16} />,
+      icon: <Icon name="delete" size={16} />,
       onSelect: () => setConfirmingDelete(true),
     },
   ];
@@ -329,11 +329,11 @@ export function MaintenanceDetailPage() {
         actions={
           <>
             <Menu label="More actions" variant="icon" items={menuItems}>
-              <Icon name="more-line" size={16} />
+              <Icon name="more" size={16} />
             </Menu>
             <Button
               variant="secondary"
-              startEnhancer={<Icon name="pencil-line" size={16} />}
+              startEnhancer={<Icon name="edit" size={16} />}
               onClick={() => openDialog(() => setEditing(true))}
             >
               Edit
@@ -343,14 +343,14 @@ export function MaintenanceDetailPage() {
             </Button>
             {maintenance.status === 'SCHEDULED' ? (
               <Button
-                startEnhancer={<Icon name="play-line" size={16} />}
+                startEnhancer={<Icon name="play" size={16} />}
                 onClick={() => openDialog(() => setTransition('start'))}
               >
                 Start now
               </Button>
             ) : maintenance.status === 'IN_PROGRESS' ? (
               <Button
-                startEnhancer={<Icon name="check-double-line" size={16} />}
+                startEnhancer={<Icon name="check-double" size={16} />}
                 onClick={() => openDialog(() => setTransition('complete'))}
               >
                 Complete
@@ -418,7 +418,7 @@ export function MaintenanceDetailPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  startEnhancer={<Icon name="pencil-line" size={16} />}
+                  startEnhancer={<Icon name="edit" size={16} />}
                   onClick={() => openDialog(() => setEditing(true))}
                 >
                   Edit

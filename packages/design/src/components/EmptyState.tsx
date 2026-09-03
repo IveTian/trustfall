@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { mesh } from '../tokens/const.stylex.ts';
@@ -18,7 +19,7 @@ export function EmptyState({
   description,
   actions,
 }: {
-  icon?: string;
+  icon?: IconName;
   title: string;
   description?: string;
   actions?: ReactNode;

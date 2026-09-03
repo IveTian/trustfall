@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ComponentStatus, IncidentStatus, MaintenanceStatus } from '@trustfall/shared';
 import type { ReactNode } from 'react';
 import {
@@ -69,7 +70,7 @@ type AnyUpdate = TimelineUpdate<IncidentStatus | MaintenanceStatus>;
 function presentationFor(
   props: IncidentTimelineProps,
   status: AnyUpdate['status'],
-): { presentation: StatusPresentation; glyph: string } {
+): { presentation: StatusPresentation; glyph: IconName } {
   if (props.kind === 'maintenance') {
     const key = status as MaintenanceStatus;
     return { presentation: maintenanceStatusPresentation[key], glyph: maintenanceStatusGlyph[key] };

@@ -7,6 +7,7 @@
     "**/.astro/**",
     "**/.wrangler/**",
     "apps/web/public/admin/**",
+    "packages/icon/src/generated/**",
     "worker-configuration.d.ts",
     "migrations/**"
   ],

@@ -79,7 +79,7 @@ if (incident) {
       </SiteGroup>
 
       <SiteHeading>Updates</SiteHeading>
-      <SitePanel>
+      <SitePanel minRows={2} step={0.5}>
         <IncidentTimeline client:load updates={incident.updates} locale="en" />
       </SitePanel>
     </Site>

@@ -2,11 +2,12 @@ import { useSyncExternalStore } from 'react';
 import { applyTheme, readTheme, subscribeTheme, type ThemePreference } from '../theme-script.ts';
 import { Icon } from './Icon.tsx';
 import { Menu, type MenuRadius } from './Menu.tsx';
+import type { IconName } from '@trustfall/icon';
 
-const OPTIONS: Array<{ id: ThemePreference; label: string; icon: string }> = [
-  { id: 'system', label: 'System', icon: 'computer-line' },
-  { id: 'light', label: 'Light', icon: 'sun-line' },
-  { id: 'dark', label: 'Dark', icon: 'moon-line' },
+const OPTIONS: Array<{ id: ThemePreference; label: string; icon: IconName }> = [
+  { id: 'system', label: 'System', icon: 'computer' },
+  { id: 'light', label: 'Light', icon: 'sun' },
+  { id: 'dark', label: 'Dark', icon: 'moon' },
 ];
 
 function serverTheme(): ThemePreference {

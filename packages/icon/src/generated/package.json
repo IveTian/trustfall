@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

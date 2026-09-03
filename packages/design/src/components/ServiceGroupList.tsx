@@ -136,7 +136,7 @@ function GroupBlocks({
           {...stylex.props(styles.row)}
         >
           <span {...stylex.props(styles.chevron, expanded && styles.chevronOpen)}>
-            <Icon name="arrow-down-s-line" size={16} />
+            <Icon name="chevron-down" size={16} />
           </span>
           <span {...stylex.props(styles.name)}>{group.displayName}</span>
           <StatusPill status={group.status} />

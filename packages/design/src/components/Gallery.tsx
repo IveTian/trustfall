@@ -60,21 +60,21 @@ function SandwichDemo() {
       nav={
         <SectionNav>
           <SectionNavItem
-            icon="flashlight-line"
+            icon="flashlight"
             active={section === 'now'}
             onClick={() => setSection('now')}
           >
             Happening now
           </SectionNavItem>
           <SectionNavItem
-            icon="history-line"
+            icon="history"
             active={section === 'past'}
             onClick={() => setSection('past')}
           >
             Past events
           </SectionNavItem>
           <SectionNavItem
-            icon="hammer-line"
+            icon="hammer"
             active={section === 'maintenance'}
             onClick={() => setSection('maintenance')}
           >
@@ -119,10 +119,10 @@ function SandwichDemo() {
       }
     >
       <EmptyState
-        icon="flashlight-line"
+        icon="flashlight"
         title="New incidents will appear here"
         description="When something breaks, open an incident and its timeline lands on this screen."
-        actions={<Button startEnhancer={<Icon name="add-fill" />}>Open an incident</Button>}
+        actions={<Button startEnhancer={<Icon name="add" />}>Open an incident</Button>}
       />
     </PageColumns>
   );
@@ -257,7 +257,7 @@ export function DesignGallery() {
             <Button variant="danger">Resolve incident</Button>
             <Button variant="ghost">Sign out</Button>
           </Stack>
-          <Button size="lg" fullWidth endEnhancer={<Icon name="arrow-right-fill" />}>
+          <Button size="lg" fullWidth endEnhancer={<Icon name="arrow-right" />}>
             Continue
           </Button>
           <Field label="Display name" htmlFor="gallery-name">
@@ -362,7 +362,7 @@ export function DesignGallery() {
               <>
                 <StatusPill status="OPERATIONAL" />
                 <IconButton label="Delete Web application">
-                  <Icon name="delete-bin-line" size={16} />
+                  <Icon name="delete" size={16} />
                 </IconButton>
               </>
             }
@@ -375,22 +375,22 @@ export function DesignGallery() {
               <>
                 <StatusPill status="DEGRADED_PERFORMANCE" />
                 <IconButton label="Delete Public API">
-                  <Icon name="delete-bin-line" size={16} />
+                  <Icon name="delete" size={16} />
                 </IconButton>
               </>
             }
           />
           <TreeRow
             title="CN region"
-            icon="folder-line"
+            icon="folder"
             handle
             end={
               <>
                 <IconButton label="Rename CN region">
-                  <Icon name="pencil-line" size={16} />
+                  <Icon name="edit" size={16} />
                 </IconButton>
                 <IconButton label="Delete CN region">
-                  <Icon name="delete-bin-line" size={16} />
+                  <Icon name="delete" size={16} />
                 </IconButton>
               </>
             }
@@ -403,7 +403,7 @@ export function DesignGallery() {
                     <>
                       <StatusPill status="OPERATIONAL" />
                       <IconButton label="Delete API CN">
-                        <Icon name="delete-bin-line" size={16} />
+                        <Icon name="delete" size={16} />
                       </IconButton>
                     </>
                   }
@@ -415,7 +415,7 @@ export function DesignGallery() {
                     <>
                       <StatusPill status="MAJOR_OUTAGE" />
                       <IconButton label="Delete China CDN">
-                        <Icon name="delete-bin-line" size={16} />
+                        <Icon name="delete" size={16} />
                       </IconButton>
                     </>
                   }
@@ -425,15 +425,15 @@ export function DesignGallery() {
           />
           <TreeRow
             title="EU region"
-            icon="folder-line"
+            icon="folder"
             handle
             end={
               <>
                 <IconButton label="Rename EU region">
-                  <Icon name="pencil-line" size={16} />
+                  <Icon name="edit" size={16} />
                 </IconButton>
                 <IconButton label="Delete EU region">
-                  <Icon name="delete-bin-line" size={16} />
+                  <Icon name="delete" size={16} />
                 </IconButton>
               </>
             }
@@ -528,10 +528,10 @@ export function DesignGallery() {
         </Text>
         <Card>
           <EmptyState
-            icon="stack-fill"
+            icon="layers-fill"
             title="No components yet"
             description="Name what is missing, say what it will do, offer one way to start."
-            actions={<Button startEnhancer={<Icon name="add-fill" />}>Add a component</Button>}
+            actions={<Button startEnhancer={<Icon name="add" />}>Add a component</Button>}
           />
         </Card>
       </Stack>

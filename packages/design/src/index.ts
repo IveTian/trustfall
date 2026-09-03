@@ -74,7 +74,11 @@ export { StatusIcon } from './components/StatusIcon.tsx';
 export { StatusPill } from './components/StatusPill.tsx';
 export type { StatusPillProps } from './components/StatusPill.tsx';
 export { StatusSelect } from './components/StatusSelect.tsx';
-export { ImpactSelect, impactStatusLabels } from './components/ImpactSelect.tsx';
+export {
+  ImpactSelect,
+  impactStatusLabels,
+  impactStatusPresentation,
+} from './components/ImpactSelect.tsx';
 export { DiffBlock } from './components/Diff.tsx';
 export type { DiffLine } from './components/Diff.tsx';
 export type { ImpactStatus } from './components/ImpactSelect.tsx';
@@ -91,6 +95,7 @@ export type { PublicServiceGroup } from './components/ServiceGroupList.tsx';
 export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { CardKind } from './components/CardKind.tsx';
 export { CardTitleLink } from './components/CardTitleLink.tsx';
+export { RecentRow } from './components/RecentRow.tsx';
 export type { CardKindName } from './components/CardKind.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';
@@ -133,3 +138,4 @@ export { SidebarHeader, SidebarNavItem, SidebarNavSection } from './components/S
 export { ProfileMenu } from './components/ProfileMenu.tsx';
 export type { ProfileMenuItem } from './components/ProfileMenu.tsx';
 export { Icon } from './components/Icon.tsx';
+export type { IconName } from '@trustfall/icon';

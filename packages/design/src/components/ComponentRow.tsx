@@ -96,7 +96,7 @@ export function ComponentRow({
               <span {...stylex.props(styles.name)}>
                 <span {...stylex.props(styles.group)}>{group}</span>
                 <span {...stylex.props(styles.chevron)} aria-hidden="true">
-                  <Icon name="arrow-right-s-line" size={16} />
+                  <Icon name="chevron-right" size={16} />
                 </span>
                 <span>{displayName}</span>
               </span>

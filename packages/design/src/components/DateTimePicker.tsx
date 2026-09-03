@@ -301,7 +301,7 @@ export function DateTimePicker({
           {value == null ? placeholder : summary.format(new Date(value))}
         </span>
         <span {...stylex.props(styles.triggerIcon)}>
-          <Icon name="calendar-line" size={16} />
+          <Icon name="calendar" size={16} />
         </span>
       </button>
       <input
@@ -324,13 +324,13 @@ export function DateTimePicker({
         >
           <div {...stylex.props(styles.monthBar)}>
             <IconButton label="Previous month" onClick={() => shiftMonth(-1)}>
-              <Icon name="arrow-left-s-line" size={16} />
+              <Icon name="chevron-left" size={16} />
             </IconButton>
             <span aria-live="polite" {...stylex.props(styles.monthLabel)}>
               {monthLabel.format(new Date(view.year, view.month, 1))}
             </span>
             <IconButton label="Next month" onClick={() => shiftMonth(1)}>
-              <Icon name="arrow-right-s-line" size={16} />
+              <Icon name="chevron-right" size={16} />
             </IconButton>
           </div>
           {/* The grid carries the arrow-key handling, so a key event from any day lands here. */}
@@ -383,7 +383,7 @@ export function DateTimePicker({
           </div>
           <div {...stylex.props(styles.timeRow)}>
             <span {...stylex.props(styles.timeLabel)}>
-              <Icon name="time-line" size={16} />
+              <Icon name="time" size={16} />
               {clock.format(new Date(epochOf({ ...shown, minute: minuteShown })))}
             </span>
             <TimeMenu
