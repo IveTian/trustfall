@@ -5,6 +5,7 @@ import { color } from '../tokens/color.stylex.ts';
 import { control } from '../tokens/const.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { Card, type CardSurface } from './Card.tsx';
+import { CardKind } from './CardKind.tsx';
 import { Icon } from './Icon.tsx';
 import { RelativeTime } from './RelativeTime.tsx';
 import { RichTextBody } from './RichTextBody.tsx';
@@ -30,8 +31,8 @@ export type PublicMaintenance = {
 };
 
 /**
- * The public maintenance card, laid out like the console's: the title with a
- * trailing arrow when it opens the maintenance, the status, when the window
+ * The public maintenance card, laid out like the console's: a "Maintenance"
+ * eyebrow, the title with a trailing arrow when it opens the maintenance, the status, when the window
  * runs (in the schedule's own zone, since that is the zone it was promised
  * in) and how far off that is, how it repeats, the latest word, and what it
  * touches.
@@ -53,6 +54,7 @@ export function MaintenanceCard({
     <Card as="article" surface={surface}>
       <Stack gap={3} grow justify="between">
         <Stack gap={2}>
+          <CardKind kind="maintenance" />
           {maintenance.href ? (
             <a href={maintenance.href} {...stylex.props(styles.open)}>
               {title}
