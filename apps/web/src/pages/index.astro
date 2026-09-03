@@ -1,18 +1,28 @@
 ---
 import { env } from 'cloudflare:workers';
-import { createDb, getSummary, isSiteInitialized } from '@trustfall/db';
 import {
-  ComponentGroupSection,
+  createDb,
+  getSummary,
+  isSiteInitialized,
+  listIncidents,
+  listMaintenances,
+} from '@trustfall/db';
+import {
+  ComponentRow,
   IncidentCard,
   MaintenanceCard,
   OverallStatusBanner,
-  SiteChrome,
-  Stack,
+  overallStatusTone,
+  type PublicIncident,
+  type PublicMaintenance,
+  SiteGroup,
+  SiteHeading,
+  SitePanel,
   Text,
 } from '@trustfall/design';
 import type { ComponentStatus } from '@trustfall/shared';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
-import Base from '../layouts/Base.astro';
+import Site from '../layouts/Site.astro';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -24,9 +34,27 @@ if (initialized) {
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
 
-let summary;
+type Summary = Awaited<ReturnType<typeof getSummary>>;
+type Incident = Summary['activeIncidents'][number];
+type Maintenance = Summary['activeMaintenances'][number];
+
+const RECENT_LIMIT = 6;
+
+let summary: Summary;
+let recentIncidents: Incident[] = [];
+let recentMaintenances: Maintenance[] = [];
 try {
-  summary = await getSummary(db);
+  [summary, recentIncidents, recentMaintenances] = await Promise.all([
+    getSummary(db),
+    // Ordered by start time upstream, so over-fetch and let the resolve-time
+    // sort below pick the genuinely latest.
+    listIncidents(db, { state: 'RESOLVED', pageSize: RECENT_LIMIT * 5 }).then(
+      (page) => page.incidents,
+    ),
+    listMaintenances(db, { state: 'PAST', pageSize: RECENT_LIMIT }).then(
+      (page) => page.maintenances,
+    ),
+  ]);
 } catch {
   summary = {
     overallStatus: 'OPERATIONAL' as const,
@@ -38,102 +66,186 @@ try {
     activeMaintenances: [],
   };
 }
+
+const toIncident = (incident: Incident): PublicIncident => ({
+  id: incident.id,
+  title: incident.title,
+  status: incident.status,
+  impact: incident.impact,
+  startTime: incident.startTime,
+  resolveTime: incident.resolveTime,
+  updates: incident.updates,
+  href: `/incidents/${incident.id}`,
+});
+
+const toMaintenance = (maintenance: Maintenance): PublicMaintenance => ({
+  id: maintenance.id,
+  title: maintenance.title,
+  status: maintenance.status,
+  windowStart: maintenance.windowStart,
+  windowEnd: maintenance.windowEnd,
+  startTime: maintenance.startTime,
+  recurrence: maintenance.recurrence ?? null,
+  timeZone: maintenance.timeZone,
+  affectedComponents: maintenance.components,
+  updates: maintenance.updates,
+});
+
+// Under way now, versus still to open.
+const underWay = summary.activeMaintenances.filter((item) => item.status === 'IN_PROGRESS');
+const scheduled = summary.activeMaintenances.filter((item) => item.status === 'SCHEDULED');
+
+// What happened lately, incidents and maintenance together, latest first.
+type Recent =
+  | { kind: 'incident'; at: number; incident: PublicIncident }
+  | { kind: 'maintenance'; at: number; maintenance: PublicMaintenance };
+const recent: Recent[] = [
+  ...recentIncidents.map(
+    (incident): Recent => ({
+      kind: 'incident',
+      at: incident.resolveTime ?? incident.startTime,
+      incident: toIncident(incident),
+    }),
+  ),
+  ...recentMaintenances.map(
+    (maintenance): Recent => ({
+      kind: 'maintenance',
+      at: maintenance.windowEnd,
+      maintenance: toMaintenance(maintenance),
+    }),
+  ),
+]
+  .sort((a, b) => b.at - a.at)
+  .slice(0, RECENT_LIMIT);
+
+const toComponents = (components: Summary['ungroupedComponents']) =>
+  components.map((component) => ({
+    id: component.id,
+    displayName: component.displayName,
+    description: component.description,
+    status: component.status as ComponentStatus,
+  }));
+// Only what is affected, in the console's order: the ungrouped services
+// first, then each group's, groups and services as the operators arranged
+// them (`position`, then name — the queries already sort so). When every
+// service is operational the banner has said it all and the run is skipped.
+const services = [
+  ...toComponents(summary.ungroupedComponents).map((component) => ({ ...component, group: null })),
+  ...summary.componentGroups.flatMap((group) =>
+    toComponents(group.components).map((component) => ({ ...component, group: group.displayName })),
+  ),
+].filter((service) => service.status !== 'OPERATIONAL');
 ---
 
-<Base title={summary.siteName} description={summary.siteDescription}>
-  {
-    initialized ? (
-      <SiteChrome siteName={summary.siteName}>
-        <Stack gap={5}>
-          <OverallStatusBanner
-            status={summary.overallStatus}
-            siteName={summary.siteName}
-            description={summary.siteDescription}
-          />
-          {
-            summary.componentGroups.length === 0 && summary.ungroupedComponents.length === 0 ? (
-              <Text tone="muted">No components have been published yet.</Text>
-            ) : null
-          }
-          {
-            summary.componentGroups.map((group) => (
-              <ComponentGroupSection
-                displayName={group.displayName}
-                description={group.description}
-                components={group.components.map((component) => ({
-                  id: component.id,
-                  displayName: component.displayName,
-                  description: component.description,
-                  status: component.status as ComponentStatus,
-                }))}
+{
+  initialized ? (
+    <Site
+      title={summary.siteName}
+      description={summary.siteDescription}
+      siteName={summary.siteName}
+      current="overview"
+    >
+      <SitePanel
+        tone={
+          summary.overallStatus === 'OPERATIONAL' ? undefined : overallStatusTone(summary.overallStatus)
+        }
+      >
+        <OverallStatusBanner
+          status={summary.overallStatus}
+          siteName={summary.siteName}
+          description={summary.siteDescription}
+        />
+      </SitePanel>
+
+      {services.length > 0 ? (
+        <>
+          <SiteHeading>Current status</SiteHeading>
+          <SiteGroup as="ul">
+            {services.map((service) => (
+          <SitePanel as="li" density="row">
+            <ComponentRow
+              as="div"
+              bare
+              group={service.group}
+              displayName={service.displayName}
+              description={service.description}
+              status={service.status}
+            />
+          </SitePanel>
+        ))}
+      </SiteGroup>
+        </>
+      ) : null}
+
+      <SiteHeading>Active incidents and maintenance</SiteHeading>
+      <SiteGroup>
+        {summary.activeIncidents.length === 0 && underWay.length === 0 ? (
+          <SitePanel density="row">
+            <Text tone="muted">Nothing is under way.</Text>
+          </SitePanel>
+        ) : null}
+        {summary.activeIncidents.map((incident) => (
+          <SitePanel as="article" minRows={2.5} step={0.5}>
+            <IncidentCard client:load surface="plain" incident={toIncident(incident)} />
+          </SitePanel>
+        ))}
+        {underWay.map((maintenance) => (
+          <SitePanel as="article" minRows={2.5} step={0.5}>
+            <MaintenanceCard
+              client:load
+              surface="plain"
+              locale="en"
+              maintenance={toMaintenance(maintenance)}
+            />
+          </SitePanel>
+        ))}
+      </SiteGroup>
+
+      <SiteHeading>Recent incidents and maintenance</SiteHeading>
+      <SiteGroup>
+        {recent.length === 0 ? (
+          <SitePanel density="row">
+            <Text tone="muted">Nothing has happened lately.</Text>
+          </SitePanel>
+        ) : (
+          recent.map((item) => (
+            <SitePanel as="article" minRows={2.5} step={0.5}>
+              {item.kind === 'incident' ? (
+                <IncidentCard client:load surface="plain" incident={item.incident} />
+              ) : (
+                <MaintenanceCard
+                  client:load
+                  surface="plain"
+                  locale="en"
+                  maintenance={item.maintenance}
+                />
+              )}
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
+
+      <SiteHeading>Scheduled maintenance</SiteHeading>
+      <SiteGroup>
+        {scheduled.length === 0 ? (
+          <SitePanel density="row">
+            <Text tone="muted">No maintenance is scheduled.</Text>
+          </SitePanel>
+        ) : (
+          scheduled.map((maintenance) => (
+            <SitePanel as="article" minRows={2.5} step={0.5}>
+              <MaintenanceCard
+                client:load
+                surface="plain"
+                locale="en"
+                maintenance={toMaintenance(maintenance)}
               />
-            ))
-          }
-          {
-            summary.ungroupedComponents.length > 0 ? (
-              <ComponentGroupSection
-                displayName="Other"
-                components={summary.ungroupedComponents.map((component) => ({
-                  id: component.id,
-                  displayName: component.displayName,
-                  description: component.description,
-                  status: component.status as ComponentStatus,
-                }))}
-              />
-            ) : null
-          }
-          {
-            summary.activeMaintenances.length > 0 ? (
-              <Stack gap={3}>
-                <Text as="h2" tone="title">
-                  Scheduled maintenance
-                </Text>
-                {summary.activeMaintenances.map((maintenance) => (
-                  <MaintenanceCard
-                    maintenance={{
-                      id: maintenance.id,
-                      title: maintenance.title,
-                      status: maintenance.status,
-                      windowStart: maintenance.windowStart,
-                      windowEnd: maintenance.windowEnd,
-                      startTime: maintenance.startTime,
-                      recurrence: maintenance.recurrence ?? null,
-                      timeZone: maintenance.timeZone,
-                      affectedComponents: maintenance.components,
-                      updates: maintenance.updates,
-                    }}
-                  />
-                ))}
-              </Stack>
-            ) : null
-          }
-          {
-            summary.activeIncidents.length > 0 ? (
-              <Stack gap={3}>
-                <Text as="h2" tone="title">
-                  Active incidents
-                </Text>
-                {summary.activeIncidents.map((incident) => (
-                  <IncidentCard
-                    incident={{
-                      id: incident.id,
-                      title: incident.title,
-                      status: incident.status,
-                      impact: incident.impact,
-                      startTime: incident.startTime,
-                      resolveTime: incident.resolveTime,
-                      updates: incident.updates,
-                      href: `/incidents/${incident.id}`,
-                    }}
-                  />
-                ))}
-              </Stack>
-            ) : null
-          }
-        </Stack>
-      </SiteChrome>
-    ) : (
-      <UninitializedNotice />
-    )
-  }
-</Base>
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

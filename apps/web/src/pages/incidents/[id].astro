@@ -5,13 +5,13 @@ import {
   AffectedComponentsChart,
   type ChartComponent,
   IncidentTimeline,
-  SiteChrome,
-  Stack,
-  StatusPill,
+  SiteGroup,
+  SiteHeading,
+  SitePanel,
   Text,
 } from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
-import Base from '../../layouts/Base.astro';
+import Site from '../../layouts/Site.astro';
 
 const { id } = Astro.params;
 if (!id) {
@@ -35,16 +35,6 @@ if (initialized) {
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
 
-// The page is rendered once and cached for everyone, so it speaks UTC rather
-// than guessing a reader's zone.
-const startedAt = incident
-  ? new Intl.DateTimeFormat('en', {
-      timeZone: 'UTC',
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(incident.startTime))
-  : '';
-
 // Every component the incident ever named, currently affected ones first.
 const affected: ChartComponent[] = [];
 if (incident) {
@@ -64,37 +54,36 @@ if (incident) {
 }
 ---
 
-<Base title={incident ? `${incident.title} · ${siteName}` : siteName}>
-  {
-    incident ? (
-      <SiteChrome siteName={siteName}>
-        <Stack gap={4}>
-          <Stack direction="horizontal" gap={2}>
-            <StatusPill status={incident.status} kind="incident" />
-            <StatusPill status={incident.impact} kind="impact" />
-          </Stack>
-          <Text as="h1" tone="display">{incident.title}</Text>
-          <Text tone="caption">Started {startedAt} UTC</Text>
-          <IncidentTimeline updates={incident.updates} timeZone="UTC" />
-          {
-            affected.length > 0 ? (
-              <Stack gap={3}>
-                <Text as="h2" tone="label">Affected components</Text>
-                <AffectedComponentsChart
-                  components={affected}
-                  updates={incident.updates}
-                  startTime={incident.startTime}
-                  endTime={incident.resolveTime}
-                  timeZone="UTC"
-                  now={Date.now()}
-                />
-              </Stack>
-            ) : null
-          }
-        </Stack>
-      </SiteChrome>
-    ) : (
-      <UninitializedNotice />
-    )
-  }
-</Base>
+{
+  incident ? (
+    <Site title={`${incident.title} · ${siteName}`} siteName={siteName} current="history">
+      <SiteGroup spacing="shared">
+        <SitePanel density="row">
+          <Text as="h1" tone="display">
+            {incident.title}
+          </Text>
+        </SitePanel>
+        {affected.length > 0 ? (
+          <SitePanel density="flush">
+            <AffectedComponentsChart
+              components={affected}
+              updates={incident.updates}
+              startTime={incident.startTime}
+              endTime={incident.resolveTime}
+              locale="en"
+              now={Date.now()}
+              client:load
+            />
+          </SitePanel>
+        ) : null}
+      </SiteGroup>
+
+      <SiteHeading>Updates</SiteHeading>
+      <SitePanel>
+        <IncidentTimeline client:load updates={incident.updates} locale="en" />
+      </SitePanel>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

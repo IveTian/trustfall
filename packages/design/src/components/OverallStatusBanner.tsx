@@ -1,34 +1,18 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentStatus } from '@trustfall/shared';
-import { componentStatusPresentation, overallStatusCopy } from '../status.ts';
+import { componentStatusPresentation, overallStatusCopy, type StatusTone } from '../status.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { StatusIcon } from './StatusIcon.tsx';
 import { Text } from './Text.tsx';
 
-const styles = stylex.create({
-  banner: {
-    display: 'grid',
-    gap: space[3],
-  },
-  rule: {
-    backgroundColor: color.operational,
-    blockSize: space[1],
-    borderRadius: radius.pill,
-    inlineSize: '100%',
-  },
-  degraded: { backgroundColor: color.degraded },
-  partialOutage: { backgroundColor: color.partialOutage },
-  majorOutage: { backgroundColor: color.majorOutage },
-  maintenance: { backgroundColor: color.maintenance },
-  row: {
-    alignItems: 'center',
-    display: 'flex',
-    gap: space[3],
-  },
-});
-
+/**
+ * The one-glance answer at the top of the public page: the status glyph in a
+ * badge of its tone, the sentence, and the site's own line under it. Colour
+ * stays on the glyph — and, when things are not operational, on the block
+ * around the banner (`SitePanel tone`) — so an all-clear page reads quiet.
+ */
 export function OverallStatusBanner({
   status,
   siteName,
@@ -39,30 +23,59 @@ export function OverallStatusBanner({
   description?: string;
 }) {
   const presentation = componentStatusPresentation[status];
-  const ruleStyle =
-    presentation.tone === 'degraded'
-      ? styles.degraded
-      : presentation.tone === 'partialOutage'
-        ? styles.partialOutage
-        : presentation.tone === 'majorOutage'
-          ? styles.majorOutage
-          : presentation.tone === 'maintenance'
-            ? styles.maintenance
-            : styles.rule;
-
   return (
     <section {...stylex.props(styles.banner)} aria-live="polite">
-      <div
-        {...stylex.props(styles.rule, presentation.tone !== 'operational' && ruleStyle)}
-        aria-hidden="true"
-      />
-      <div {...stylex.props(styles.row)}>
-        <StatusIcon icon={presentation.icon} tone={presentation.tone} title={presentation.label} />
+      <span {...stylex.props(styles.badge, badgeTone[presentation.tone])}>
+        <StatusIcon
+          icon={presentation.icon}
+          tone={presentation.tone}
+          title={presentation.label}
+          size="lg"
+        />
+      </span>
+      <div {...stylex.props(styles.copy)}>
         <Text as="h1" tone="display">
           {overallStatusCopy(status, siteName)}
         </Text>
+        {description ? <Text tone="muted">{description}</Text> : null}
       </div>
-      {description ? <Text tone="muted">{description}</Text> : null}
     </section>
   );
 }
+
+/** The block's own tone for a status, so the page can tint the surface around the banner. */
+export function overallStatusTone(status: ComponentStatus): StatusTone {
+  return componentStatusPresentation[status].tone;
+}
+
+const styles = stylex.create({
+  banner: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: space[4],
+  },
+  badge: {
+    alignItems: 'center',
+    backgroundColor: color.surfaceSubtle,
+    blockSize: space[7],
+    borderRadius: radius.md,
+    display: 'flex',
+    flexShrink: 0,
+    inlineSize: space[7],
+    justifyContent: 'center',
+  },
+  copy: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space[1],
+    minWidth: 0,
+  },
+});
+
+const badgeTone = stylex.create({
+  operational: { backgroundColor: color.operationalMuted },
+  degraded: { backgroundColor: color.degradedMuted },
+  partialOutage: { backgroundColor: color.partialOutageMuted },
+  majorOutage: { backgroundColor: color.majorOutageMuted },
+  maintenance: { backgroundColor: color.maintenanceMuted },
+});

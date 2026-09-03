@@ -1,0 +1,72 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getSetting, isSiteInitialized, listMaintenances } from '@trustfall/db';
+import { MaintenanceCard, SiteGroup, SiteHeading, SitePanel, Text } from '@trustfall/design';
+import UninitializedNotice from '../components/UninitializedNotice.astro';
+import Site from '../layouts/Site.astro';
+
+const db = createDb(env.DB);
+const initialized = await isSiteInitialized(db);
+
+if (initialized) {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+
+let maintenances: Awaited<ReturnType<typeof listMaintenances>>['maintenances'] = [];
+let siteName = 'TrustFall';
+if (initialized) {
+  try {
+    const listed = await listMaintenances(db, { pageSize: 50 });
+    maintenances = listed.maintenances;
+  } catch {
+    maintenances = [];
+  }
+  try {
+    siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  } catch {
+    // The default name is enough to render the page.
+  }
+}
+---
+
+{
+  initialized ? (
+    <Site title={`Maintenance · ${siteName}`} siteName={siteName} current="maintenance">
+      <SiteHeading as="h1">Maintenance</SiteHeading>
+      <SiteGroup>
+        {maintenances.length === 0 ? (
+          <SitePanel density="row">
+            <Text tone="muted">No maintenance windows have been published.</Text>
+          </SitePanel>
+        ) : (
+          maintenances.map((maintenance) => (
+            <SitePanel as="article" minRows={2.5} step={0.5}>
+              <MaintenanceCard
+                client:load
+                surface="plain"
+                locale="en"
+                maintenance={{
+                  id: maintenance.id,
+                  title: maintenance.title,
+                  status: maintenance.status,
+                  windowStart: maintenance.windowStart,
+                  windowEnd: maintenance.windowEnd,
+                  startTime: maintenance.startTime,
+                  recurrence: maintenance.recurrence ?? null,
+                  timeZone: maintenance.timeZone,
+                  affectedComponents: maintenance.components,
+                  updates: maintenance.updates,
+                }}
+              />
+            </SitePanel>
+          ))
+        )}
+      </SiteGroup>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

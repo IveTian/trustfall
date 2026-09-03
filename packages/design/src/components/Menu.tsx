@@ -2,12 +2,15 @@ import * as stylex from '@stylexjs/stylex';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { breakpoints, control, mesh, motion, zIndex } from '../tokens/const.stylex.ts';
-import { radius } from '../tokens/radius.stylex.ts';
+import { radius as radiusToken } from '../tokens/radius.stylex.ts';
 import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
 import { Icon } from './Icon.tsx';
 import { measurePopover, type PopoverAnchor } from '../popover.ts';
+
+/** `none` squares every corner; `sm` and `md` are the radius tokens. */
+export type MenuRadius = 'none' | 'sm' | 'md';
 
 export type MenuItem = {
   id: string;
@@ -36,6 +39,7 @@ export function Menu({
   align = 'end',
   disabled = false,
   variant = 'button',
+  radius = 'md',
   triggerId,
 }: {
   /**
@@ -56,6 +60,12 @@ export function Menu({
    * ghost trigger for a lone glyph, the IconButton of menus.
    */
   variant?: 'button' | 'field' | 'bare' | 'icon';
+  /**
+   * Corner treatment for the trigger and the panel. The console keeps the
+   * default; a chrome that draws in straight lines — the public site's bar —
+   * passes `none`.
+   */
+  radius?: MenuRadius;
   /** Forwarded to the trigger so a `<label htmlFor>` can reach it. */
   triggerId?: string;
 }) {
@@ -197,6 +207,7 @@ export function Menu({
           open && variant === 'button' && styles.triggerOpen,
           open && variant === 'icon' && styles.triggerIconOnlyOpen,
           open && variant === 'field' && styles.triggerFieldOpen,
+          radius !== 'md' && triggerRadius[radius],
         )}
       >
         <span {...stylex.props(styles.triggerLabel)}>{children}</span>
@@ -215,6 +226,7 @@ export function Menu({
           aria-label={label}
           {...stylex.props(
             styles.panel,
+            radius !== 'md' && panelRadius[radius],
             anchor.dropsDown && styles.panelDown,
             styles.panelAt(
               anchor.blockStart,
@@ -238,7 +250,7 @@ export function Menu({
                 close(true);
                 item.onSelect();
               }}
-              {...stylex.props(styles.row)}
+              {...stylex.props(styles.row, radius === 'none' && styles.rowSquare)}
             >
               {item.icon ? <span {...stylex.props(styles.rowIcon)}>{item.icon}</span> : null}
               <span {...stylex.props(styles.rowLabel)}>{item.label}</span>
@@ -255,10 +267,25 @@ export function Menu({
   );
 }
 
+// Applied after the variant styles so a square or small corner wins over the
+// variant's own radius. `md` is the variant default and has no entry.
+const triggerRadius = stylex.create({
+  none: { borderRadius: 0 },
+  sm: { borderRadius: radiusToken.sm },
+});
+
+const panelRadius = stylex.create({
+  none: { borderRadius: 0 },
+  sm: { borderRadius: radiusToken.sm },
+});
+
 const styles = stylex.create({
   root: {
     minWidth: 0,
     position: 'relative',
+  },
+  rowSquare: {
+    borderRadius: 0,
   },
   rootField: {
     width: '100%',
@@ -274,7 +301,7 @@ const styles = stylex.create({
       default: color.border,
       ':hover': color.borderStrong,
     },
-    borderRadius: radius.md,
+    borderRadius: radiusToken.md,
     borderStyle: 'solid',
     borderWidth: mesh.line,
     boxShadow: shadow.subtle,
@@ -382,7 +409,7 @@ const styles = stylex.create({
       ':hover': color.borderStrong,
       ':focus': color.accent,
     },
-    borderRadius: radius.sm,
+    borderRadius: radiusToken.sm,
     boxShadow: {
       default: 'none',
       ':focus': `inset 0 0 0 ${mesh.line} ${color.accent}`,
@@ -427,7 +454,7 @@ const styles = stylex.create({
     animationTimingFunction: motion.ease,
     backgroundColor: color.surfaceRaised,
     borderColor: color.border,
-    borderRadius: radius.md,
+    borderRadius: radiusToken.md,
     borderStyle: 'solid',
     borderWidth: mesh.line,
     boxShadow: shadow.overlay,
@@ -469,7 +496,7 @@ const styles = stylex.create({
       default: 'transparent',
       ':hover': color.surfaceSubtle,
     },
-    borderRadius: radius.sm,
+    borderRadius: radiusToken.sm,
     borderWidth: 0,
     boxSizing: 'border-box',
     color: color.textPrimary,

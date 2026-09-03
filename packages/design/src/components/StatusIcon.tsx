@@ -9,6 +9,10 @@ const styles = stylex.create({
     height: space[4],
     width: space[4],
   },
+  lg: {
+    height: space[5],
+    width: space[5],
+  },
   operational: { color: color.operational },
   degraded: { color: color.degraded },
   partialOutage: { color: color.partialOutage },
@@ -20,17 +24,20 @@ export function StatusIcon({
   icon,
   tone,
   title,
+  size = 'md',
 }: {
   icon: StatusIconKind;
   tone: StatusTone;
   title: string;
+  /** `lg` for the one glyph a page leads with; everything else stays `md`. */
+  size?: 'md' | 'lg';
 }) {
   return (
     <svg
       viewBox="0 0 16 16"
       aria-hidden="false"
       role="img"
-      {...stylex.props(styles.svg, styles[tone])}
+      {...stylex.props(styles.svg, styles[tone], size === 'lg' && styles.lg)}
     >
       <title>{title}</title>
       {icon === 'check' ? (

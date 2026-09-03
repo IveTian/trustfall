@@ -134,7 +134,14 @@ const styles = stylex.create({
     paddingBlock: space[4],
     paddingInline: space[4],
   },
+  // Like the body: divided from whatever follows it in the panel.
   list: {
+    borderBlockEndColor: color.border,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: {
+      default: mesh.line,
+      ':last-child': 0,
+    },
     listStyle: 'none',
     margin: 0,
     padding: 0,

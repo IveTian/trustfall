@@ -1,0 +1,258 @@
+/* Must stay in lockstep with tokens/color.stylex.ts, tokens/mesh.ts and tokens/space.stylex.ts. */
+
+.tf-site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background-color: light-dark(#efefef, #141414);
+}
+
+/*
+ * The mesh starts half a cell under the bar, which is exactly where the first
+ * block's top edge sits, so that horizontal line is the block's own border.
+ * Vertical rhythm is in whole cells: a panel is rows × cell plus the line its
+ * bottom border covers; a lone panel or group stands a cell apart from the
+ * one before it; a heading is a cell and a run of grouped panels share a
+ * line. Horizontally, until site-shell-runtime measures, a tile is centred on
+ * the page: with an odd number of columns the edges then land on lines.
+ */
+.tf-site-main {
+  --tf-site-cell: 64px;
+  --tf-site-line: 1px;
+  --tf-site-cols: 13;
+  --tf-site-origin-x: 50%;
+
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  align-items: center;
+  width: 100%;
+  padding-block: calc(var(--tf-site-cell) / 2);
+  background-image:
+    linear-gradient(
+      to right,
+      light-dark(#dcdcdc, #333) var(--tf-site-line),
+      transparent var(--tf-site-line)
+    ),
+    linear-gradient(
+      to bottom,
+      light-dark(#dcdcdc, #333) var(--tf-site-line),
+      transparent var(--tf-site-line)
+    );
+  background-size: var(--tf-site-cell) var(--tf-site-cell);
+  background-position: var(--tf-site-origin-x) calc(var(--tf-site-cell) / 2);
+}
+
+.tf-site-group {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A cell apart from the block before, less the line that block's bottom border covers. */
+:is(.tf-site-panel, .tf-site-group) + :is(.tf-site-panel, .tf-site-group) {
+  margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
+}
+
+/* Grouped panels share the line between them, or stand a cell or half a cell apart. */
+.tf-site-group > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-line) * -1);
+}
+
+.tf-site-group[data-spacing='cell'] > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
+}
+
+.tf-site-group[data-spacing='half'] > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+/*
+ * A run of blocks that folds open under another — a group's services. The
+ * fold itself takes no room when closed; open, it grows to its content over
+ * `motion.base`, and the half-cell gap before its first block is its own
+ * inset so it folds away with them. Duration and easing mirror
+ * tokens/const.stylex.ts.
+ */
+.tf-site-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: grid-template-rows 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tf-site-fold[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.tf-site-fold > .tf-site-group {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The gap before the first block is a margin, so it clips away with the fold. */
+.tf-site-fold > .tf-site-group > .tf-site-panel:first-child {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+.tf-site-fold[data-open] > .tf-site-group {
+  opacity: 1;
+}
+
+.tf-site-fold + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tf-site-fold,
+  .tf-site-fold > .tf-site-group {
+    transition: none;
+  }
+}
+
+/*
+ * Half-cell gaps put every second panel half a cell off the lines, and a
+ * half-cell panel can end between lines. Once site-shell-runtime measures,
+ * each group is padded to the next line for whatever follows; until then,
+ * an even run of whole-cell panels is padded by count.
+ */
+.tf-site-main:not([data-tf-site-ready])
+  .tf-site-group[data-spacing='half']
+  > .tf-site-panel:nth-child(even):last-child {
+  margin-block-end: calc(var(--tf-site-cell) / 2);
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-group {
+  padding-block-end: var(--tf-site-group-pad, 0px);
+}
+
+/* A group inside a fold is measured as part of the group around it, and the
+   custom property would otherwise inherit that group's padding. */
+.tf-site-main[data-tf-site-ready] .tf-site-fold > .tf-site-group {
+  padding-block-end: 0;
+}
+
+/*
+ * One cell, the words at its foot, over the group it names. Starting on the
+ * line the previous block ends on keeps the next block on a line too.
+ */
+.tf-site-heading {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
+  max-width: 100%;
+  height: var(--tf-site-cell);
+  padding: 0 16px 12px;
+}
+
+:is(.tf-site-panel, .tf-site-group) + .tf-site-heading {
+  margin-block-start: calc(var(--tf-site-line) * -1);
+}
+
+/* A whole number of cells, plus one line so the border sits on the grid. */
+.tf-site-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
+  max-width: 100%;
+  border: var(--tf-site-line) solid light-dark(#dcdcdc, #333);
+}
+
+/* Nested under another block: a cell of canvas open on the start edge. */
+.tf-site-panel[data-indent='1'] {
+  width: calc((var(--tf-site-cols) - 1) * var(--tf-site-cell) + var(--tf-site-line));
+  margin-inline-start: var(--tf-site-cell);
+}
+
+/* A toned panel paints its own fill (SiteShell.tsx); the rest are white. */
+.tf-site-panel:not([data-tone]) {
+  background-color: light-dark(#fff, #1a1a1a);
+}
+
+.tf-site-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 16px;
+}
+
+/* One line of content in one cell, centred in the row. The inset shrinks so
+   a display-size line (32px) still fits under the cell with its border. */
+.tf-site-panel[data-density='row'] > .tf-site-content {
+  justify-content: center;
+  padding-block: 12px;
+}
+
+/* No inset: the content's own rows and rules run out to the border. */
+.tf-site-panel[data-density='flush'] > .tf-site-content {
+  padding: 0;
+}
+
+/* After site-shell-runtime measures: the mesh origins at the panels' left edge. */
+.tf-site-main[data-tf-site-ready] {
+  --tf-site-origin-x: var(--tf-site-panel-left);
+
+  align-items: flex-start;
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-heading {
+  width: calc(var(--tf-site-panel-width) + var(--tf-site-line));
+  max-width: none;
+  margin-inline-start: var(--tf-site-panel-left);
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-panel {
+  width: calc(var(--tf-site-panel-width) + var(--tf-site-line));
+  max-width: none;
+  min-height: calc(var(--tf-site-panel-height, 0px) + var(--tf-site-line));
+  margin-inline-start: var(--tf-site-panel-left);
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-panel[data-indent='1'] {
+  width: calc(var(--tf-site-panel-width) - var(--tf-site-cell) + var(--tf-site-line));
+  margin-inline-start: calc(var(--tf-site-panel-left) + var(--tf-site-cell));
+}
+
+[data-tf-site-nav-label] {
+  view-transition-class: tf-site-nav-label;
+}
+
+/*
+ * Crossing from one public page to another is a view transition (the web app
+ * runs Astro's client router). Only the bar's active pill, named in
+ * SiteNav.tsx, travels from where it was to where it now is; the labels are
+ * lifted with it so they stay legible on top. Duration and easing mirror
+ * `motion.slow` and `motion.ease` in tokens/const.stylex.ts.
+ */
+::view-transition-group(tf-site-nav-active) {
+  z-index: 1;
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+::view-transition-group(.tf-site-nav-label) {
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(tf-site-nav-active),
+  ::view-transition-old(tf-site-nav-active),
+  ::view-transition-new(tf-site-nav-active) {
+    animation: none;
+  }
+}

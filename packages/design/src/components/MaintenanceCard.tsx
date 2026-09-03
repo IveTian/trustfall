@@ -1,7 +1,13 @@
 import type { MaintenanceRecurrence, MaintenanceStatus } from '@trustfall/shared';
 import { describeRecurrence, formatInstant, formatWindow } from '../maintenance-copy.ts';
-import { Card } from './Card.tsx';
-import { Link } from './Link.tsx';
+import * as stylex from '@stylexjs/stylex';
+import { color } from '../tokens/color.stylex.ts';
+import { control } from '../tokens/const.stylex.ts';
+import { space } from '../tokens/space.stylex.ts';
+import { Card, type CardSurface } from './Card.tsx';
+import { CardKind } from './CardKind.tsx';
+import { Icon } from './Icon.tsx';
+import { RelativeTime } from './RelativeTime.tsx';
 import { RichTextBody } from './RichTextBody.tsx';
 import { Stack } from './Stack.tsx';
 import { StatusPill } from './StatusPill.tsx';
@@ -25,48 +31,115 @@ export type PublicMaintenance = {
 };
 
 /**
- * The public page's maintenance card: the status, the title, when the window
+ * The public maintenance card, laid out like the console's: a "Maintenance"
+ * eyebrow, the title with a trailing arrow when it opens the maintenance, the status, when the window
  * runs (in the schedule's own zone, since that is the zone it was promised
- * in), how it repeats, what it touches, and the latest word.
+ * in) and how far off that is, how it repeats, the latest word, and what it
+ * touches.
  */
-export function MaintenanceCard({ maintenance }: { maintenance: PublicMaintenance }) {
+export function MaintenanceCard({
+  maintenance,
+  surface,
+  locale,
+}: {
+  maintenance: PublicMaintenance;
+  surface?: CardSurface;
+  /** Formatting locale; the viewer's own when omitted. A cached page pins it. */
+  locale?: string;
+}) {
   const latest = maintenance.updates[0];
-  const underWay = maintenance.status === 'IN_PROGRESS';
+  const zone = maintenance.timeZone;
+  const title = <Text tone="label">{maintenance.title}</Text>;
   return (
-    <Card as="article">
-      <Stack gap={3}>
-        <Stack direction="horizontal" gap={2}>
-          <StatusPill status={maintenance.status} kind="maintenance" />
-        </Stack>
-        <Text as="h2" tone="title">
+    <Card as="article" surface={surface}>
+      <Stack gap={3} grow justify="between">
+        <Stack gap={2}>
+          <CardKind kind="maintenance" />
           {maintenance.href ? (
-            <Link href={maintenance.href}>{maintenance.title}</Link>
+            <a href={maintenance.href} {...stylex.props(styles.open)}>
+              {title}
+              <span {...stylex.props(styles.arrow)}>
+                <Icon name="arrow-right-line" size={16} />
+              </span>
+            </a>
           ) : (
-            maintenance.title
+            title
           )}
-        </Text>
-        <Text tone="mono">
-          {underWay ? 'Under way until' : 'Scheduled for'}{' '}
-          {underWay
-            ? formatInstant(maintenance.windowEnd, maintenance.timeZone)
-            : formatWindow(maintenance.windowStart, maintenance.windowEnd, maintenance.timeZone)}
-        </Text>
-        {maintenance.recurrence ? (
-          <Text tone="caption">
-            {describeRecurrence(
-              maintenance.recurrence,
-              maintenance.startTime,
-              maintenance.timeZone,
-            )}
-          </Text>
-        ) : null}
-        {latest ? <RichTextBody markdown={latest.body} /> : null}
-        {maintenance.affectedComponents.length > 0 ? (
-          <Text tone="caption">
-            Affects {maintenance.affectedComponents.map((item) => item.displayName).join(', ')}
-          </Text>
-        ) : null}
+          {latest ? <RichTextBody markdown={latest.body} muted /> : null}
+          {maintenance.recurrence ? (
+            <Text tone="caption">
+              {describeRecurrence(maintenance.recurrence, maintenance.startTime, zone, locale)}
+            </Text>
+          ) : null}
+          {maintenance.affectedComponents.length > 0 ? (
+            <Text tone="caption">
+              Affects {maintenance.affectedComponents.map((item) => item.displayName).join(', ')}
+            </Text>
+          ) : null}
+        </Stack>
+        <div {...stylex.props(styles.foot)}>
+          <Stack direction="horizontal" gap={2} wrap>
+            <StatusPill status={maintenance.status} kind="maintenance" />
+          </Stack>
+          <span {...stylex.props(styles.when)}>
+            <Text tone="caption" as="span">
+              {maintenance.status === 'IN_PROGRESS' ? (
+                <>
+                  Ends {formatInstant(maintenance.windowEnd, zone, locale)} ·{' '}
+                  <RelativeTime value={maintenance.windowEnd} />
+                </>
+              ) : maintenance.status === 'SCHEDULED' ? (
+                <>
+                  {formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)} ·{' '}
+                  <RelativeTime value={maintenance.windowStart} />
+                </>
+              ) : (
+                formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, locale)
+              )}
+            </Text>
+          </span>
+        </div>
       </Stack>
     </Card>
   );
 }
+
+const styles = stylex.create({
+  open: {
+    alignItems: 'center',
+    color: 'inherit',
+    display: 'flex',
+    gap: space[3],
+    justifyContent: 'space-between',
+    outlineColor: {
+      ':focus-visible': color.focus,
+    },
+    outlineOffset: {
+      ':focus-visible': control.focusOffset,
+    },
+    outlineStyle: {
+      ':focus-visible': 'solid',
+    },
+    outlineWidth: {
+      ':focus-visible': control.focusWidth,
+    },
+    textDecoration: 'none',
+  },
+  arrow: {
+    alignItems: 'center',
+    color: color.textMuted,
+    display: 'flex',
+    flexShrink: 0,
+  },
+  foot: {
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: space[3],
+    justifyContent: 'space-between',
+  },
+  when: {
+    marginInlineStart: 'auto',
+    textAlign: 'end',
+  },
+});

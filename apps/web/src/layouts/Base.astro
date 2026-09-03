@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import { themeBootScript } from '@trustfall/design';
 import '../styles/global.css';
 
@@ -11,12 +12,13 @@ const { title, description = 'Current service status.' } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <ClientRouter />
     <script is:inline set:html={themeBootScript} />
     {import.meta.env.DEV ? (
       <>
@@ -28,8 +30,55 @@ const { title, description = 'Current service status.' } = Astro.props;
   <body>
     <slot />
     <script>
-      import { startMeshRuntime } from '../../../../packages/design/src/mesh-runtime.ts';
+      import {
+        bindMeshScreens,
+        startMeshRuntime,
+      } from '../../../../packages/design/src/mesh-runtime.ts';
+      import {
+        bindSiteShells,
+        startSiteShellRuntime,
+      } from '../../../../packages/design/src/site-shell-runtime.ts';
       startMeshRuntime();
+      startSiteShellRuntime();
+      // The runtimes catch a swapped-in page on their own, but a frame later;
+      // measuring here, inside the router's swap, puts the panel on the grid
+      // before the view transition captures the new page.
+      document.addEventListener('astro:after-swap', () => {
+        bindMeshScreens();
+        bindSiteShells();
+      });
+
+      if (import.meta.env.DEV) {
+        // StyleX's dev runtime paints through a <style> it injects itself and
+        // disables the /virtual:stylex.css link. The client router's head
+        // swap would drop that <style> — the fetched page never had it — and
+        // keep the disabled link, leaving the next page unstyled; even a
+        // moment without it starts border-color transitions from black. So
+        // the incoming document gets a twin marked as the same persisted
+        // element, which makes the router keep the live one in place, and
+        // after the swap it is refreshed for rules the new page compiled.
+        const STYLE_ID = '__stylex_virtual__';
+        const CSS_PATH = '/virtual:stylex.css';
+        const PERSIST_ATTR = 'data-astro-transition-persist';
+        document.addEventListener('astro:before-swap', (event) => {
+          const live = document.getElementById(STYLE_ID);
+          if (!live) return;
+          live.setAttribute(PERSIST_ATTR, STYLE_ID);
+          const twin = event.newDocument.createElement('style');
+          twin.setAttribute(PERSIST_ATTR, STYLE_ID);
+          event.newDocument.head.appendChild(twin);
+        });
+        document.addEventListener('astro:after-swap', () => {
+          const live = document.getElementById(STYLE_ID);
+          if (!live) return;
+          fetch(`${CSS_PATH}?t=${Date.now()}`, { cache: 'no-store' })
+            .then((response) => response.text())
+            .then((css) => {
+              if (css && css !== live.textContent) live.textContent = css;
+            })
+            .catch(() => {});
+        });
+      }
     </script>
   </body>
 </html>

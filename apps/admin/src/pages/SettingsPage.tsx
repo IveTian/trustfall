@@ -7,6 +7,7 @@ import {
   type SettingsSectionId,
 } from '../lib/settings-sections.ts';
 import { useToast } from '../lib/toast.ts';
+import { AppearanceSettings } from './settings/AppearanceSettings.tsx';
 import { MembersSettings } from './settings/MembersSettings.tsx';
 import { PreferencesSettings } from './settings/PreferencesSettings.tsx';
 import { ProfileSettings } from './settings/ProfileSettings.tsx';
@@ -45,6 +46,8 @@ function Section({ id, onToast }: { id: SettingsSectionId; onToast: (message: st
       return <PreferencesSettings />;
     case 'workspace':
       return <WorkspaceSettings onToast={onToast} />;
+    case 'appearance':
+      return <AppearanceSettings onToast={onToast} />;
     case 'members':
       return <MembersSettings onToast={onToast} />;
   }

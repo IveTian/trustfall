@@ -229,6 +229,9 @@ export const settingsSchema = z
   .object({
     site_name: z.string(),
     site_description: z.string(),
+    show_status_history: z.boolean().openapi({
+      description: 'Whether the public Status page draws each service’s last 90 days as a bar.',
+    }),
   })
   .openapi('Settings');
 

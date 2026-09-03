@@ -1,0 +1,121 @@
+---
+import { env } from 'cloudflare:workers';
+import {
+  createDb,
+  getSetting,
+  getSummary,
+  isSiteInitialized,
+  listIncidentsSince,
+  listMaintenancesSince,
+} from '@trustfall/db';
+import {
+  HISTORY_DAYS,
+  historyIntervals,
+  type PublicServiceGroup,
+  ServiceGroupList,
+  SiteHeading,
+  SitePanel,
+  type StatusInterval,
+  Text,
+} from '@trustfall/design';
+import { type ComponentStatus, rollupOverallStatus } from '@trustfall/shared';
+import UninitializedNotice from '../components/UninitializedNotice.astro';
+import Site from '../layouts/Site.astro';
+
+const db = createDb(env.DB);
+const initialized = await isSiteInitialized(db);
+
+if (initialized) {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+
+type Summary = Awaited<ReturnType<typeof getSummary>>;
+let summary: Summary | undefined;
+if (initialized) {
+  try {
+    summary = await getSummary(db);
+  } catch {
+    summary = undefined;
+  }
+}
+const siteName = summary?.siteName ?? 'TrustFall';
+
+// The history bars are opt-in (Settings › Appearance). When on, every
+// service carries its non-operational stretches from the last ninety days;
+// the island cuts them into days in the reader's zone. An extra day of
+// margin covers readers whose calendar day started before UTC's.
+const now = Date.now();
+let showHistory = false;
+let history = new Map<string, StatusInterval[]>();
+if (summary != null) {
+  try {
+    showHistory = (await getSetting(db, 'showStatusHistory')) === 'true';
+    if (showHistory) {
+      const since = now - (HISTORY_DAYS + 1) * 24 * 60 * 60 * 1000;
+      const [incidents, maintenances] = await Promise.all([
+        listIncidentsSince(db, since, now),
+        listMaintenancesSince(db, since),
+      ]);
+      history = historyIntervals(
+        {
+          incidents: incidents.map((incident) => ({
+            ...incident,
+            href: `/incidents/${incident.id}`,
+          })),
+          maintenances: maintenances.map((maintenance) => ({
+            ...maintenance,
+            href: '/maintenance',
+          })),
+        },
+        now,
+      );
+    }
+  } catch {
+    // The bars are a nicety; the statuses are the page.
+    showHistory = false;
+    history = new Map();
+  }
+}
+
+const toComponents = (components: Summary['ungroupedComponents']) =>
+  components.map((component) => ({
+    id: component.id,
+    displayName: component.displayName,
+    description: component.description,
+    status: component.status as ComponentStatus,
+    ...(showHistory ? { history: history.get(component.id) ?? [] } : null),
+  }));
+
+const groups: PublicServiceGroup[] = (summary?.componentGroups ?? [])
+  .filter((group) => group.components.length > 0)
+  .map((group) => {
+    const components = toComponents(group.components);
+    return {
+      id: group.id,
+      displayName: group.displayName,
+      status: rollupOverallStatus(components.map((component) => component.status)),
+      components,
+    };
+  });
+const ungrouped = toComponents(summary?.ungroupedComponents ?? []);
+---
+
+{
+  initialized ? (
+    <Site title={`Status · ${siteName}`} siteName={siteName} current="status">
+      <SiteHeading as="h1">Status</SiteHeading>
+      {groups.length === 0 && ungrouped.length === 0 ? (
+        <SitePanel density="row">
+          <Text tone="muted">No components have been published yet.</Text>
+        </SitePanel>
+      ) : (
+        <ServiceGroupList client:load groups={groups} ungrouped={ungrouped} now={now} />
+      )}
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

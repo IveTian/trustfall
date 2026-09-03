@@ -9,6 +9,7 @@ import { radius } from '../tokens/radius.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
 import { StatusIcon } from './StatusIcon.tsx';
+import { useTimeZone } from '../time-zone.ts';
 
 export type ChartComponent = {
   id: string;
@@ -29,24 +30,31 @@ const MIN_SPAN_MS = 5 * 60 * 1000;
  * How each affected component fared across the incident: one bar per
  * component, coloured by its status between updates, with a dashed marker at
  * every update. `endTime` is the resolve time; while the incident is open the
- * chart runs to now.
+ * chart runs to now. The chart draws no box of its own — its axis and rows
+ * run to the edges of whatever block holds it, a flush `SitePanel` on the
+ * site.
  */
 export function AffectedComponentsChart({
   components,
   updates,
   startTime,
   endTime,
-  timeZone,
+  timeZone: pinnedTimeZone,
+  locale,
   now,
 }: {
   components: ChartComponent[];
   updates: ChartUpdate[];
   startTime: number;
   endTime?: number | null;
+  /** IANA zone the axis is stamped in; the reader's preference when omitted. */
   timeZone?: string;
+  /** Formatting locale; the viewer's own when omitted. A cached page pins it. */
+  locale?: string;
   /** The clock the open bar runs to. Captured by the caller: render stays pure. */
   now: number;
 }) {
+  const timeZone = useTimeZone(pinnedTimeZone);
   const end = endTime ?? Math.max(now, startTime);
   const span = Math.max(end - startTime, MIN_SPAN_MS);
   const chartStart = startTime - span * LEAD_RATIO;
@@ -54,7 +62,7 @@ export function AffectedComponentsChart({
   const total = chartEnd - chartStart;
   const percent = (at: number) => `${((at - chartStart) / total) * 100}%`;
 
-  const stamp = new Intl.DateTimeFormat(undefined, {
+  const stamp = new Intl.DateTimeFormat(locale, {
     timeZone,
     month: 'short',
     day: '2-digit',
@@ -69,7 +77,7 @@ export function AffectedComponentsChart({
   ];
 
   return (
-    <div {...stylex.props(styles.chart)}>
+    <div>
       <div {...stylex.props(styles.axis)}>
         <span>{stamp.format(new Date(startTime))}</span>
         <span>{endTime == null ? 'Now' : stamp.format(new Date(endTime))}</span>
@@ -149,14 +157,6 @@ const segmentTone = stylex.create({
 }) satisfies Record<StatusTone, unknown>;
 
 const styles = stylex.create({
-  chart: {
-    backgroundColor: color.surfaceRaised,
-    borderColor: color.border,
-    borderRadius: radius.md,
-    borderStyle: 'solid',
-    borderWidth: mesh.line,
-    overflow: 'hidden',
-  },
   axis: {
     borderBlockEndColor: color.border,
     borderBlockEndStyle: 'solid',

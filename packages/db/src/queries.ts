@@ -337,6 +337,28 @@ export async function listIncidents(
   };
 }
 
+/**
+ * Every incident that overlaps the stretch from `since` to `now` — started by
+ * `now`, and still open or resolved at or after `since` — with its timeline,
+ * for the public history bars. Not paged: the window is bounded, and the bars
+ * need all of it.
+ */
+export async function listIncidentsSince(
+  db: Database,
+  since: number,
+  now: number,
+): Promise<IncidentWithRelations[]> {
+  const rows = await db
+    .select()
+    .from(incidents)
+    .where(
+      sql`${incidents.startTime} <= ${now} and (${incidents.resolveTime} is null or ${incidents.resolveTime} >= ${since})`,
+    )
+    .orderBy(desc(incidents.startTime), desc(incidents.id))
+    .all();
+  return attachIncidentRelations(db, rows);
+}
+
 export async function getIncident(
   db: Database,
   id: string,

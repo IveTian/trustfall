@@ -10,7 +10,7 @@ Tokens are the only source of style values. A component must not introduce a raw
 
 A status has exactly one canonical mapping to color, icon shape, and label, declared in `src/status.ts`. The public page and the admin must never invent their own mapping.
 
-Standalone screens (status page, sign-in, setup) use `MeshScreen`. The admin console uses `AppShell`, and every console screen composes the same two pieces inside it: a `PageHeader` carrying the mark, the breadcrumb and that page's actions, then a `PageBody`. Apps do not invent a third page chrome.
+The public site uses `SiteShell`: the mesh canvas edge to edge, a `SiteNav` across the top, one reading panel below. Standalone screens (sign-in, setup, the uninitialized notice) use `MeshScreen`. The admin console uses `AppShell`, and every console screen composes the same two pieces inside it: a `PageHeader` carrying the mark, the breadcrumb and that page's actions, then a `PageBody`. Apps do not invent a third page chrome.
 
 A control that opens a popup is a design-system component — `Menu`, `StatusSelect`, `ProfileMenu`. The console does not fall back to a native `<select>` or `alert()`, whose popups the theme cannot reach.
 
@@ -18,7 +18,7 @@ A control that opens a popup is a design-system component — `Menu`, `StatusSel
 
 WCAG 2.2 AA is a build requirement. Status is never conveyed by color alone: every status renders a distinct icon shape and a text label next to its color.
 
-Honor `prefers-color-scheme` and `prefers-reduced-motion`. Timestamps render in the reader’s local timezone, with the absolute UTC value available on hover and to assistive technology.
+Honor `prefers-color-scheme` and `prefers-reduced-motion`. Timestamps render in the reader’s chosen time zone — their own by default, switchable from the site bar — with the absolute UTC value available on hover and to assistive technology.
 
 Type is the system UI stack so CJK and Latin share a face. Monospace is reserved for timestamps, IDs, and durations.
 

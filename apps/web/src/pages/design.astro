@@ -1,14 +1,14 @@
 ---
-import { DesignGallery, SiteChrome } from '@trustfall/design';
-import Base from '../layouts/Base.astro';
+import { DesignGallery, SitePanel } from '@trustfall/design';
+import Site from '../layouts/Site.astro';
 
 if (!import.meta.env.DEV) {
   return new Response('Not found', { status: 404 });
 }
 ---
 
-<Base title="Design gallery · TrustFall">
-  <SiteChrome siteName="TrustFall">
+<Site title="Design gallery · TrustFall" siteName="TrustFall">
+  <SitePanel>
     <DesignGallery client:load />
-  </SiteChrome>
-</Base>
+  </SitePanel>
+</Site>
