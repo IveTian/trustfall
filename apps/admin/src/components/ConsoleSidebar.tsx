@@ -66,8 +66,8 @@ export function ConsoleSidebar() {
         </SidebarNavSection>
       </Stack>
       <Stack gap={3}>
-        <SidebarNavItem icon="external-link-fill" label="View status page" href="/" />
         <SidebarClock />
+        <SidebarNavItem icon="external-link-fill" label="View status page" href="/" />
       </Stack>
     </Stack>
   );
