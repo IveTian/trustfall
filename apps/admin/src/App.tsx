@@ -2,6 +2,7 @@ import { MeshScreen } from '@trustfall/design';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router';
 import { AppShell } from './components/AppShell.tsx';
 import { useSession } from './lib/auth.ts';
+import { DEFAULT_SETTINGS_SECTION, settingsPath } from './lib/settings-sections.ts';
 import { SetupProvider, useSetup } from './lib/setup.tsx';
 import { ComponentsPage } from './pages/ComponentsPage.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
@@ -73,7 +74,11 @@ const router = createBrowserRouter(
         { path: '/components', element: <ComponentsPage /> },
         { path: '/incidents', element: <IncidentsPage /> },
         { path: '/incidents/:incidentId', element: <IncidentDetailPage /> },
-        { path: '/settings', element: <SettingsPage /> },
+        {
+          path: '/settings',
+          element: <Navigate to={settingsPath(DEFAULT_SETTINGS_SECTION)} replace />,
+        },
+        { path: '/settings/:section', element: <SettingsPage /> },
       ],
     },
   ],

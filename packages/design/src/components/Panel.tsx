@@ -35,6 +35,14 @@ export function PanelHeader({
   );
 }
 
+/**
+ * Free-form content inside a panel — a short form, a paragraph — with the
+ * same gutters the rows use, so text and fields line up with row titles.
+ */
+export function PanelBody({ children }: { children: ReactNode }) {
+  return <div {...stylex.props(styles.body)}>{children}</div>;
+}
+
 export function PanelList({ children }: { children: ReactNode }) {
   return <ul {...stylex.props(styles.list)}>{children}</ul>;
 }
@@ -42,19 +50,24 @@ export function PanelList({ children }: { children: ReactNode }) {
 /**
  * One row: what it is on the start edge, the single control that changes it on
  * the end edge. The name runs at chrome size, not body size — a list of forty
- * components should read as a list, not as forty headings.
+ * components should read as a list, not as forty headings. `start` is a
+ * leading visual — an avatar, a status icon — that identifies the row at a
+ * glance without becoming its name.
  */
 export function PanelRow({
   title,
   description,
+  start,
   end,
 }: {
   title: string;
   description?: ReactNode;
+  start?: ReactNode;
   end?: ReactNode;
 }) {
   return (
     <li {...stylex.props(styles.row)}>
+      {start ? <div {...stylex.props(styles.rowStart)}>{start}</div> : null}
       <div {...stylex.props(styles.rowCopy)}>
         <span {...stylex.props(styles.rowTitle)}>{title}</span>
         {description ? <span {...stylex.props(styles.rowDescription)}>{description}</span> : null}
@@ -111,6 +124,16 @@ const styles = stylex.create({
     flexShrink: 0,
     gap: space[2],
   },
+  body: {
+    borderBlockEndColor: color.border,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: {
+      default: mesh.line,
+      ':last-child': 0,
+    },
+    paddingBlock: space[4],
+    paddingInline: space[4],
+  },
   list: {
     listStyle: 'none',
     margin: 0,
@@ -130,9 +153,15 @@ const styles = stylex.create({
     paddingBlock: space[3],
     paddingInline: space[4],
   },
+  rowStart: {
+    alignItems: 'center',
+    display: 'flex',
+    flexShrink: 0,
+  },
   rowCopy: {
     display: 'flex',
     flexDirection: 'column',
+    flexGrow: 1,
     gap: space[0],
     minWidth: 0,
   },
