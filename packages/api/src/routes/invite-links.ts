@@ -168,11 +168,22 @@ export function inviteLinkRoutes() {
       if (!existing) {
         throw new ApiError(ProblemType.NOT_FOUND, 'Invite link not found.');
       }
+
+      const state = inviteLinkState(existing);
       if (await hasUserWithEmail(db(), body.email)) {
+        // A taken address on an active invite is a field error: the slot is
+        // still unused, so another email can register. already-exists is only
+        // for a spent link after a lost 201 — the client treats that as done.
+        if (state === 'ACTIVE') {
+          throw new ApiError(
+            ProblemType.VALIDATION_FAILED,
+            'An account with this email already exists.',
+            [{ name: 'email', reason: 'An account with this email already exists.' }],
+          );
+        }
         accountAlreadyExists();
       }
 
-      const state = inviteLinkState(existing);
       if (state !== 'ACTIVE') {
         unusableInvite(state);
       }
