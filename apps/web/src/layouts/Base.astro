@@ -66,7 +66,7 @@ const { title, description = 'Current service status.' } = Astro.props;
           live.setAttribute(PERSIST_ATTR, STYLE_ID);
           const twin = event.newDocument.createElement('style');
           twin.setAttribute(PERSIST_ATTR, STYLE_ID);
-          event.newDocument.head.append(twin);
+          event.newDocument.head.appendChild(twin);
         });
         document.addEventListener('astro:after-swap', () => {
           const live = document.getElementById(STYLE_ID);

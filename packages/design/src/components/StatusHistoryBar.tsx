@@ -248,20 +248,20 @@ function DayTooltip({
 }) {
   const panel = useRef<HTMLDivElement>(null);
   // Centred on the cell, then nudged back inside the viewport once measured.
+  // The nudge is worked out from where the panel would sit unshifted, so
+  // moving from one cell to the next never carries the last nudge along.
   const [shift, setShift] = useState(0);
   useLayoutEffect(() => {
     const rect = panel.current?.getBoundingClientRect();
     if (!rect) {
       return;
     }
-    const overLeft = VIEWPORT_MARGIN_PX - rect.left;
-    const overRight = rect.right - (window.innerWidth - VIEWPORT_MARGIN_PX);
-    if (overLeft > 0) {
-      setShift((current) => current + overLeft);
-    } else if (overRight > 0) {
-      setShift((current) => current - overRight);
-    }
-  }, [at]);
+    const naturalLeft = rect.left - shift;
+    const naturalRight = rect.right - shift;
+    const overLeft = VIEWPORT_MARGIN_PX - naturalLeft;
+    const overRight = naturalRight - (window.innerWidth - VIEWPORT_MARGIN_PX);
+    setShift(overLeft > 0 ? overLeft : overRight > 0 ? -overRight : 0);
+  }, [at, shift]);
 
   // The whole stretch the service was affected, not just this day's share
   // of it. An event still running is counted up to now.

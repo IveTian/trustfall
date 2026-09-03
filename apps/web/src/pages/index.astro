@@ -46,7 +46,11 @@ let recentMaintenances: Maintenance[] = [];
 try {
   [summary, recentIncidents, recentMaintenances] = await Promise.all([
     getSummary(db),
-    listIncidents(db, { state: 'RESOLVED', pageSize: RECENT_LIMIT }).then((page) => page.incidents),
+    // Ordered by start time upstream, so over-fetch and let the resolve-time
+    // sort below pick the genuinely latest.
+    listIncidents(db, { state: 'RESOLVED', pageSize: RECENT_LIMIT * 5 }).then(
+      (page) => page.incidents,
+    ),
     listMaintenances(db, { state: 'PAST', pageSize: RECENT_LIMIT }).then(
       (page) => page.maintenances,
     ),

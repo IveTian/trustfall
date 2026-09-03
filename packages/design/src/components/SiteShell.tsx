@@ -19,14 +19,16 @@ import { text } from '../tokens/text.stylex.ts';
  * pass under.
  *
  * `nav` is the bar; it is a prop rather than a child so an Astro page can hand
- * in a hydrated island while the shell itself stays static.
+ * in a hydrated island while the shell itself stays static. Optional in the
+ * type only because Astro passes a named slot as this prop at runtime, which
+ * its checker cannot see; the site always provides one.
  */
 export function SiteShell({
   nav,
   children,
   cols = SITE_MESH_COLS,
 }: {
-  nav: ReactNode;
+  nav?: ReactNode;
   /** `SitePanel`s, `SiteHeading`s and `SiteGroup`s, in reading order. */
   children: ReactNode;
   /** Panel width in cells, at most; narrower viewports get fewer. Odd keeps the CSS fallback centred on a line. */

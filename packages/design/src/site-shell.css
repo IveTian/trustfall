@@ -21,6 +21,7 @@
   --tf-site-line: 1px;
   --tf-site-cols: 13;
   --tf-site-origin-x: 50%;
+
   position: relative;
   box-sizing: border-box;
   display: flex;
@@ -205,6 +206,7 @@
 /* After site-shell-runtime measures: the mesh origins at the panels' left edge. */
 .tf-site-main[data-tf-site-ready] {
   --tf-site-origin-x: var(--tf-site-panel-left);
+
   align-items: flex-start;
 }
 

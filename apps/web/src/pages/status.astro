@@ -48,21 +48,36 @@ const siteName = summary?.siteName ?? 'TrustFall';
 // the island cuts them into days in the reader's zone. An extra day of
 // margin covers readers whose calendar day started before UTC's.
 const now = Date.now();
-const showHistory = summary != null && (await getSetting(db, 'showStatusHistory')) === 'true';
+let showHistory = false;
 let history = new Map<string, StatusInterval[]>();
-if (showHistory) {
-  const since = now - (HISTORY_DAYS + 1) * 24 * 60 * 60 * 1000;
-  const [incidents, maintenances] = await Promise.all([
-    listIncidentsSince(db, since),
-    listMaintenancesSince(db, since),
-  ]);
-  history = historyIntervals(
-    {
-      incidents: incidents.map((incident) => ({ ...incident, href: `/incidents/${incident.id}` })),
-      maintenances: maintenances.map((maintenance) => ({ ...maintenance, href: '/maintenance' })),
-    },
-    now,
-  );
+if (summary != null) {
+  try {
+    showHistory = (await getSetting(db, 'showStatusHistory')) === 'true';
+    if (showHistory) {
+      const since = now - (HISTORY_DAYS + 1) * 24 * 60 * 60 * 1000;
+      const [incidents, maintenances] = await Promise.all([
+        listIncidentsSince(db, since, now),
+        listMaintenancesSince(db, since),
+      ]);
+      history = historyIntervals(
+        {
+          incidents: incidents.map((incident) => ({
+            ...incident,
+            href: `/incidents/${incident.id}`,
+          })),
+          maintenances: maintenances.map((maintenance) => ({
+            ...maintenance,
+            href: '/maintenance',
+          })),
+        },
+        now,
+      );
+    }
+  } catch {
+    // The bars are a nicety; the statuses are the page.
+    showHistory = false;
+    history = new Map();
+  }
 }
 
 const toComponents = (components: Summary['ungroupedComponents']) =>

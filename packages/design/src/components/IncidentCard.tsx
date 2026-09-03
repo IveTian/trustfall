@@ -68,13 +68,12 @@ export function IncidentCard({
             <StatusPill status={incident.status} kind="incident" />
             <StatusPill status={incident.impact} kind="impact" />
           </Stack>
-          {latest ? (
-            <span {...stylex.props(styles.when)}>
-              <Text tone="caption" as="span">
-                <DateTime value={latest.createTime} /> · <RelativeTime value={latest.createTime} />
-              </Text>
-            </span>
-          ) : null}
+          <span {...stylex.props(styles.when)}>
+            <Text tone="caption" as="span">
+              <DateTime value={latest?.createTime ?? incident.startTime} /> ·{' '}
+              <RelativeTime value={latest?.createTime ?? incident.startTime} />
+            </Text>
+          </span>
         </div>
       </Stack>
     </Card>

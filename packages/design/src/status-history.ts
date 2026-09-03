@@ -152,8 +152,7 @@ export function historyIntervals(
 }
 
 function keyFormatter(timeZone: string): Intl.DateTimeFormat {
-  // en-CA writes dates as YYYY-MM-DD, which sorts and compares as text.
-  return new Intl.DateTimeFormat('en-CA', {
+  return new Intl.DateTimeFormat('en', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
@@ -169,9 +168,20 @@ function safeKeyFormatter(timeZone: string): Intl.DateTimeFormat {
   }
 }
 
+/**
+ * `YYYY-MM-DD` assembled from the formatter's parts, so the key sorts and
+ * compares as text whatever order the runtime's locale data would print.
+ */
+function keyFrom(formatter: Intl.DateTimeFormat, at: number): string {
+  const parts = formatter.formatToParts(new Date(at));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
 /** The calendar day an instant falls on in the zone, as `YYYY-MM-DD`. */
 export function dayKey(at: number, timeZone: string): string {
-  return safeKeyFormatter(timeZone).format(new Date(at));
+  return keyFrom(safeKeyFormatter(timeZone), at);
 }
 
 /**
@@ -185,7 +195,7 @@ export function dayKeys(now: number, timeZone: string, days = HISTORY_DAYS): str
   const utc = keyFormatter('UTC');
   const keys: string[] = [];
   for (let back = days - 1; back >= 0; back -= 1) {
-    keys.push(utc.format(new Date(Date.UTC(year, month - 1, day - back))));
+    keys.push(keyFrom(utc, Date.UTC(year, month - 1, day - back)));
   }
   return keys;
 }

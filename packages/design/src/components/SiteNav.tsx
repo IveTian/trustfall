@@ -33,7 +33,7 @@ export function SiteNav({
   radius = 'sm',
 }: {
   siteName: string;
-  items: SiteNavItem[];
+  items: readonly SiteNavItem[];
   current?: string;
   /** Off only where the bar is shown as a specimen rather than worn by a page. */
   sticky?: boolean;

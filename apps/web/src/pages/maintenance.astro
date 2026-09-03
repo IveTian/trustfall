@@ -21,9 +21,13 @@ if (initialized) {
   try {
     const listed = await listMaintenances(db, { pageSize: 50 });
     maintenances = listed.maintenances;
-    siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
   } catch {
     maintenances = [];
+  }
+  try {
+    siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  } catch {
+    // The default name is enough to render the page.
   }
 }
 ---

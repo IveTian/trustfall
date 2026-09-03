@@ -17,7 +17,7 @@ export function SiteNavIsland({
   current,
 }: {
   siteName: string;
-  items: SiteNavItem[];
+  items: readonly SiteNavItem[];
   current?: string;
 }) {
   const [active, setActive] = useState(current);
