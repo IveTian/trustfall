@@ -35,15 +35,36 @@ export function SiteShell({
   return (
     <div className="tf-site-shell">
       {nav}
-      <main
-        className="tf-site-main"
-        data-tf-site-main=""
-        data-cell={SITE_MESH_CELL_PX}
-        data-cols={cols}
-      >
-        {children}
-      </main>
+      <SiteCanvas cols={cols}>{children}</SiteCanvas>
     </div>
+  );
+}
+
+/**
+ * The mesh canvas with the page's blocks on it, without the bar or the
+ * full-height shell around it. `SiteShell` is this under the bar; the
+ * console's Appearance preview is this alone, in a frame, so what it shows
+ * is drawn by the same code as the page.
+ */
+export function SiteCanvas({
+  children,
+  cols = SITE_MESH_COLS,
+  as: Tag = 'main',
+}: {
+  children: ReactNode;
+  cols?: number;
+  /** `div` when the canvas is not the page's main content. */
+  as?: 'main' | 'div';
+}) {
+  return (
+    <Tag
+      className="tf-site-main"
+      data-tf-site-main=""
+      data-cell={SITE_MESH_CELL_PX}
+      data-cols={cols}
+    >
+      {children}
+    </Tag>
   );
 }
 
@@ -65,8 +86,12 @@ export function SitePanel({
   as?: 'section' | 'article' | 'div' | 'li';
   /** Tints the block with the status's muted colour; for the banner when things are not operational. */
   tone?: StatusTone;
-  /** `row` shrinks the vertical inset so a one-line block fits in a single cell. */
-  density?: 'default' | 'row';
+  /**
+   * `row` shrinks the vertical inset so a one-line block fits in a single
+   * cell. `flush` drops the inset altogether: the content draws its own
+   * rows and rules out to the block's border, as a chart does.
+   */
+  density?: 'default' | 'row' | 'flush';
   /** The block is at least this many cells tall, however little it holds. */
   minRows?: number;
   /** Height snaps up to whole cells, or to half cells. */
@@ -83,7 +108,7 @@ export function SitePanel({
       className={`tf-site-panel ${toned?.className ?? ''}`.trim()}
       {...(toned?.style ? { style: toned.style } : null)}
       data-tone={tone}
-      data-density={density === 'row' ? 'row' : undefined}
+      data-density={density === 'default' ? undefined : density}
       data-min-rows={minRows}
       data-step={step === 0.5 ? '0.5' : undefined}
       data-indent={indent === 1 ? '1' : undefined}

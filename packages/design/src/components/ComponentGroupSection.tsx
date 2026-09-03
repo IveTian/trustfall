@@ -1,4 +1,5 @@
 import type { ComponentStatus } from '@trustfall/shared';
+import type { StatusInterval } from '../status-history.ts';
 import { Card, type CardSurface } from './Card.tsx';
 import { ComponentRow } from './ComponentRow.tsx';
 import { Stack } from './Stack.tsx';
@@ -9,6 +10,8 @@ export type PublicComponent = {
   displayName: string;
   description?: string | null;
   status: ComponentStatus;
+  /** Non-operational stretches in the last ninety days; present only when the site shows history. */
+  history?: StatusInterval[];
 };
 
 export function ComponentGroupSection({

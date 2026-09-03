@@ -150,6 +150,26 @@ export async function listMaintenances(
   };
 }
 
+/**
+ * Every maintenance written to at or after `since` — under way, or finished
+ * within the window — with its timeline, for the public history bars. A
+ * maintenance's last write is its last transition, so one that ended before
+ * `since` is left out.
+ */
+export async function listMaintenancesSince(
+  db: Database,
+  since: number,
+): Promise<MaintenanceWithRelations[]> {
+  await reconcileMaintenances(db);
+  const rows = await db
+    .select()
+    .from(maintenances)
+    .where(sql`${maintenances.updateTime} >= ${since}`)
+    .orderBy(desc(maintenances.windowStart), desc(maintenances.id))
+    .all();
+  return attachMaintenanceRelations(db, rows);
+}
+
 /** What the public page shows: windows under way, then those still to open, soonest first. */
 export async function listActiveMaintenances(
   db: Database,

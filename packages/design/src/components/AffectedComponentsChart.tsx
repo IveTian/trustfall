@@ -30,7 +30,9 @@ const MIN_SPAN_MS = 5 * 60 * 1000;
  * How each affected component fared across the incident: one bar per
  * component, coloured by its status between updates, with a dashed marker at
  * every update. `endTime` is the resolve time; while the incident is open the
- * chart runs to now.
+ * chart runs to now. The chart draws no box of its own — its axis and rows
+ * run to the edges of whatever block holds it, a flush `SitePanel` on the
+ * site.
  */
 export function AffectedComponentsChart({
   components,
@@ -75,7 +77,7 @@ export function AffectedComponentsChart({
   ];
 
   return (
-    <div {...stylex.props(styles.chart)}>
+    <div>
       <div {...stylex.props(styles.axis)}>
         <span>{stamp.format(new Date(startTime))}</span>
         <span>{endTime == null ? 'Now' : stamp.format(new Date(endTime))}</span>
@@ -155,14 +157,6 @@ const segmentTone = stylex.create({
 }) satisfies Record<StatusTone, unknown>;
 
 const styles = stylex.create({
-  chart: {
-    backgroundColor: color.surfaceRaised,
-    borderColor: color.border,
-    borderRadius: radius.md,
-    borderStyle: 'solid',
-    borderWidth: mesh.line,
-    overflow: 'hidden',
-  },
   axis: {
     borderBlockEndColor: color.border,
     borderBlockEndStyle: 'solid',

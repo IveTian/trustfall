@@ -1,11 +1,21 @@
 ---
 import { env } from 'cloudflare:workers';
-import { createDb, getSummary, isSiteInitialized } from '@trustfall/db';
 import {
+  createDb,
+  getSetting,
+  getSummary,
+  isSiteInitialized,
+  listIncidentsSince,
+  listMaintenancesSince,
+} from '@trustfall/db';
+import {
+  HISTORY_DAYS,
+  historyIntervals,
   type PublicServiceGroup,
   ServiceGroupList,
   SiteHeading,
   SitePanel,
+  type StatusInterval,
   Text,
 } from '@trustfall/design';
 import { type ComponentStatus, rollupOverallStatus } from '@trustfall/shared';
@@ -33,12 +43,35 @@ if (initialized) {
 }
 const siteName = summary?.siteName ?? 'TrustFall';
 
+// The history bars are opt-in (Settings › Appearance). When on, every
+// service carries its non-operational stretches from the last ninety days;
+// the island cuts them into days in the reader's zone. An extra day of
+// margin covers readers whose calendar day started before UTC's.
+const now = Date.now();
+const showHistory = summary != null && (await getSetting(db, 'showStatusHistory')) === 'true';
+let history = new Map<string, StatusInterval[]>();
+if (showHistory) {
+  const since = now - (HISTORY_DAYS + 1) * 24 * 60 * 60 * 1000;
+  const [incidents, maintenances] = await Promise.all([
+    listIncidentsSince(db, since),
+    listMaintenancesSince(db, since),
+  ]);
+  history = historyIntervals(
+    {
+      incidents: incidents.map((incident) => ({ ...incident, href: `/incidents/${incident.id}` })),
+      maintenances: maintenances.map((maintenance) => ({ ...maintenance, href: '/maintenance' })),
+    },
+    now,
+  );
+}
+
 const toComponents = (components: Summary['ungroupedComponents']) =>
   components.map((component) => ({
     id: component.id,
     displayName: component.displayName,
     description: component.description,
     status: component.status as ComponentStatus,
+    ...(showHistory ? { history: history.get(component.id) ?? [] } : null),
   }));
 
 const groups: PublicServiceGroup[] = (summary?.componentGroups ?? [])
@@ -64,7 +97,7 @@ const ungrouped = toComponents(summary?.ungroupedComponents ?? []);
           <Text tone="muted">No components have been published yet.</Text>
         </SitePanel>
       ) : (
-        <ServiceGroupList client:load groups={groups} ungrouped={ungrouped} />
+        <ServiceGroupList client:load groups={groups} ungrouped={ungrouped} now={now} />
       )}
     </Site>
   ) : (

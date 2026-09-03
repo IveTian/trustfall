@@ -4,12 +4,10 @@ import { createDb, getIncident, getSetting, isSiteInitialized } from '@trustfall
 import {
   AffectedComponentsChart,
   type ChartComponent,
-  DateTime,
   IncidentTimeline,
+  SiteGroup,
   SiteHeading,
   SitePanel,
-  Stack,
-  StatusPill,
   Text,
 } from '@trustfall/design';
 import UninitializedNotice from '../../components/UninitializedNotice.astro';
@@ -59,33 +57,14 @@ if (incident) {
 {
   incident ? (
     <Site title={`${incident.title} · ${siteName}`} siteName={siteName} current="history">
-      <SitePanel>
-        <Stack gap={3}>
-          <Stack direction="horizontal" gap={2}>
-            <StatusPill status={incident.status} kind="incident" />
-            <StatusPill status={incident.impact} kind="impact" />
-          </Stack>
+      <SiteGroup spacing="shared">
+        <SitePanel density="row">
           <Text as="h1" tone="display">
             {incident.title}
           </Text>
-          {/* The page is rendered once and cached for everyone, so the clocks
-              are islands: the server speaks UTC and each reader's browser
-              re-reads them in the zone chosen from the bar. */}
-          <Text tone="caption">
-            Started <DateTime client:load value={incident.startTime} />
-          </Text>
-        </Stack>
-      </SitePanel>
-
-      <SiteHeading>Updates</SiteHeading>
-      <SitePanel>
-        <IncidentTimeline client:load updates={incident.updates} locale="en" />
-      </SitePanel>
-
-      {affected.length > 0 ? (
-        <>
-          <SiteHeading>Affected components</SiteHeading>
-          <SitePanel>
+        </SitePanel>
+        {affected.length > 0 ? (
+          <SitePanel density="flush">
             <AffectedComponentsChart
               components={affected}
               updates={incident.updates}
@@ -96,8 +75,13 @@ if (incident) {
               client:load
             />
           </SitePanel>
-        </>
-      ) : null}
+        ) : null}
+      </SiteGroup>
+
+      <SiteHeading>Updates</SiteHeading>
+      <SitePanel>
+        <IncidentTimeline client:load updates={incident.updates} locale="en" />
+      </SitePanel>
     </Site>
   ) : (
     <UninitializedNotice />

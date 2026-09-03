@@ -104,13 +104,23 @@ export { AffectedComponentsChart } from './components/AffectedComponentsChart.ts
 export type { ChartComponent } from './components/AffectedComponentsChart.tsx';
 export { componentSegments } from './affected-segments.ts';
 export type { ChartUpdate, Segment } from './affected-segments.ts';
+export { StatusHistoryBar } from './components/StatusHistoryBar.tsx';
+export { StatusPagePreview } from './components/StatusPagePreview.tsx';
+export { dailyStatuses, dayKeys, historyIntervals, HISTORY_DAYS } from './status-history.ts';
+export type { DayEvent, DayStatus, HistorySource, StatusInterval } from './status-history.ts';
 export { RelativeTime } from './components/RelativeTime.tsx';
 export { DateTime } from './components/DateTime.tsx';
 export { ThemeToggle } from './components/ThemeToggle.tsx';
 export { DesignGallery } from './components/Gallery.tsx';
 export { SiteNav } from './components/SiteNav.tsx';
 export type { SiteNavItem } from './components/SiteNav.tsx';
-export { SiteShell, SitePanel, SiteHeading, SiteGroup } from './components/SiteShell.tsx';
+export {
+  SiteShell,
+  SiteCanvas,
+  SitePanel,
+  SiteHeading,
+  SiteGroup,
+} from './components/SiteShell.tsx';
 export { ThemeMenu } from './components/ThemeMenu.tsx';
 export { TimeZoneMenu } from './components/TimeZoneMenu.tsx';
 export { MeshScreen } from './components/MeshScreen.tsx';

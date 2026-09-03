@@ -7,11 +7,16 @@ import { settingsSchema } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
 
 async function readSettings() {
-  const [siteName, siteDescription] = await Promise.all([
+  const [siteName, siteDescription, showStatusHistory] = await Promise.all([
     getSetting(db(), 'siteName'),
     getSetting(db(), 'siteDescription'),
+    getSetting(db(), 'showStatusHistory'),
   ]);
-  return { site_name: siteName ?? 'TrustFall', site_description: siteDescription ?? '' };
+  return {
+    site_name: siteName ?? 'TrustFall',
+    site_description: siteDescription ?? '',
+    show_status_history: showStatusHistory === 'true',
+  };
 }
 
 /** A singleton: there is one site, so `/settings` is the resource itself. */
@@ -51,6 +56,7 @@ export function settingsRoutes() {
               schema: z.object({
                 site_name: z.string().min(1).optional(),
                 site_description: z.string().optional(),
+                show_status_history: z.boolean().optional(),
               }),
             },
           },
@@ -72,6 +78,9 @@ export function settingsRoutes() {
       }
       if (body.site_description !== undefined) {
         await setSetting(db(), 'siteDescription', body.site_description);
+      }
+      if (body.show_status_history !== undefined) {
+        await setSetting(db(), 'showStatusHistory', String(body.show_status_history));
       }
       return c.json(await readSettings(), 200);
     },

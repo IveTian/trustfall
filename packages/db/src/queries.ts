@@ -337,6 +337,24 @@ export async function listIncidents(
   };
 }
 
+/**
+ * Every incident that overlaps the stretch from `since` to now — still open,
+ * or resolved at or after `since` — with its timeline, for the public
+ * history bars. Not paged: the window is bounded, and the bars need all of it.
+ */
+export async function listIncidentsSince(
+  db: Database,
+  since: number,
+): Promise<IncidentWithRelations[]> {
+  const rows = await db
+    .select()
+    .from(incidents)
+    .where(sql`(${incidents.resolveTime} is null or ${incidents.resolveTime} >= ${since})`)
+    .orderBy(desc(incidents.startTime), desc(incidents.id))
+    .all();
+  return attachIncidentRelations(db, rows);
+}
+
 export async function getIncident(
   db: Database,
   id: string,

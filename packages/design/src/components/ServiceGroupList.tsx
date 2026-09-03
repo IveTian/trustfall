@@ -31,9 +31,12 @@ export type PublicServiceGroup = {
 export function ServiceGroupList({
   groups,
   ungrouped,
+  now,
 }: {
   groups: PublicServiceGroup[];
   ungrouped: PublicComponent[];
+  /** The clock the history bars end at. Captured by the caller: render stays pure. */
+  now?: number;
 }) {
   const [open, setOpen] = useState<Set<string>>(
     () => new Set(groups.filter((group) => group.status !== 'OPERATIONAL').map((g) => g.id)),
@@ -60,15 +63,7 @@ export function ServiceGroupList({
   return (
     <SiteGroup as="ul">
       {ungrouped.map((component) => (
-        <SitePanel key={component.id} as="li" density="row">
-          <ComponentRow
-            as="div"
-            bare
-            displayName={component.displayName}
-            description={component.description}
-            status={component.status}
-          />
-        </SitePanel>
+        <ServiceBlock key={component.id} component={component} now={now} />
       ))}
       {groups.map((group) => {
         const expanded = open.has(group.id);
@@ -79,6 +74,7 @@ export function ServiceGroupList({
             group={group}
             expanded={expanded}
             servicesId={servicesId}
+            now={now}
             onToggle={() => toggle(group.id)}
           />
         );
@@ -87,15 +83,46 @@ export function ServiceGroupList({
   );
 }
 
+/**
+ * One service's block. With a history bar it is a cell and a half tall — the
+ * name line and the bar, centred in the block — instead of the single row.
+ */
+function ServiceBlock({
+  component,
+  now,
+  indent,
+}: {
+  component: PublicComponent;
+  now?: number;
+  indent?: 0 | 1;
+}) {
+  const withHistory = component.history != null && now !== undefined;
+  return (
+    <SitePanel as="li" density="row" step={withHistory ? 0.5 : 1} indent={indent}>
+      <ComponentRow
+        as="div"
+        bare
+        displayName={component.displayName}
+        description={component.description}
+        status={component.status}
+        history={withHistory ? component.history : undefined}
+        now={now}
+      />
+    </SitePanel>
+  );
+}
+
 function GroupBlocks({
   group,
   expanded,
   servicesId,
+  now,
   onToggle,
 }: {
   group: PublicServiceGroup;
   expanded: boolean;
   servicesId: string;
+  now?: number;
   onToggle: () => void;
 }) {
   return (
@@ -129,15 +156,7 @@ function GroupBlocks({
       >
         <SiteGroup as="ul">
           {group.components.map((component) => (
-            <SitePanel key={component.id} as="li" density="row" indent={1}>
-              <ComponentRow
-                as="div"
-                bare
-                displayName={component.displayName}
-                description={component.description}
-                status={component.status}
-              />
-            </SitePanel>
+            <ServiceBlock key={component.id} component={component} now={now} indent={1} />
           ))}
         </SiteGroup>
       </li>

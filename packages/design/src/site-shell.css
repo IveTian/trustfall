@@ -190,9 +190,16 @@
   padding: 16px;
 }
 
-/* One line of content in one cell, centred in the row. */
+/* One line of content in one cell, centred in the row. The inset shrinks so
+   a display-size line (32px) still fits under the cell with its border. */
 .tf-site-panel[data-density='row'] > .tf-site-content {
   justify-content: center;
+  padding-block: 12px;
+}
+
+/* No inset: the content's own rows and rules run out to the border. */
+.tf-site-panel[data-density='flush'] > .tf-site-content {
+  padding: 0;
 }
 
 /* After site-shell-runtime measures: the mesh origins at the panels' left edge. */
