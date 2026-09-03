@@ -115,11 +115,15 @@ export function SiteGroup({
 }: {
   children: ReactNode;
   as?: 'div' | 'ul';
-  /** `shared`: the blocks share a grid line. `cell`: a cell of canvas between them. */
-  spacing?: 'shared' | 'cell';
+  /**
+   * `shared`: the blocks share a grid line. `cell`: a cell of canvas between
+   * them. `half`: half a cell — every second block then sits half a cell off
+   * the lines, and the run is padded so what follows is back on one.
+   */
+  spacing?: 'shared' | 'cell' | 'half';
 }) {
   return (
-    <Tag className="tf-site-group" data-spacing={spacing === 'cell' ? 'cell' : undefined}>
+    <Tag className="tf-site-group" data-spacing={spacing === 'shared' ? undefined : spacing}>
       {children}
     </Tag>
   );

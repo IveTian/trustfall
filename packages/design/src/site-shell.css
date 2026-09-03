@@ -59,13 +59,26 @@
   margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
 }
 
-/* Grouped panels share the line between them, or stand a cell apart. */
+/* Grouped panels share the line between them, or stand a cell or half a cell apart. */
 .tf-site-group > .tf-site-panel + .tf-site-panel {
   margin-block-start: calc(var(--tf-site-line) * -1);
 }
 
 .tf-site-group[data-spacing='cell'] > .tf-site-panel + .tf-site-panel {
   margin-block-start: calc(var(--tf-site-cell) - var(--tf-site-line));
+}
+
+.tf-site-group[data-spacing='half'] > .tf-site-panel + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+/*
+ * Half-cell gaps put every second panel half a cell off the lines; an even
+ * count would leave the run ending there too, so it is padded back to a line
+ * for whatever follows.
+ */
+.tf-site-group[data-spacing='half'] > .tf-site-panel:nth-child(even):last-child {
+  margin-block-end: calc(var(--tf-site-cell) / 2);
 }
 
 /*
@@ -80,7 +93,7 @@
   width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
   max-width: 100%;
   height: var(--tf-site-cell);
-  padding: 0 32px 16px;
+  padding: 0 16px 12px;
 }
 
 :is(.tf-site-panel, .tf-site-group) + .tf-site-heading {
@@ -107,13 +120,12 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  padding: 32px;
+  padding: 16px;
 }
 
-/* One line of content in one cell: half the inset, and centred in the row. */
+/* One line of content in one cell, centred in the row. */
 .tf-site-panel[data-density='row'] > .tf-site-content {
   justify-content: center;
-  padding-block: 16px;
 }
 
 /* After site-shell-runtime measures: the mesh origins at the panels' left edge. */
