@@ -21,6 +21,7 @@ import {
   incidentStatusSchema,
   incidentUpdateSchema,
   pageQuery,
+  timestampInput,
 } from '../schemas.ts';
 import { authMiddleware } from '../session.ts';
 
@@ -45,6 +46,17 @@ const etagHeader = {
 const locationHeader = (description: string) => ({
   Location: { description, schema: { type: 'string' as const } },
 });
+
+/** The schema has already insisted on RFC 3339; this only turns it into ms. */
+function parseTimestamp(value: string, name: string): number {
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) {
+    throw new ApiError(ProblemType.VALIDATION_FAILED, `${name} is not a valid timestamp.`, [
+      { name, reason: 'Expected an RFC 3339 timestamp.' },
+    ]);
+  }
+  return ms;
+}
 
 async function loadIncident(id: string) {
   const incident = await getIncident(db(), id);
@@ -105,7 +117,7 @@ export function incidentRoutes() {
       tags: ['Incidents'],
       summary: 'Open an incident',
       description:
-        'Creates the incident and its first timeline entry, and moves every affected component to its declared status (partial outage when none is given).',
+        'Creates the incident and its first timeline entry, and moves every affected component to its declared status (partial outage when none is given). Omit `started_at` to begin at the moment of publishing; send it to backdate the start.',
       request: {
         body: {
           content: {
@@ -117,6 +129,9 @@ export function incidentRoutes() {
                 status: incidentStatusSchema.optional().openapi({
                   description: 'Defaults to INVESTIGATING.',
                 }),
+                started_at: timestampInput(
+                  'When the incident began. Omit to start at the moment of publishing. Must be now or in the past.',
+                ).optional(),
                 component_ids: z.array(z.string()).default([]),
                 component_statuses: z.record(z.string(), componentStatusSchema).optional().openapi({
                   description:
@@ -140,6 +155,12 @@ export function incidentRoutes() {
     }),
     async (c) => {
       const body = c.req.valid('json');
+      const startTime = body.started_at ? parseTimestamp(body.started_at, 'started_at') : undefined;
+      if (startTime != null && startTime > Date.now()) {
+        throw new ApiError(ProblemType.VALIDATION_FAILED, 'started_at must not be in the future.', [
+          { name: 'started_at', reason: 'Must be now or in the past.' },
+        ]);
+      }
       const incident = await createIncident(db(), {
         title: body.title,
         impact: body.impact,
@@ -147,6 +168,7 @@ export function incidentRoutes() {
         status: body.status,
         componentIds: body.component_ids,
         componentStatuses: body.component_statuses,
+        startTime,
       });
       return c.json(presentIncident(incident), 201, {
         Location: createdLocation(c, incident.id),

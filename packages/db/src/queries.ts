@@ -380,16 +380,19 @@ export async function createIncident(
     body: string;
     componentIds: string[];
     componentStatuses?: Record<string, ComponentStatus>;
+    /** When the incident began. Omit to start at the moment of publishing. */
+    startTime?: number;
   },
 ): Promise<IncidentWithRelations> {
   const now = nowMs();
+  const startTime = input.startTime ?? now;
   const status = input.status ?? 'INVESTIGATING';
   const incident: IncidentRow = {
     id: createId('inc'),
     title: input.title,
     status,
     impact: input.impact,
-    startTime: now,
+    startTime,
     resolveTime: null,
     createTime: now,
     updateTime: now,
@@ -403,7 +406,7 @@ export async function createIncident(
       incidentId: incident.id,
       status,
       body: input.body,
-      createTime: now,
+      createTime: startTime,
     }),
     ...(input.componentIds.length
       ? [

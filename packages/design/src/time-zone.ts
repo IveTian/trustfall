@@ -67,6 +67,18 @@ export function timeZoneLabel(timeZone: string | undefined, at: number): string 
   }
 }
 
+/**
+ * The city an IANA zone is named for — the last path segment, spaces for
+ * underscores. "UTC" stays "UTC".
+ */
+export function timeZoneCity(timeZone: string): string {
+  if (timeZone === 'UTC' || timeZone === 'Etc/UTC' || timeZone === 'Etc/GMT') {
+    return 'UTC';
+  }
+  const leaf = timeZone.split('/').pop() ?? timeZone;
+  return leaf.replaceAll('_', ' ');
+}
+
 function noPreference(): null {
   return null;
 }

@@ -1,4 +1,10 @@
-import { SidebarHeader, SidebarNavItem, SidebarNavSection, Stack } from '@trustfall/design';
+import {
+  SidebarClock,
+  SidebarHeader,
+  SidebarNavItem,
+  SidebarNavSection,
+  Stack,
+} from '@trustfall/design';
 import { useLocation, useNavigate } from 'react-router';
 import { SETTINGS_SECTIONS, settingsPath } from '../lib/settings-sections.ts';
 
@@ -13,26 +19,29 @@ export function SettingsSidebar({ onBack }: { onBack: () => void }) {
   const groups = ['Account', 'Workspace'] as const;
 
   return (
-    <Stack gap={4}>
-      <SidebarHeader onBack={onBack} backLabel="Back to console">
-        Settings
-      </SidebarHeader>
-      {groups.map((group) => (
-        <SidebarNavSection key={group} label={group}>
-          {SETTINGS_SECTIONS.filter((section) => section.group === group).map((section) => {
-            const path = settingsPath(section.id);
-            return (
-              <SidebarNavItem
-                key={section.id}
-                icon={section.icon}
-                label={section.label}
-                active={location.pathname === path}
-                onClick={() => navigate(path)}
-              />
-            );
-          })}
-        </SidebarNavSection>
-      ))}
+    <Stack gap={5} grow justify="between">
+      <Stack gap={4}>
+        <SidebarHeader onBack={onBack} backLabel="Back to console">
+          Settings
+        </SidebarHeader>
+        {groups.map((group) => (
+          <SidebarNavSection key={group} label={group}>
+            {SETTINGS_SECTIONS.filter((section) => section.group === group).map((section) => {
+              const path = settingsPath(section.id);
+              return (
+                <SidebarNavItem
+                  key={section.id}
+                  icon={section.icon}
+                  label={section.label}
+                  active={location.pathname === path}
+                  onClick={() => navigate(path)}
+                />
+              );
+            })}
+          </SidebarNavSection>
+        ))}
+      </Stack>
+      <SidebarClock />
     </Stack>
   );
 }
