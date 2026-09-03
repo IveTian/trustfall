@@ -38,9 +38,9 @@
         "usage": "Canvas at step 3, panel at step 0, hairlines at step 4, muted type at step 7, primary type at step 9. Nine of ten pixels are one of these."
       },
       "semantic": {
-        "success": "#12A150",
-        "warning": "#D48806",
-        "error": "#E11900",
+        "success": "#16A34A",
+        "warning": "#C28A00",
+        "error": "#DC2626",
         "info": "#2E6BE6"
       },
       "surface": {
