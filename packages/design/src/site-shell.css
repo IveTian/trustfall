@@ -73,6 +73,54 @@
 }
 
 /*
+ * A run of blocks that folds open under another — a group's services. The
+ * fold itself takes no room when closed; open, it grows to its content over
+ * `motion.base`, and the half-cell gap before its first block is its own
+ * inset so it folds away with them. Duration and easing mirror
+ * tokens/const.stylex.ts.
+ */
+.tf-site-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: grid-template-rows 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tf-site-fold[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.tf-site-fold > .tf-site-group {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The gap before the first block is a margin, so it clips away with the fold. */
+.tf-site-fold > .tf-site-group > .tf-site-panel:first-child {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+.tf-site-fold[data-open] > .tf-site-group {
+  opacity: 1;
+}
+
+.tf-site-fold + .tf-site-panel {
+  margin-block-start: calc(var(--tf-site-cell) / 2 - var(--tf-site-line));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tf-site-fold,
+  .tf-site-fold > .tf-site-group {
+    transition: none;
+  }
+}
+
+/*
  * Half-cell gaps put every second panel half a cell off the lines, and a
  * half-cell panel can end between lines. Once site-shell-runtime measures,
  * each group is padded to the next line for whatever follows; until then,
@@ -86,6 +134,12 @@
 
 .tf-site-main[data-tf-site-ready] .tf-site-group {
   padding-block-end: var(--tf-site-group-pad, 0px);
+}
+
+/* A group inside a fold is measured as part of the group around it, and the
+   custom property would otherwise inherit that group's padding. */
+.tf-site-main[data-tf-site-ready] .tf-site-fold > .tf-site-group {
+  padding-block-end: 0;
 }
 
 /*

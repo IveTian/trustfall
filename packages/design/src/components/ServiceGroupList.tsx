@@ -22,8 +22,9 @@ export type PublicServiceGroup = {
 
 /**
  * The Status page's tree, in the console's order: the ungrouped services as
- * blocks of their own first, then one block per group, folding open to a
- * block per service set a cell in from the start edge. A group with
+ * blocks of their own first, then one block per group, folding open — with
+ * a height transition — to a block per service set a cell in from the start
+ * edge. A group with
  * something wrong starts open; the rest start closed, so the page leads with
  * what needs reading.
  */
@@ -38,7 +39,8 @@ export function ServiceGroupList({
     () => new Set(groups.filter((group) => group.status !== 'OPERATIONAL').map((g) => g.id)),
   );
 
-  // Folding adds and removes blocks; put them on the grid the moment they land.
+  // Folding changes how far the run reaches; re-measure as it starts (the
+  // fold's own transitionend re-measures once it has settled).
   useEffect(() => {
     bindSiteShells();
   }, [open]);
@@ -113,8 +115,20 @@ function GroupBlocks({
           <StatusPill status={group.status} />
         </button>
       </SitePanel>
-      {expanded
-        ? group.components.map((component) => (
+      {/* Always mounted so it can fold open and shut; out of reach while shut. */}
+      <li
+        id={servicesId}
+        className="tf-site-fold"
+        data-open={expanded ? '' : undefined}
+        inert={!expanded}
+        onTransitionEnd={(event) => {
+          if (event.target === event.currentTarget) {
+            bindSiteShells();
+          }
+        }}
+      >
+        <SiteGroup as="ul">
+          {group.components.map((component) => (
             <SitePanel key={component.id} as="li" density="row" indent={1}>
               <ComponentRow
                 as="div"
@@ -124,8 +138,9 @@ function GroupBlocks({
                 status={component.status}
               />
             </SitePanel>
-          ))
-        : null}
+          ))}
+        </SiteGroup>
+      </li>
     </>
   );
 }

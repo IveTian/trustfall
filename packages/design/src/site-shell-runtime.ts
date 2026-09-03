@@ -80,11 +80,11 @@ function measure(main: HTMLElement, session: Session): void {
   // one line past a grid line. Measured from its children, so the group's
   // own padding from the last pass does not count.
   for (const group of main.querySelectorAll<HTMLElement>('.tf-site-group')) {
-    if (!hydrated(group)) {
+    // A group nested in a fold is measured as part of the group around it.
+    if (!hydrated(group) || group.parentElement?.closest('.tf-site-group')) {
       continue;
     }
-    const children = group.querySelectorAll<HTMLElement>(':scope > .tf-site-panel');
-    const last = children[children.length - 1];
+    const last = group.lastElementChild;
     if (!last) {
       group.style.removeProperty('--tf-site-group-pad');
       continue;
