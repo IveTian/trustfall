@@ -3,8 +3,23 @@
 .tf-site-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background-color: light-dark(#efefef, #141414);
+}
+
+/*
+ * The canvas scrolls, not the document: the bar stays out of the scroll
+ * region, so a scrollbar runs under it rather than through it, and the bar's
+ * width — and where its pages are centred — does not change with the
+ * scrollbar's coming and going from page to page. The mesh is attached to
+ * the content so the lines travel with the blocks whose borders they are.
+ */
+.tf-site-shell > .tf-site-main {
+  flex-basis: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background-attachment: local;
 }
 
 /*

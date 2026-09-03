@@ -15,8 +15,11 @@ import { text } from '../tokens/text.stylex.ts';
  * stack on one another sharing a grid line. Every panel is a whole number of
  * cells wide and tall and the mesh originates at its edges, so its border is
  * the grid — `site-shell-runtime.ts` does the measuring, `site-shell.css`
- * the layout. The document scrolls, so the bar can stick while the blocks
- * pass under.
+ * the layout. The canvas is the scroll region, not the document: the bar
+ * keeps its place and its width above it, and a scrollbar runs under the
+ * bar rather than through it. The web app's `site-scroll.ts` keeps the
+ * canvas's scroll position in the router's history so going back lands
+ * where the reader left.
  *
  * `nav` is the bar; it is a prop rather than a child so an Astro page can hand
  * in a hydrated island while the shell itself stays static. Optional in the
