@@ -1,33 +1,71 @@
 ---
 import { env } from 'cloudflare:workers';
-import { createDb, getSetting, isSiteInitialized } from '@trustfall/db';
-import { EmptyState, SitePanel } from '@trustfall/design';
+import { createDb, getSummary, isSiteInitialized } from '@trustfall/db';
+import {
+  type PublicServiceGroup,
+  ServiceGroupList,
+  SiteHeading,
+  SitePanel,
+  Text,
+} from '@trustfall/design';
+import { type ComponentStatus, rollupOverallStatus } from '@trustfall/shared';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
 
-let siteName = 'TrustFall';
 if (initialized) {
-  siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
   Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
 } else {
   Astro.response.status = 503;
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
+
+type Summary = Awaited<ReturnType<typeof getSummary>>;
+let summary: Summary | undefined;
+if (initialized) {
+  try {
+    summary = await getSummary(db);
+  } catch {
+    summary = undefined;
+  }
+}
+const siteName = summary?.siteName ?? 'TrustFall';
+
+const toComponents = (components: Summary['ungroupedComponents']) =>
+  components.map((component) => ({
+    id: component.id,
+    displayName: component.displayName,
+    description: component.description,
+    status: component.status as ComponentStatus,
+  }));
+
+const groups: PublicServiceGroup[] = (summary?.componentGroups ?? [])
+  .filter((group) => group.components.length > 0)
+  .map((group) => {
+    const components = toComponents(group.components);
+    return {
+      id: group.id,
+      displayName: group.displayName,
+      status: rollupOverallStatus(components.map((component) => component.status)),
+      components,
+    };
+  });
+const ungrouped = toComponents(summary?.ungroupedComponents ?? []);
 ---
 
 {
   initialized ? (
     <Site title={`Status · ${siteName}`} siteName={siteName} current="status">
-      <SitePanel>
-        <EmptyState
-          icon="pulse-line"
-          title="Status is on its way"
-          description="Per-component status will live here. Until then, the overview shows the current state."
-        />
-      </SitePanel>
+      <SiteHeading as="h1">Status</SiteHeading>
+      {groups.length === 0 && ungrouped.length === 0 ? (
+        <SitePanel density="row">
+          <Text tone="muted">No components have been published yet.</Text>
+        </SitePanel>
+      ) : (
+        <ServiceGroupList client:load groups={groups} ungrouped={ungrouped} />
+      )}
     </Site>
   ) : (
     <UninitializedNotice />

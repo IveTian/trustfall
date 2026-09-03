@@ -86,6 +86,8 @@ export { RichTextBody } from './components/RichTextBody.tsx';
 export { RichTextEditor } from './components/RichTextEditor.tsx';
 export { SectionNav, SectionNavItem } from './components/SectionNav.tsx';
 export { ComponentGroupSection } from './components/ComponentGroupSection.tsx';
+export { ServiceGroupList } from './components/ServiceGroupList.tsx';
+export type { PublicServiceGroup } from './components/ServiceGroupList.tsx';
 export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';

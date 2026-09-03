@@ -59,6 +59,7 @@ export function SitePanel({
   density = 'default',
   minRows,
   step = 1,
+  indent = 0,
 }: {
   children: ReactNode;
   as?: 'section' | 'article' | 'div' | 'li';
@@ -70,16 +71,22 @@ export function SitePanel({
   minRows?: number;
   /** Height snaps up to whole cells, or to half cells. */
   step?: 1 | 0.5;
+  /** Cells of canvas left open on the start edge: a block nested under another. */
+  indent?: 0 | 1;
 }) {
   const toned = tone ? stylex.props(panelTone[tone]) : null;
+  // `style` is only claimed when a tone sets one: the runtime writes the
+  // snapped height into the element's style, and a hydrating island must
+  // not diff against that.
   return (
     <Tag
       className={`tf-site-panel ${toned?.className ?? ''}`.trim()}
-      style={toned?.style}
+      {...(toned?.style ? { style: toned.style } : null)}
       data-tone={tone}
       data-density={density === 'row' ? 'row' : undefined}
       data-min-rows={minRows}
       data-step={step === 0.5 ? '0.5' : undefined}
+      data-indent={indent === 1 ? '1' : undefined}
     >
       <div className="tf-site-content">{children}</div>
     </Tag>

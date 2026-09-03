@@ -123,12 +123,14 @@ const toComponents = (components: Summary['ungroupedComponents']) =>
     description: component.description,
     status: component.status as ComponentStatus,
   }));
-// Every service in one run, grouped ones first under their group's name.
+// Every service in one run, in the console's order: the ungrouped ones
+// first, then each group's, groups and services as the operators arranged
+// them (`position`, then name — the queries already sort so).
 const services = [
+  ...toComponents(summary.ungroupedComponents).map((component) => ({ ...component, group: null })),
   ...summary.componentGroups.flatMap((group) =>
     toComponents(group.components).map((component) => ({ ...component, group: group.displayName })),
   ),
-  ...toComponents(summary.ungroupedComponents).map((component) => ({ ...component, group: null })),
 ];
 ---
 

@@ -25,7 +25,11 @@ function readNumber(element: HTMLElement, attr: string, fallback: number): numbe
 function measure(main: HTMLElement, session: Session): void {
   const cell = readNumber(main, 'data-cell', SITE_MESH_CELL_PX);
   const maxCols = readNumber(main, 'data-cols', SITE_MESH_COLS);
-  const panels = Array.from(main.querySelectorAll<HTMLElement>('.tf-site-panel'));
+  // An island's panels are left alone until it has hydrated: React would
+  // otherwise diff the snapped height written into their style against the
+  // props it rendered. The observer below comes back for them.
+  const hydrated = (element: Element) => element.closest('astro-island[ssr]') === null;
+  const panels = Array.from(main.querySelectorAll<HTMLElement>('.tf-site-panel')).filter(hydrated);
 
   // Watch every panel's content; drop what the page no longer has.
   const contents = new Set<Element>();
@@ -76,6 +80,9 @@ function measure(main: HTMLElement, session: Session): void {
   // one line past a grid line. Measured from its children, so the group's
   // own padding from the last pass does not count.
   for (const group of main.querySelectorAll<HTMLElement>('.tf-site-group')) {
+    if (!hydrated(group)) {
+      continue;
+    }
     const children = group.querySelectorAll<HTMLElement>(':scope > .tf-site-panel');
     const last = children[children.length - 1];
     if (!last) {
@@ -140,6 +147,8 @@ export function startSiteShellRuntime(): void {
   started = true;
   bindSiteShells();
   new MutationObserver(scheduleBind).observe(document.documentElement, {
+    attributeFilter: ['ssr'],
+    attributes: true,
     childList: true,
     subtree: true,
   });

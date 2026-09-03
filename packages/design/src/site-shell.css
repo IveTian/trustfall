@@ -118,6 +118,12 @@
   border: var(--tf-site-line) solid light-dark(#dcdcdc, #333);
 }
 
+/* Nested under another block: a cell of canvas open on the start edge. */
+.tf-site-panel[data-indent='1'] {
+  width: calc((var(--tf-site-cols) - 1) * var(--tf-site-cell) + var(--tf-site-line));
+  margin-inline-start: var(--tf-site-cell);
+}
+
 /* A toned panel paints its own fill (SiteShell.tsx); the rest are white. */
 .tf-site-panel:not([data-tone]) {
   background-color: light-dark(#fff, #1a1a1a);
@@ -152,6 +158,11 @@
   max-width: none;
   min-height: calc(var(--tf-site-panel-height, 0px) + var(--tf-site-line));
   margin-inline-start: var(--tf-site-panel-left);
+}
+
+.tf-site-main[data-tf-site-ready] .tf-site-panel[data-indent='1'] {
+  width: calc(var(--tf-site-panel-width) - var(--tf-site-cell) + var(--tf-site-line));
+  margin-inline-start: calc(var(--tf-site-panel-left) + var(--tf-site-cell));
 }
 
 [data-tf-site-nav-label] {
