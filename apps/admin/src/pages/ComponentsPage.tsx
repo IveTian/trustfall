@@ -129,10 +129,10 @@ function ComponentTreeRow({
         <>
           <StatusPill status={component.status} />
           <IconButton label={`Edit ${component.display_name}`} onClick={onEdit}>
-            <Icon name="pencil-line" size={16} />
+            <Icon name="edit" size={16} />
           </IconButton>
           <IconButton label={`Delete ${component.display_name}`} onClick={onDelete}>
-            <Icon name="delete-bin-line" size={16} />
+            <Icon name="delete" size={16} />
           </IconButton>
         </>
       }
@@ -204,17 +204,17 @@ function GroupTreeRow({
       handleRef={handleRef}
       title={group.display_name}
       description={group.description}
-      icon="folder-line"
+      icon="folder"
       handle
       dragging={dragging}
       dropEdge={dropEdge}
       end={
         <>
           <IconButton label={`Edit ${group.display_name}`} onClick={onEdit}>
-            <Icon name="pencil-line" size={16} />
+            <Icon name="edit" size={16} />
           </IconButton>
           <IconButton label={`Delete ${group.display_name}`} onClick={onDelete}>
-            <Icon name="delete-bin-line" size={16} />
+            <Icon name="delete" size={16} />
           </IconButton>
         </>
       }
@@ -620,7 +620,7 @@ export function ComponentsPage() {
   return (
     <>
       <PageHeader
-        icon="stack-fill"
+        icon="layers-fill"
         trail={['Components']}
         actions={
           <>

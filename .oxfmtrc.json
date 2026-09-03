@@ -13,6 +13,6 @@
     "worker-configuration.d.ts",
     "apps/web/public/admin",
     "migrations",
-    "packages/design/src/icons.css"
+    "packages/icon/src/generated/**"
   ]
 }

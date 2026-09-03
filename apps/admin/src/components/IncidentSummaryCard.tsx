@@ -33,7 +33,7 @@ export function IncidentSummaryCard({
         <Stack direction="horizontal" justify="between" gap={3}>
           <Text tone="label">{incident.title}</Text>
           <Text tone="muted" as="span">
-            <Icon name="arrow-right-line" size={16} />
+            <Icon name="arrow-right" size={16} />
           </Text>
         </Stack>
         <Stack direction="horizontal" gap={2}>

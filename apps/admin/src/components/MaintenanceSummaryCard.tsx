@@ -36,7 +36,7 @@ export function MaintenanceSummaryCard({
         <Stack direction="horizontal" justify="between" gap={3}>
           <Text tone="label">{maintenance.title}</Text>
           <Text tone="muted" as="span">
-            <Icon name="arrow-right-line" size={16} />
+            <Icon name="arrow-right" size={16} />
           </Text>
         </Stack>
         <Stack direction="horizontal" gap={2} wrap>

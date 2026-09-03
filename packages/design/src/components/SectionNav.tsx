@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ReactNode } from 'react';
 import { breakpoints, control, mesh, motion } from '../tokens/const.stylex.ts';
 import { color } from '../tokens/color.stylex.ts';
@@ -22,7 +23,7 @@ export function SectionNavItem({
   onClick,
   children,
 }: {
-  icon: string;
+  icon: IconName;
   active?: boolean;
   onClick: () => void;
   children: ReactNode;

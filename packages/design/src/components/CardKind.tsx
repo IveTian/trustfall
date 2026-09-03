@@ -3,12 +3,13 @@ import { color } from '../tokens/color.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { Badge } from './Badge.tsx';
 import { Icon } from './Icon.tsx';
+import type { IconName } from '@trustfall/icon';
 
 export type CardKindName = 'incident' | 'maintenance';
 
-const KINDS: Record<CardKindName, { icon: string; label: string }> = {
-  incident: { icon: 'alarm-warning-line', label: 'Incident' },
-  maintenance: { icon: 'tools-line', label: 'Maintenance' },
+const KINDS: Record<CardKindName, { icon: IconName; label: string }> = {
+  incident: { icon: 'siren', label: 'Incident' },
+  maintenance: { icon: 'tools', label: 'Maintenance' },
 };
 
 /**

@@ -388,16 +388,16 @@ export function IncidentDetailPage() {
                 {
                   id: 'delete',
                   label: 'Delete incident',
-                  icon: <Icon name="delete-bin-line" size={16} />,
+                  icon: <Icon name="delete" size={16} />,
                   onSelect: () => setConfirmingDelete(true),
                 },
               ]}
             >
-              <Icon name="more-line" size={16} />
+              <Icon name="more" size={16} />
             </Menu>
             <Button
               variant="secondary"
-              startEnhancer={<Icon name="external-link-line" size={16} />}
+              startEnhancer={<Icon name="external-link" size={16} />}
               onClick={() => window.open(`/incidents/${incident.id}`, '_blank', 'noopener')}
             >
               View on status page
@@ -441,7 +441,7 @@ export function IncidentDetailPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  startEnhancer={<Icon name="pencil-line" size={16} />}
+                  startEnhancer={<Icon name="edit" size={16} />}
                   onClick={openUpdate}
                 >
                   Edit

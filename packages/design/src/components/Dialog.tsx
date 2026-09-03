@@ -266,7 +266,7 @@ export function Dialog({
                 onClick={onClose}
                 {...stylex.props(styles.close)}
               >
-                <Icon name="close-fill" size={16} />
+                <Icon name="close" size={16} />
               </button>
             ) : null}
           </div>

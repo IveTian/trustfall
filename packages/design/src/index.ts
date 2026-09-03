@@ -137,3 +137,4 @@ export { SidebarHeader, SidebarNavItem, SidebarNavSection } from './components/S
 export { ProfileMenu } from './components/ProfileMenu.tsx';
 export type { ProfileMenuItem } from './components/ProfileMenu.tsx';
 export { Icon } from './components/Icon.tsx';
+export type { IconName } from '@trustfall/icon';

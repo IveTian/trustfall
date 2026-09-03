@@ -1,0 +1,4 @@
+'use client';
+import { createIcon } from './runtime.js';
+export const IconChainLink1 = /* @__PURE__ */ createIcon("IconChainLink1", "<path d=\"M13.25 17.75L10.9142 20.0858C10.1332 20.8668 8.86684 20.8668 8.08579 20.0858L3.91422 15.9142C3.13317 15.1332 3.13317 13.8668 3.91422 13.0858L6.25 10.75\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M10.75 6.2497L13.0858 3.91391C13.8668 3.13286 15.1332 3.13286 15.9142 3.91391L20.0858 8.08548C20.8668 8.86653 20.8668 10.1329 20.0858 10.9139L17.75 13.2497\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M9 15L15 9\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "chain-link-1,url");
+export default IconChainLink1;

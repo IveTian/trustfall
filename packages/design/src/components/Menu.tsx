@@ -213,7 +213,7 @@ export function Menu({
         <span {...stylex.props(styles.triggerLabel)}>{children}</span>
         {variant === 'bare' || variant === 'icon' ? null : (
           <span {...stylex.props(styles.triggerIcon)}>
-            <Icon name="arrow-down-s-line" size={16} />
+            <Icon name="chevron-down" size={16} />
           </span>
         )}
       </button>
@@ -256,7 +256,7 @@ export function Menu({
               <span {...stylex.props(styles.rowLabel)}>{item.label}</span>
               {item.selected === undefined ? null : (
                 <span {...stylex.props(styles.rowCheck)}>
-                  {item.selected ? <Icon name="check-fill" size={16} /> : null}
+                  {item.selected ? <Icon name="check" size={16} /> : null}
                 </span>
               )}
             </button>

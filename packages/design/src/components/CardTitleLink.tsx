@@ -20,7 +20,7 @@ export function CardTitleLink({ href, children }: { href: string; children: Reac
     <a href={href} data-tf-card-link="" {...stylex.props(styles.open)}>
       <span {...stylex.props(styles.title)}>{children}</span>
       <span {...stylex.props(styles.arrow)}>
-        <Icon name="arrow-right-line" size={16} />
+        <Icon name="arrow-right" size={16} />
       </span>
     </a>
   );

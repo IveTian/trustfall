@@ -20,16 +20,16 @@ const IMPACT_OPTIONS = [
 export type ImpactStatus = (typeof IMPACT_OPTIONS)[number];
 
 export const impactStatusPresentation: Record<ImpactStatus, StatusPresentation> = {
-  OPERATIONAL: { tone: 'operational', icon: { remix: 'check-line' }, label: 'No impact' },
+  OPERATIONAL: { tone: 'operational', icon: 'circle-check-fill', label: 'No impact' },
   DEGRADED_PERFORMANCE: {
     tone: 'degraded',
-    icon: { remix: 'error-warning-line' },
+    icon: 'error-warning-fill',
     label: 'Degraded performance',
   },
-  PARTIAL_OUTAGE: { tone: 'partialOutage', icon: { remix: 'alert-line' }, label: 'Partial outage' },
+  PARTIAL_OUTAGE: { tone: 'partialOutage', icon: 'alert-fill', label: 'Partial outage' },
   MAJOR_OUTAGE: {
     tone: 'majorOutage',
-    icon: { remix: 'alarm-warning-line' },
+    icon: 'siren-fill',
     label: 'Full outage',
   },
 };

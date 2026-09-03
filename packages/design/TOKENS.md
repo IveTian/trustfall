@@ -97,18 +97,25 @@ Motion durations must collapse to `0ms` under `breakpoints.reduceMotion` in the 
 
 ## Status map — `src/status.ts`
 
-| Kind      | Value                  | Tone          | Icon     | Label                |
-| --------- | ---------------------- | ------------- | -------- | -------------------- |
-| Component | `OPERATIONAL`          | operational   | check    | Operational          |
-| Component | `DEGRADED_PERFORMANCE` | degraded      | diamond  | Degraded performance |
-| Component | `PARTIAL_OUTAGE`       | partialOutage | triangle | Partial outage       |
-| Component | `MAJOR_OUTAGE`         | majorOutage   | stop     | Major outage         |
-| Incident  | `INVESTIGATING`        | partialOutage | triangle | Investigating        |
-| Incident  | `IDENTIFIED`           | degraded      | diamond  | Identified           |
-| Incident  | `MONITORING`           | maintenance   | wrench   | Monitoring           |
-| Incident  | `RESOLVED`             | operational   | check    | Resolved             |
-| Impact    | `MINOR`                | degraded      | diamond  | Minor                |
-| Impact    | `MAJOR`                | partialOutage | triangle | Major                |
-| Impact    | `CRITICAL`             | majorOutage   | stop     | Critical             |
+| Kind        | Value                  | Tone          | Icon              | Label                |
+| ----------- | ---------------------- | ------------- | ----------------- | -------------------- |
+| Component   | `OPERATIONAL`          | operational   | circle-check-fill | Operational          |
+| Component   | `UNDER_MAINTENANCE`    | maintenance   | tools-fill        | Under maintenance    |
+| Component   | `DEGRADED_PERFORMANCE` | degraded      | diamond-fill      | Degraded performance |
+| Component   | `PARTIAL_OUTAGE`       | partialOutage | triangle-fill     | Partial outage       |
+| Component   | `MAJOR_OUTAGE`         | majorOutage   | octagon-fill      | Major outage         |
+| Incident    | `INVESTIGATING`        | partialOutage | search            | Investigating        |
+| Incident    | `IDENTIFIED`           | degraded      | lightbulb         | Identified           |
+| Incident    | `MONITORING`           | maintenance   | eye               | Monitoring           |
+| Incident    | `RESOLVED`             | operational   | check             | Resolved             |
+| Maintenance | `SCHEDULED`            | maintenance   | calendar-event    | Scheduled            |
+| Maintenance | `IN_PROGRESS`          | maintenance   | tools             | In progress          |
+| Maintenance | `COMPLETED`            | operational   | check             | Completed            |
+| Maintenance | `CANCELLED`            | operational   | close             | Cancelled            |
+| Impact      | `MINOR`                | degraded      | error-warning     | Minor                |
+| Impact      | `MAJOR`                | partialOutage | alert             | Major                |
+| Impact      | `CRITICAL`             | majorOutage   | siren             | Critical             |
+
+Icons are names in `@trustfall/icon`; a service's status wears a filled shape, a phase or an impact the sign for what is happening.
 
 Color is never the only signal: every status renders the icon and the label.

@@ -115,7 +115,7 @@
       "style": "outline",
       "stroke_weight": "1.5px",
       "size_scale": ["16px", "20px"],
-      "preferred_set": "Remix Icon / Lucide-class line icons, drawn in the muted neutral, never in accent"
+      "preferred_set": "Central Icons (round, outlined, radius 2, stroke 1.5; the filled cut for the console rail), generated on demand into packages/icon, drawn in the muted neutral, never in accent"
     },
     "motion": {
       "easing": "cubic-bezier(0.2, 0, 0, 1)",

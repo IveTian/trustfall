@@ -212,15 +212,15 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.31.0
         version: 3.31.0
+      '@trustfall/icon':
+        specifier: workspace:*
+        version: link:../icon
       '@trustfall/shared':
         specifier: workspace:*
         version: link:../shared
       markdown-it:
         specifier: ^15.0.1
         version: 15.0.1
-      remixicon:
-        specifier: ^4.9.1
-        version: 4.9.1
       tiptap-markdown:
         specifier: ^0.9.0
         version: 0.9.0(@tiptap/core@3.31.0(@tiptap/pm@3.31.0))
@@ -240,6 +240,15 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+
+  packages/icon:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.2
+        version: 19.2.18
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
 
   packages/jobs:
     dependencies:
@@ -3995,9 +4004,6 @@ packages:
 
   regex@6.1.0:
     resolution: {integrity: sha512-6VwtthbV4o/7+OaAF9I5L5V3llLEsoPyq9P1JVXkedTP33c7MfCG0/5NOPcSJn0TzXcG9YUrR0gQSWioew3LDg==}
-
-  remixicon@4.9.1:
-    resolution: {integrity: sha512-36gLSoujkabnCFZFDyP17VNh9piuBA/rsXUb4auSJWLGsHVXtmxLj/EM5FjaEAGnk8oIAj1Azob/DZ2N+90lAQ==}
 
   request-light@0.5.8:
     resolution: {integrity: sha512-3Zjgh+8b5fhRJBQZoy+zbVKpAQGLyka0MPgW3zruTF4dFFJ8Fqcfu9YsAvi/rvdcaTeWG3MkbZv4WKxAn/84Lg==}
@@ -7978,8 +7984,6 @@ snapshots:
   regex@6.1.0:
     dependencies:
       regex-utilities: 2.3.0
-
-  remixicon@4.9.1: {}
 
   request-light@0.5.8: {}
 

@@ -1,0 +1,4 @@
+'use client';
+import { createIcon } from './runtime.js';
+export const IconBuildingsFilled = /* @__PURE__ */ createIcon("IconBuildingsFilled", "<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M5.75 3C4.23122 3 3 4.23122 3 5.75V18.5H1.75C1.33579 18.5 1 18.8358 1 19.25C1 19.6642 1.33579 20 1.75 20H22.25C22.6642 20 23 19.6642 23 19.25C23 18.8358 22.6642 18.5 22.25 18.5H21V9.75C21 8.23122 19.7688 7 18.25 7H16V18.5H15V5.75C15 4.23122 13.7688 3 12.25 3H5.75ZM7.75 8C7.33579 8 7 8.33579 7 8.75C7 9.16421 7.33579 9.5 7.75 9.5H10.25C10.6642 9.5 11 9.16421 11 8.75C11 8.33579 10.6642 8 10.25 8H7.75ZM7.75 12C7.33579 12 7 12.3358 7 12.75C7 13.1642 7.33579 13.5 7.75 13.5H10.25C10.6642 13.5 11 13.1642 11 12.75C11 12.3358 10.6642 12 10.25 12H7.75Z\" fill=\"currentColor\"/>", "buildings, company, workspace");
+export default IconBuildingsFilled;

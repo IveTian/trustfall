@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import type { IconName } from '@trustfall/icon';
 import type { ReactNode } from 'react';
 import { color } from '../tokens/color.stylex.ts';
 import { control, mesh } from '../tokens/const.stylex.ts';
@@ -92,7 +93,7 @@ const styles = stylex.create({
 });
 
 type NavItemProps = {
-  icon?: string;
+  icon?: IconName;
   label: string;
   active?: boolean;
   onClick?: () => void;
@@ -171,7 +172,7 @@ export function SidebarHeader({
   return (
     <div {...stylex.props(headerStyles.header)}>
       <IconButton label={backLabel} size="sm" onClick={onBack}>
-        <Icon name="arrow-left-line" size={16} />
+        <Icon name="arrow-left" size={16} />
       </IconButton>
       <span {...stylex.props(headerStyles.title)}>{children}</span>
     </div>
