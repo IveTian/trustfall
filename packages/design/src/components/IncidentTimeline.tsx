@@ -1,10 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentStatus, IncidentStatus } from '@trustfall/shared';
+import type { ComponentStatus, IncidentStatus, MaintenanceStatus } from '@trustfall/shared';
 import type { ReactNode } from 'react';
 import {
   componentStatusPresentation,
   incidentStatusGlyph,
   incidentStatusPresentation,
+  maintenanceStatusGlyph,
+  maintenanceStatusPresentation,
+  type StatusPresentation,
 } from '../status.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { control, mesh } from '../tokens/const.stylex.ts';
@@ -24,12 +27,29 @@ export type TimelineAffectedComponent = {
 
 export type TimelineUpdate = {
   id: string;
-  status: IncidentStatus;
+  status: IncidentStatus | MaintenanceStatus;
   body: string;
   createTime: number;
   /** The affected set as this update left it. Omitted for entries without one. */
   components?: TimelineAffectedComponent[];
+  /** A caption under the status: "Automatic" for an entry the scheduler wrote. */
+  note?: string;
 };
+
+/** Which status vocabulary the entries speak; it picks the glyph and label. */
+export type TimelineKind = 'incident' | 'maintenance';
+
+function presentationFor(
+  kind: TimelineKind,
+  status: TimelineUpdate['status'],
+): { presentation: StatusPresentation; glyph: string } {
+  if (kind === 'maintenance') {
+    const key = status as MaintenanceStatus;
+    return { presentation: maintenanceStatusPresentation[key], glyph: maintenanceStatusGlyph[key] };
+  }
+  const key = status as IncidentStatus;
+  return { presentation: incidentStatusPresentation[key], glyph: incidentStatusGlyph[key] };
+}
 
 /** "GMT+8" for the zone the times are shown in; the IANA name when unknown. */
 export function timeZoneLabel(timeZone: string | undefined, at: number): string {
@@ -62,12 +82,14 @@ export function IncidentTimeline({
   updates,
   timeZone,
   renderActions,
+  kind = 'incident',
 }: {
   /** Newest first. */
   updates: TimelineUpdate[];
   /** IANA zone the clock times are shown in; the viewer's own when omitted. */
   timeZone?: string;
   renderActions?: (update: TimelineUpdate) => ReactNode;
+  kind?: TimelineKind;
 }) {
   const clock = new Intl.DateTimeFormat(undefined, {
     timeZone,
@@ -112,7 +134,7 @@ export function IncidentTimeline({
           </header>
           <ol {...stylex.props(styles.list)}>
             {group.updates.map((update, index) => {
-              const presentation = incidentStatusPresentation[update.status];
+              const { presentation, glyph } = presentationFor(kind, update.status);
               const last = groupIndex === days.length - 1 && index === group.updates.length - 1;
               return (
                 <li key={update.id} {...stylex.props(styles.entry)}>
@@ -124,13 +146,18 @@ export function IncidentTimeline({
                   </time>
                   <div {...stylex.props(styles.rail)}>
                     <span aria-hidden {...stylex.props(styles.glyph, glyphTone[presentation.tone])}>
-                      <Icon name={incidentStatusGlyph[update.status]} size={16} />
+                      <Icon name={glyph} size={16} />
                     </span>
                     {last ? null : <span {...stylex.props(styles.line)} />}
                   </div>
                   <div {...stylex.props(styles.content)}>
                     <div {...stylex.props(styles.heading)}>
-                      <span {...stylex.props(styles.status)}>{presentation.label}</span>
+                      <span {...stylex.props(styles.status)}>
+                        {presentation.label}
+                        {update.note ? (
+                          <span {...stylex.props(styles.note)}>{update.note}</span>
+                        ) : null}
+                      </span>
                       {renderActions ? (
                         <span {...stylex.props(styles.actions)}>{renderActions(update)}</span>
                       ) : null}
@@ -255,6 +282,13 @@ const styles = stylex.create({
     fontSize: text.sizeBody,
     fontWeight: text.weightBold,
     lineHeight: text.lineBody,
+  },
+  note: {
+    color: color.textMuted,
+    fontSize: text.sizeCaption,
+    fontWeight: text.weightRegular,
+    lineHeight: text.lineCaption,
+    marginInlineStart: space[2],
   },
   actions: {
     alignItems: 'center',

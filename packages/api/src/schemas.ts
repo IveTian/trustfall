@@ -1,5 +1,11 @@
 import { z } from '@hono/zod-openapi';
-import { COMPONENT_STATUSES, INCIDENT_IMPACTS, INCIDENT_STATUSES } from '@trustfall/shared';
+import {
+  COMPONENT_STATUSES,
+  INCIDENT_IMPACTS,
+  INCIDENT_STATUSES,
+  MAINTENANCE_FREQUENCIES,
+  MAINTENANCE_STATUSES,
+} from '@trustfall/shared';
 
 export const DEFAULT_PAGE_SIZE = 25;
 export const MAX_PAGE_SIZE = 100;
@@ -23,6 +29,13 @@ export const incidentStatusSchema = z.enum(INCIDENT_STATUSES).openapi({
 export const incidentImpactSchema = z.enum(INCIDENT_IMPACTS).openapi({
   description: 'How badly the incident affects users.',
 });
+
+export const maintenanceStatusSchema = z.enum(MAINTENANCE_STATUSES).openapi({
+  description:
+    'Where a maintenance sits in its life. SCHEDULED is the window ahead (for a series, the next one); IN_PROGRESS is the window under way. COMPLETED and CANCELLED are terminal.',
+});
+
+export const maintenanceFrequencySchema = z.enum(MAINTENANCE_FREQUENCIES);
 
 export const problemSchema = z
   .object({
@@ -108,6 +121,80 @@ export const incidentSchema = z
   })
   .openapi('Incident');
 
+export const maintenanceRecurrenceSchema = z
+  .object({
+    frequency: maintenanceFrequencySchema,
+    interval: z
+      .number()
+      .int()
+      .min(1)
+      .max(99)
+      .openapi({ description: 'The step: every 2 weeks, every 3 months.' }),
+    by_weekday: z.array(z.number().int().min(0).max(6)).min(1).max(7).optional().openapi({
+      description:
+        'WEEKLY only: days of the week, 0 = Sunday. Defaults to the weekday of the first window.',
+    }),
+    until: timestamp('Last instant a window may start. Omit or null for a series with no end.')
+      .nullable()
+      .optional(),
+  })
+  .openapi('MaintenanceRecurrence');
+
+export const maintenanceWindowSchema = z
+  .object({
+    starts_at: timestamp('When the window opens.'),
+    ends_at: timestamp('When the window closes.'),
+  })
+  .openapi('MaintenanceWindow');
+
+export const maintenanceUpdateSchema = z
+  .object({
+    id: z.string().openapi({ example: 'mup_7b39' }),
+    maintenance_id: z.string(),
+    status: maintenanceStatusSchema,
+    body: z.string(),
+    automatic: z.boolean().openapi({
+      description:
+        'True when the scheduler wrote the entry as a window opened or closed on its own.',
+    }),
+    created_at: timestamp('When the update was posted.'),
+  })
+  .openapi('MaintenanceUpdate');
+
+export const maintenanceSchema = z
+  .object({
+    id: z.string().openapi({ example: 'mnt_a53d' }),
+    title: z.string(),
+    status: maintenanceStatusSchema,
+    starts_at: timestamp(
+      'When the tracked window opens: the one under way, or the next to open. For a finished maintenance, its last window. A window started by hand keeps its planned start; the IN_PROGRESS update says when it really began.',
+    ),
+    ends_at: timestamp('When the tracked window closes.'),
+    schedule: z
+      .object({
+        starts_at: timestamp('When the first (or only) window was planned to open.'),
+        ends_at: timestamp('When the first window was planned to close.'),
+        duration_minutes: z.number().int(),
+        recurrence: maintenanceRecurrenceSchema.nullable(),
+        time_zone: z.string().openapi({
+          description: 'IANA zone the recurrence keeps its wall-clock time in.',
+          example: 'Asia/Shanghai',
+        }),
+      })
+      .openapi({ description: 'What the operator set; the tracked window is derived from it.' }),
+    next_windows: z.array(maintenanceWindowSchema).openapi({
+      description: 'For a series, up to five windows after the tracked one. Empty otherwise.',
+    }),
+    affected_components: z.array(z.object({ component_id: z.string(), display_name: z.string() })),
+    updates: z.array(maintenanceUpdateSchema).openapi({
+      description:
+        'Timeline, newest first. Paginate /maintenances/{maintenance_id}/updates for long ones.',
+    }),
+    created_at: timestamp('When the maintenance record was created.'),
+    updated_at: timestamp('When the maintenance last changed.'),
+  })
+  .openapi('Maintenance');
+
 export const statusSchema = z
   .object({
     overall_status: componentStatusSchema.openapi({
@@ -120,6 +207,9 @@ export const statusSchema = z
     ),
     ungrouped_components: z.array(componentSchema),
     active_incidents: z.array(incidentSchema),
+    active_maintenances: z.array(maintenanceSchema).openapi({
+      description: 'Windows under way, then the next to open, soonest first.',
+    }),
   })
   .openapi('Status');
 

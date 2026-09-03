@@ -21,6 +21,7 @@ const styles = stylex.create({
   degraded: { backgroundColor: color.degraded },
   partialOutage: { backgroundColor: color.partialOutage },
   majorOutage: { backgroundColor: color.majorOutage },
+  maintenance: { backgroundColor: color.maintenance },
   row: {
     alignItems: 'center',
     display: 'flex',
@@ -45,7 +46,9 @@ export function OverallStatusBanner({
         ? styles.partialOutage
         : presentation.tone === 'majorOutage'
           ? styles.majorOutage
-          : styles.rule;
+          : presentation.tone === 'maintenance'
+            ? styles.maintenance
+            : styles.rule;
 
   return (
     <section {...stylex.props(styles.banner)} aria-live="polite">

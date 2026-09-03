@@ -1,9 +1,15 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ComponentStatus, IncidentImpact, IncidentStatus } from '@trustfall/shared';
+import type {
+  ComponentStatus,
+  IncidentImpact,
+  IncidentStatus,
+  MaintenanceStatus,
+} from '@trustfall/shared';
 import {
   componentStatusPresentation,
   incidentImpactPresentation,
   incidentStatusPresentation,
+  maintenanceStatusPresentation,
 } from '../status.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { Badge } from './Badge.tsx';
@@ -21,15 +27,17 @@ export function StatusPill({
   status,
   kind = 'component',
 }: {
-  status: ComponentStatus | IncidentStatus | IncidentImpact;
-  kind?: 'component' | 'incident' | 'impact';
+  status: ComponentStatus | IncidentStatus | IncidentImpact | MaintenanceStatus;
+  kind?: 'component' | 'incident' | 'impact' | 'maintenance';
 }) {
   const presentation =
     kind === 'incident'
       ? incidentStatusPresentation[status as IncidentStatus]
       : kind === 'impact'
         ? incidentImpactPresentation[status as IncidentImpact]
-        : componentStatusPresentation[status as ComponentStatus];
+        : kind === 'maintenance'
+          ? maintenanceStatusPresentation[status as MaintenanceStatus]
+          : componentStatusPresentation[status as ComponentStatus];
 
   return (
     <span {...stylex.props(styles.pill)}>

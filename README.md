@@ -104,14 +104,14 @@ Tokens, density themes, and components live in `packages/design`. See [PRINCIPLE
 ## Where this is going
 
 Today TrustFall is a status page: component groups, components, incidents with a
-linear update feed, and a public page. Incident response is being built on top of
+linear update feed, maintenance windows (immediate, scheduled, or recurring) that
+put their components under maintenance while they run, and a public page. Incident response is being built on top of
 it, tracked against [incident.io](https://incident.io)'s Response and Status
 Pages products.
 
 Not yet built: configurable severities and statuses, incident roles, custom
 fields, a curated timeline, actions and follow-ups, post-incident reviews,
-maintenance windows, subscribers, uptime history, RBAC, API keys and outbound
-webhooks.
+subscribers, uptime history, RBAC, API keys and outbound webhooks.
 
 Explicit non-goals: on-call scheduling and escalation, alert ingestion and
 routing, a workflow engine, a service catalog, and multi-tenancy. TrustFall is

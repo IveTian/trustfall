@@ -4,6 +4,7 @@ import { createDb, getSummary, isSiteInitialized } from '@trustfall/db';
 import {
   ComponentGroupSection,
   IncidentCard,
+  MaintenanceCard,
   OverallStatusBanner,
   SiteChrome,
   Stack,
@@ -34,6 +35,7 @@ try {
     componentGroups: [],
     ungroupedComponents: [],
     activeIncidents: [],
+    activeMaintenances: [],
   };
 }
 ---
@@ -78,6 +80,31 @@ try {
                   status: component.status as ComponentStatus,
                 }))}
               />
+            ) : null
+          }
+          {
+            summary.activeMaintenances.length > 0 ? (
+              <Stack gap={3}>
+                <Text as="h2" tone="title">
+                  Scheduled maintenance
+                </Text>
+                {summary.activeMaintenances.map((maintenance) => (
+                  <MaintenanceCard
+                    maintenance={{
+                      id: maintenance.id,
+                      title: maintenance.title,
+                      status: maintenance.status,
+                      windowStart: maintenance.windowStart,
+                      windowEnd: maintenance.windowEnd,
+                      startTime: maintenance.startTime,
+                      recurrence: maintenance.recurrence ?? null,
+                      timeZone: maintenance.timeZone,
+                      affectedComponents: maintenance.components,
+                      updates: maintenance.updates,
+                    }}
+                  />
+                ))}
+              </Stack>
             ) : null
           }
           {

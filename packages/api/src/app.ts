@@ -2,11 +2,13 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { getAuth } from './auth.ts';
 import type { AppEnv } from './env.ts';
+import { MaintenanceStateError } from '@trustfall/db';
 import { ApiError, invalidParamsFromIssues, mapDatabaseError, ProblemType } from './errors.ts';
 import { respondWithProblem } from './http.ts';
 import { componentRoutes } from './routes/components.ts';
 import { inviteLinkRoutes } from './routes/invite-links.ts';
 import { incidentRoutes } from './routes/incidents.ts';
+import { maintenanceRoutes } from './routes/maintenances.ts';
 import { settingsRoutes } from './routes/settings.ts';
 import { setupRoutes } from './routes/setup.ts';
 import { statusRoutes } from './routes/status.ts';
@@ -30,6 +32,9 @@ api.onError((err, c) => {
   if (err instanceof ApiError) {
     return respondWithProblem(c, err);
   }
+  if (err instanceof MaintenanceStateError) {
+    return respondWithProblem(c, new ApiError(ProblemType.FAILED_PRECONDITION, err.message));
+  }
   // A constraint the caller can fix must not be reported as a server fault.
   const mapped = mapDatabaseError(err);
   if (mapped) {
@@ -50,6 +55,7 @@ api.all('/auth/*', async (c) => {
 api.route('/', statusRoutes());
 api.route('/', componentRoutes());
 api.route('/', incidentRoutes());
+api.route('/', maintenanceRoutes());
 api.route('/', settingsRoutes());
 api.route('/', setupRoutes());
 api.route('/', inviteLinkRoutes());
@@ -85,6 +91,11 @@ api.doc31('/openapi.json', {
     { name: 'Components', description: 'The services whose health the page reports.' },
     { name: 'Component groups', description: 'How components are grouped on the page.' },
     { name: 'Incidents', description: 'Incidents and their timelines.' },
+    {
+      name: 'Maintenance',
+      description:
+        'Planned maintenance windows: immediate, scheduled, or recurring. Windows open and close on their own and put their components under maintenance while they run.',
+    },
     { name: 'Settings', description: 'Site-wide settings.' },
     { name: 'Setup', description: 'First-run initialization.' },
     {

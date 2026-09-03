@@ -1,4 +1,9 @@
-import type { Job } from './types.ts';
+import { createDb, nextMaintenanceBoundary, reconcileMaintenances } from '@trustfall/db';
+import { enqueue } from './index.ts';
+import { deliveryMode, type Job } from './types.ts';
+
+/** The one pending maintenance timer; re-arming replaces it rather than stacking. */
+export const MAINTENANCE_CLOCK_ID = 'maintenance-clock';
 
 /**
  * Single execution point for every job, whatever delivered it. Queue consumer,
@@ -7,13 +12,34 @@ import type { Job } from './types.ts';
  */
 export async function runJob(env: Env, job: Job): Promise<void> {
   switch (job.type) {
+    case 'MAINTENANCE_TRANSITION':
+      await runMaintenanceClock(env);
+      return;
     case 'WEBHOOK_DELIVER':
     case 'EMAIL_SEND':
     case 'COMPONENT_STATUS_RECONCILE':
-    case 'MAINTENANCE_TRANSITION':
     case 'UPTIME_ROLLUP':
       // Handlers land here as each stage brings them online.
       console.log(`job ${job.type} not yet implemented`, job.id);
       return;
   }
+}
+
+/**
+ * Opens and closes maintenance windows whose time has come, then re-arms
+ * itself for the next boundary. Reads reconcile too, so this is what keeps the
+ * page right when nobody is looking. Inline delivery cannot wait, so there it
+ * runs once and leaves the cron sweep to call again.
+ */
+async function runMaintenanceClock(env: Env): Promise<void> {
+  const db = createDb(env.DB);
+  await reconcileMaintenances(db);
+  if (deliveryMode(env) === 'inline') {
+    return;
+  }
+  const boundary = await nextMaintenanceBoundary(db);
+  if (boundary === undefined) {
+    return;
+  }
+  await enqueue(env, 'MAINTENANCE_TRANSITION', {}, { runAt: boundary, id: MAINTENANCE_CLOCK_ID });
 }

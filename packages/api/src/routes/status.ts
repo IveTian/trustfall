@@ -2,7 +2,12 @@ import { getSummary } from '@trustfall/db';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '../bindings.ts';
 import type { AppEnv } from '../env.ts';
-import { presentComponent, presentGroup, presentIncident } from '../presenters.ts';
+import {
+  presentComponent,
+  presentGroup,
+  presentIncident,
+  presentMaintenance,
+} from '../presenters.ts';
 import { statusSchema } from '../schemas.ts';
 
 /**
@@ -39,6 +44,7 @@ export function statusRoutes() {
         })),
         ungrouped_components: summary.ungroupedComponents.map(presentComponent),
         active_incidents: summary.activeIncidents.map(presentIncident),
+        active_maintenances: summary.activeMaintenances.map(presentMaintenance),
       },
       200,
     );

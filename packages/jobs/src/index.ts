@@ -11,6 +11,12 @@ export type EnqueueOptions = {
   runAt?: number;
   attempt?: number;
   ctx?: ExecutionContext;
+  /**
+   * A fixed id makes the job a singleton: scheduling it again replaces the
+   * pending copy instead of adding a second one. For timers that re-arm
+   * themselves, such as the maintenance clock.
+   */
+  id?: string;
 };
 
 /**
@@ -24,7 +30,7 @@ export async function enqueue(
   options: EnqueueOptions = {},
 ): Promise<void> {
   const job: Job = {
-    id: crypto.randomUUID(),
+    id: options.id ?? crypto.randomUUID(),
     type,
     payload,
     runAt: options.runAt ?? Date.now(),

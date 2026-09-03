@@ -20,6 +20,7 @@ import {
   settings,
 } from './schema.ts';
 import type { Database } from './client.ts';
+import { listActiveMaintenances } from './maintenances.ts';
 
 export type ComponentGroupRow = typeof componentGroups.$inferSelect;
 export type ComponentRow = typeof components.$inferSelect;
@@ -554,6 +555,9 @@ async function restoreIncidentComponents(db: Database, incident: IncidentWithRel
 }
 
 export async function getSummary(db: Database) {
+  // Maintenance goes first: reconciling it may move component statuses the
+  // rest of the snapshot then reads.
+  const activeMaintenances = await listActiveMaintenances(db);
   const [groups, allComponents, active, siteName, siteDescription] = await Promise.all([
     listComponentGroups(db),
     listComponents(db),
@@ -574,6 +578,7 @@ export async function getSummary(db: Database) {
     })),
     ungroupedComponents: allComponents.filter((component) => component.groupId == null),
     activeIncidents: active.incidents.filter((incident) => isActiveIncidentStatus(incident.status)),
+    activeMaintenances,
   };
 }
 

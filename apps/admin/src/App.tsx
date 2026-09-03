@@ -9,6 +9,8 @@ import { DashboardPage } from './pages/DashboardPage.tsx';
 import { IncidentDetailPage } from './pages/IncidentDetailPage.tsx';
 import { IncidentsPage } from './pages/IncidentsPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
+import { MaintenanceDetailPage } from './pages/MaintenanceDetailPage.tsx';
+import { MaintenancePage } from './pages/MaintenancePage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 import { SetupPage } from './pages/SetupPage.tsx';
@@ -74,6 +76,8 @@ const router = createBrowserRouter(
         { path: '/components', element: <ComponentsPage /> },
         { path: '/incidents', element: <IncidentsPage /> },
         { path: '/incidents/:incidentId', element: <IncidentDetailPage /> },
+        { path: '/maintenance', element: <MaintenancePage /> },
+        { path: '/maintenance/:maintenanceId', element: <MaintenanceDetailPage /> },
         {
           path: '/settings',
           element: <Navigate to={settingsPath(DEFAULT_SETTINGS_SECTION)} replace />,

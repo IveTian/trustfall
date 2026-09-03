@@ -11,8 +11,17 @@ export {
   incidentImpactPresentation,
   incidentStatusGlyph,
   incidentStatusPresentation,
+  maintenanceStatusGlyph,
+  maintenanceStatusPresentation,
   overallStatusCopy,
 } from './status.ts';
+export {
+  describeRecurrence,
+  formatDuration,
+  formatInstant,
+  formatWindow,
+  weekdayIndex,
+} from './maintenance-copy.ts';
 export type { StatusIconKind, StatusPresentation, StatusTone } from './status.ts';
 export { themeBootScript, applyTheme, readTheme, THEME_STORAGE_KEY } from './theme-script.ts';
 export type { ThemePreference } from './theme-script.ts';
@@ -32,6 +41,8 @@ export { Badge } from './components/Badge.tsx';
 export { Field, Input, Textarea } from './components/Field.tsx';
 export { Select } from './components/Select.tsx';
 export type { SelectOption } from './components/Select.tsx';
+export { DateTimePicker } from './components/DateTimePicker.tsx';
+export { WeekdayPicker } from './components/WeekdayPicker.tsx';
 export { Checkbox } from './components/Checkbox.tsx';
 export { Switch } from './components/Switch.tsx';
 export { Avatar } from './components/Avatar.tsx';
@@ -58,7 +69,13 @@ export type { PublicComponent } from './components/ComponentGroupSection.tsx';
 export { IncidentCard } from './components/IncidentCard.tsx';
 export type { PublicIncident, PublicIncidentUpdate } from './components/IncidentCard.tsx';
 export { IncidentTimeline, timeZoneLabel } from './components/IncidentTimeline.tsx';
-export type { TimelineUpdate, TimelineAffectedComponent } from './components/IncidentTimeline.tsx';
+export type {
+  TimelineUpdate,
+  TimelineAffectedComponent,
+  TimelineKind,
+} from './components/IncidentTimeline.tsx';
+export { MaintenanceCard } from './components/MaintenanceCard.tsx';
+export type { PublicMaintenance } from './components/MaintenanceCard.tsx';
 export { AffectedComponentsChart } from './components/AffectedComponentsChart.tsx';
 export type { ChartComponent } from './components/AffectedComponentsChart.tsx';
 export { componentSegments } from './affected-segments.ts';

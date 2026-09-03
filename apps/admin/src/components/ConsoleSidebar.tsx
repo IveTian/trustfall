@@ -51,6 +51,12 @@ export function ConsoleSidebar() {
             active={location.pathname.startsWith('/incidents')}
             onClick={() => navigate('/incidents')}
           />
+          <SidebarNavItem
+            icon="hammer-fill"
+            label="Maintenance"
+            active={location.pathname.startsWith('/maintenance')}
+            onClick={() => navigate('/maintenance')}
+          />
         </SidebarNavSection>
       </Stack>
       <Stack gap={3}>
