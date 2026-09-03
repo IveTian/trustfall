@@ -1,7 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, getSetting, isSiteInitialized, listMaintenances } from '@trustfall/db';
-import { MaintenanceCard, Stack, Text } from '@trustfall/design';
+import { MaintenanceCard, SitePanel, Stack, Text } from '@trustfall/design';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
 
@@ -31,7 +31,8 @@ if (initialized) {
 {
   initialized ? (
     <Site title={`Maintenance · ${siteName}`} siteName={siteName} current="maintenance">
-      <Stack gap={4}>
+      <SitePanel>
+        <Stack gap={4}>
         <Text as="h1" tone="display">
           Maintenance
         </Text>
@@ -55,7 +56,8 @@ if (initialized) {
             />
           ))
         )}
-      </Stack>
+        </Stack>
+      </SitePanel>
     </Site>
   ) : (
     <UninitializedNotice />

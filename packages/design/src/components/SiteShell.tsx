@@ -4,11 +4,11 @@ import { MESH_CELL_PX } from '../tokens/mesh.ts';
 
 /**
  * The public site's page: the `SiteNav` worn across the top, and under it the
- * mesh canvas from edge to edge with one white reading panel on it. The panel
- * is a whole number of cells wide and tall and the mesh originates at its
- * edges, so its border is the grid — `site-shell-runtime.ts` does the
- * measuring, `site-shell.css` the layout. The document scrolls, so the bar
- * can stick while the panel passes under.
+ * mesh canvas from edge to edge with the page's `SitePanel`s stacked on it,
+ * one cell apart. Every panel is a whole number of cells wide and tall and
+ * the mesh originates at its edges, so its border is the grid —
+ * `site-shell-runtime.ts` does the measuring, `site-shell.css` the layout.
+ * The document scrolls, so the bar can stick while the panels pass under.
  *
  * `nav` is the bar; it is a prop rather than a child so an Astro page can hand
  * in a hydrated island while the shell itself stays static.
@@ -19,6 +19,7 @@ export function SiteShell({
   cols = 9,
 }: {
   nav: ReactNode;
+  /** `SitePanel`s, in reading order. */
   children: ReactNode;
   /** Panel width in cells, at most; narrower viewports get fewer. Odd keeps the CSS fallback centred on a line. */
   cols?: number;
@@ -27,10 +28,27 @@ export function SiteShell({
     <div className="tf-site-shell">
       {nav}
       <main className="tf-site-main" data-tf-site-main="" data-cell={MESH_CELL_PX} data-cols={cols}>
-        <div className="tf-site-panel">
-          <div className="tf-site-content">{children}</div>
-        </div>
+        {children}
       </main>
     </div>
+  );
+}
+
+/**
+ * One white block on the canvas. A page is a stack of these, each answering
+ * one question — the current state, what is under way, what happened lately
+ * — so a reader can find the one they came for without reading the rest.
+ */
+export function SitePanel({
+  children,
+  as: Tag = 'section',
+}: {
+  children: ReactNode;
+  as?: 'section' | 'article' | 'div';
+}) {
+  return (
+    <Tag className="tf-site-panel">
+      <div className="tf-site-content">{children}</div>
+    </Tag>
   );
 }

@@ -6,6 +6,7 @@ import {
   type ChartComponent,
   DateTime,
   IncidentTimeline,
+  SitePanel,
   Stack,
   StatusPill,
   Text,
@@ -57,36 +58,51 @@ if (incident) {
 {
   incident ? (
     <Site title={`${incident.title} · ${siteName}`} siteName={siteName} current="history">
-        <Stack gap={4}>
+      <SitePanel>
+        <Stack gap={3}>
           <Stack direction="horizontal" gap={2}>
             <StatusPill status={incident.status} kind="incident" />
             <StatusPill status={incident.impact} kind="impact" />
           </Stack>
-          <Text as="h1" tone="display">{incident.title}</Text>
+          <Text as="h1" tone="display">
+            {incident.title}
+          </Text>
           {/* The page is rendered once and cached for everyone, so the clocks
               are islands: the server speaks UTC and each reader's browser
               re-reads them in the zone chosen from the bar. */}
           <Text tone="caption">
             Started <DateTime client:load value={incident.startTime} />
           </Text>
-          <IncidentTimeline client:load updates={incident.updates} locale="en" />
-          {
-            affected.length > 0 ? (
-              <Stack gap={3}>
-                <Text as="h2" tone="label">Affected components</Text>
-                <AffectedComponentsChart
-                  components={affected}
-                  updates={incident.updates}
-                  startTime={incident.startTime}
-                  endTime={incident.resolveTime}
-                  locale="en"
-                  now={Date.now()}
-                  client:load
-                />
-              </Stack>
-            ) : null
-          }
         </Stack>
+      </SitePanel>
+
+      <SitePanel>
+        <Stack gap={3}>
+          <Text as="h2" tone="title">
+            Updates
+          </Text>
+          <IncidentTimeline client:load updates={incident.updates} locale="en" />
+        </Stack>
+      </SitePanel>
+
+      {affected.length > 0 ? (
+        <SitePanel>
+          <Stack gap={3}>
+            <Text as="h2" tone="title">
+              Affected components
+            </Text>
+            <AffectedComponentsChart
+              components={affected}
+              updates={incident.updates}
+              startTime={incident.startTime}
+              endTime={incident.resolveTime}
+              locale="en"
+              now={Date.now()}
+              client:load
+            />
+          </Stack>
+        </SitePanel>
+      ) : null}
     </Site>
   ) : (
     <UninitializedNotice />

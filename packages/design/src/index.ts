@@ -107,7 +107,7 @@ export { ThemeToggle } from './components/ThemeToggle.tsx';
 export { DesignGallery } from './components/Gallery.tsx';
 export { SiteNav } from './components/SiteNav.tsx';
 export type { SiteNavItem } from './components/SiteNav.tsx';
-export { SiteShell } from './components/SiteShell.tsx';
+export { SiteShell, SitePanel } from './components/SiteShell.tsx';
 export { ThemeMenu } from './components/ThemeMenu.tsx';
 export { TimeZoneMenu } from './components/TimeZoneMenu.tsx';
 export { MeshScreen } from './components/MeshScreen.tsx';

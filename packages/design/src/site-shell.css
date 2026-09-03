@@ -8,10 +8,12 @@
 }
 
 /*
- * The mesh starts half a cell under the bar, which is exactly where the panel's
- * top edge sits, so the first horizontal line is the panel's own border.
- * Horizontally, until site-shell-runtime measures, a tile is centred on the
- * page: with an odd number of columns the panel's edges then land on lines.
+ * The mesh starts half a cell under the bar, which is exactly where the first
+ * panel's top edge sits, so that horizontal line is the panel's own border.
+ * Panels stack a whole cell apart (less the line each one's bottom border
+ * already covers), so every panel's edges land on lines once its height is
+ * snapped. Horizontally, until site-shell-runtime measures, a tile is centred
+ * on the page: with an odd number of columns the edges then land on lines.
  */
 .tf-site-main {
   --tf-site-cell: 96px;
@@ -24,6 +26,7 @@
   flex-direction: column;
   flex-grow: 1;
   align-items: center;
+  gap: calc(var(--tf-site-cell) - var(--tf-site-line));
   width: 100%;
   padding-block: calc(var(--tf-site-cell) / 2);
   background-image:
@@ -46,6 +49,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   width: calc(var(--tf-site-cols) * var(--tf-site-cell) + var(--tf-site-line));
   max-width: 100%;
   background-color: light-dark(#fff, #1a1a1a);
@@ -59,7 +63,7 @@
   padding: 32px;
 }
 
-/* After site-shell-runtime measures: the mesh origins at the panel's left edge. */
+/* After site-shell-runtime measures: the mesh origins at the panels' left edge. */
 .tf-site-main[data-tf-site-ready] {
   --tf-site-origin-x: var(--tf-site-panel-left);
   align-items: flex-start;
@@ -68,8 +72,12 @@
 .tf-site-main[data-tf-site-ready] .tf-site-panel {
   width: calc(var(--tf-site-panel-width) + var(--tf-site-line));
   max-width: none;
-  min-height: calc(var(--tf-site-panel-height) + var(--tf-site-line));
+  min-height: calc(var(--tf-site-panel-height, 0px) + var(--tf-site-line));
   margin-inline-start: var(--tf-site-panel-left);
+}
+
+[data-tf-site-nav-label] {
+  view-transition-class: tf-site-nav-label;
 }
 
 /*
@@ -79,10 +87,6 @@
  * lifted with it so they stay legible on top. Duration and easing mirror
  * `motion.slow` and `motion.ease` in tokens/const.stylex.ts.
  */
-[data-tf-site-nav-label] {
-  view-transition-class: tf-site-nav-label;
-}
-
 ::view-transition-group(tf-site-nav-active) {
   z-index: 1;
   animation-duration: 280ms;

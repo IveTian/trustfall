@@ -1,5 +1,5 @@
 ---
-import { DesignGallery } from '@trustfall/design';
+import { DesignGallery, SitePanel } from '@trustfall/design';
 import Site from '../layouts/Site.astro';
 
 if (!import.meta.env.DEV) {
@@ -8,5 +8,7 @@ if (!import.meta.env.DEV) {
 ---
 
 <Site title="Design gallery · TrustFall" siteName="TrustFall">
-  <DesignGallery client:load />
+  <SitePanel>
+    <DesignGallery client:load />
+  </SitePanel>
 </Site>

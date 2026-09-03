@@ -1,7 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createDb, getSetting, isSiteInitialized } from '@trustfall/db';
-import { EmptyState } from '@trustfall/design';
+import { EmptyState, SitePanel } from '@trustfall/design';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
 
@@ -21,11 +21,13 @@ if (initialized) {
 {
   initialized ? (
     <Site title={`Status · ${siteName}`} siteName={siteName} current="status">
-      <EmptyState
-        icon="pulse-line"
-        title="Status is on its way"
-        description="Per-component status will live here. Until then, the overview shows the current state."
-      />
+      <SitePanel>
+        <EmptyState
+          icon="pulse-line"
+          title="Status is on its way"
+          description="Per-component status will live here. Until then, the overview shows the current state."
+        />
+      </SitePanel>
     </Site>
   ) : (
     <UninitializedNotice />

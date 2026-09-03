@@ -1,14 +1,14 @@
 import { MESH_CELL_PX, MESH_LINE_PX } from './tokens/mesh.ts';
 
 /**
- * Snaps the public site's reading panel to the mesh: as many whole columns as
- * fit (up to the shell's `data-cols`), centred to the pixel, and as many whole
- * rows as the content needs, so all four edges of the panel sit on grid lines
- * while the page still scrolls. No React hooks — the shell is static markup.
- * A client-router swap replaces the main; a mutation observer picks up the
- * new one and lets go of the old.
+ * Snaps the public site's reading panels to the mesh: as many whole columns
+ * as fit (up to the main's `data-cols`), centred to the pixel, and each panel
+ * as many whole rows as its content needs, so all four edges of every panel
+ * sit on grid lines while the page still scrolls. No React hooks — the shell
+ * is static markup. A client-router swap replaces the main; a mutation
+ * observer picks up the new one and lets go of the old.
  */
-type Session = { observer: ResizeObserver; observedContent: Element | null };
+type Session = { observer: ResizeObserver; observed: Set<Element> };
 
 const sessions = new Map<HTMLElement, Session>();
 let started = false;
@@ -23,34 +23,49 @@ function readNumber(element: HTMLElement, attr: string, fallback: number): numbe
 function measure(main: HTMLElement, session: Session): void {
   const cell = readNumber(main, 'data-cell', MESH_CELL_PX);
   const maxCols = readNumber(main, 'data-cols', 9);
-  const panel = main.querySelector<HTMLElement>('.tf-site-panel');
-  const content = main.querySelector<HTMLElement>('.tf-site-content');
+  const panels = Array.from(main.querySelectorAll<HTMLElement>('.tf-site-panel'));
 
-  if (content && content !== session.observedContent) {
-    if (session.observedContent) {
-      session.observer.unobserve(session.observedContent);
+  // Watch every panel's content; drop what the page no longer has.
+  const contents = new Set<Element>();
+  for (const panel of panels) {
+    const content = panel.querySelector<HTMLElement>('.tf-site-content');
+    if (content) {
+      contents.add(content);
     }
-    session.observer.observe(content);
-    session.observedContent = content;
   }
-  if (!panel || !content) {
-    return;
+  for (const element of session.observed) {
+    if (!contents.has(element)) {
+      session.observer.unobserve(element);
+      session.observed.delete(element);
+    }
+  }
+  for (const element of contents) {
+    if (!session.observed.has(element)) {
+      session.observer.observe(element);
+      session.observed.add(element);
+    }
   }
 
   const viewWidth = main.clientWidth;
   const cols = Math.max(1, Math.min(maxCols, Math.floor((viewWidth - MESH_LINE_PX) / cell)));
   const width = cols * cell;
   const left = Math.max(0, Math.round((viewWidth - width - MESH_LINE_PX) / 2));
-  // The panel's outer height is rows × cell + line; its two borders take two
-  // lines of that, so the content must fit in rows × cell − line.
-  const rows = Math.max(1, Math.ceil((content.offsetHeight + MESH_LINE_PX) / cell));
-  const height = rows * cell;
 
   main.style.setProperty('--tf-site-cell', `${cell}px`);
   main.style.setProperty('--tf-site-line', `${MESH_LINE_PX}px`);
   main.style.setProperty('--tf-site-panel-left', `${left}px`);
   main.style.setProperty('--tf-site-panel-width', `${width}px`);
-  main.style.setProperty('--tf-site-panel-height', `${height}px`);
+
+  for (const panel of panels) {
+    const content = panel.querySelector<HTMLElement>('.tf-site-content');
+    if (!content) {
+      continue;
+    }
+    // A panel's outer height is rows × cell + line; its two borders take two
+    // lines of that, so the content must fit in rows × cell − line.
+    const rows = Math.max(1, Math.ceil((content.offsetHeight + MESH_LINE_PX) / cell));
+    panel.style.setProperty('--tf-site-panel-height', `${rows * cell}px`);
+  }
   main.setAttribute('data-tf-site-ready', '');
 }
 
@@ -59,7 +74,7 @@ function bind(main: HTMLElement): void {
   if (!session) {
     const next: Session = {
       observer: new ResizeObserver(() => measure(main, next)),
-      observedContent: null,
+      observed: new Set(),
     };
     session = next;
     sessions.set(main, session);
