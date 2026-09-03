@@ -41,7 +41,8 @@ export function setupRoutes() {
       path: '/setup',
       tags: ['Setup'],
       summary: 'Initialize the site',
-      description: 'Creates the owner account and names the site. Sign-up stays closed after this.',
+      description:
+        'Creates the owner account and names the site. Public sign-up stays closed after this; further accounts need an invite link.',
       security: [],
       request: {
         body: {

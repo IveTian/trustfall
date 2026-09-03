@@ -3,6 +3,8 @@ import * as stylex from '@stylexjs/stylex';
 export const motion = stylex.defineConsts({
   fast: '120ms',
   base: '200ms',
+  // For surfaces that travel, not just fade: a rail sliding its own width.
+  slow: '280ms',
   ease: 'cubic-bezier(0.2, 0, 0, 1)',
 });
 

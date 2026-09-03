@@ -85,13 +85,13 @@ Timestamps and durations use `familyMono` and tabular numerals.
 
 Inlined, not CSS variables.
 
-| Group         | Tokens                                                                                                                                                                                          |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `motion`      | `fast` 120ms, `base` 200ms, `ease` cubic-bezier(0.2, 0, 0, 1)                                                                                                                                   |
-| `breakpoints` | `sm` 640px, `md` 880px, `reduceMotion`                                                                                                                                                          |
-| `zIndex`      | `header` 10, `menu` 30, `toast` 40, `dialog` 50                                                                                                                                                 |
-| `control`     | `focusWidth` 2px, `focusOffset` 2px, `heightSm` 28px, `heightMd` 32px, `heightLg` 40px, `sidebarWidth` 240px, `menuMaxWidth` 280px, `headerHeight` 52px, `markSize` 28px, `contentWidth` 1040px |
-| `mesh`        | `cell` 96px, `line` 1px                                                                                                                                                                         |
+| Group         | Tokens                                                                                                                                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `motion`      | `fast` 120ms, `base` 200ms, `slow` 280ms, `ease` cubic-bezier(0.2, 0, 0, 1)                                                                                                                                               |
+| `breakpoints` | `sm` 640px, `md` 880px, `reduceMotion`                                                                                                                                                                                    |
+| `zIndex`      | `header` 10, `menu` 30, `toast` 40, `dialog` 50                                                                                                                                                                           |
+| `control`     | `focusWidth` 2px, `focusOffset` 2px, `heightSm` 28px, `heightMd` 32px, `heightLg` 40px, `sidebarWidth` 240px, `menuMaxWidth` 280px, `headerHeight` 52px, `markSize` 28px, `contentWidth` 880px, `contentWidthWide` 1320px |
+| `mesh`        | `cell` 96px, `line` 1px                                                                                                                                                                                                   |
 
 Motion durations must collapse to `0ms` under `breakpoints.reduceMotion` in the consuming `create` call.
 

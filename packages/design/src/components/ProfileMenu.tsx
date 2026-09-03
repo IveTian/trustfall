@@ -15,6 +15,7 @@ import { radius } from '../tokens/radius.stylex.ts';
 import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
+import { Avatar } from './Avatar.tsx';
 import { Icon } from './Icon.tsx';
 
 const THEME_OPTIONS: Array<{ id: ThemePreference; label: string; icon: string }> = [
@@ -74,27 +75,6 @@ function measureSubmenu(row: HTMLElement, panel: HTMLElement): SubmenuAnchor {
     inlineStart: `${isRtl(row) ? window.innerWidth - panelRect.left : panelRect.right}px`,
     blockStart: `${rowRect.top}px`,
   };
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '?';
-  }
-  const first = [...parts[0]!][0] ?? '';
-  const last = parts.length > 1 ? ([...parts.at(-1)!][0] ?? '') : '';
-  return `${first}${last}`.toUpperCase();
-}
-
-function Avatar({ name, image }: { name: string; image?: string | null }) {
-  if (image) {
-    return <img src={image} alt="" {...stylex.props(styles.avatar, styles.avatarImage)} />;
-  }
-  return (
-    <span aria-hidden {...stylex.props(styles.avatar, styles.avatarInitials)}>
-      {initials(name)}
-    </span>
-  );
 }
 
 /**
@@ -564,27 +544,6 @@ const styles = stylex.create({
       default: color.surfaceSunken,
       ':hover': color.surfaceSunken,
     },
-  },
-  avatar: {
-    blockSize: space[6],
-    borderRadius: radius.pill,
-    boxSizing: 'border-box',
-    flexShrink: 0,
-    inlineSize: space[6],
-  },
-  avatarImage: {
-    objectFit: 'cover',
-  },
-  avatarInitials: {
-    alignItems: 'center',
-    backgroundColor: color.accentMuted,
-    color: color.accent,
-    display: 'flex',
-    fontFamily: text.familyUi,
-    fontSize: text.sizeCaption,
-    fontWeight: text.weightMedium,
-    justifyContent: 'center',
-    lineHeight: text.lineCaption,
   },
   identity: {
     display: 'flex',

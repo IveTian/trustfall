@@ -5,6 +5,7 @@ import type { AppEnv } from './env.ts';
 import { ApiError, invalidParamsFromIssues, mapDatabaseError, ProblemType } from './errors.ts';
 import { respondWithProblem } from './http.ts';
 import { componentRoutes } from './routes/components.ts';
+import { inviteLinkRoutes } from './routes/invite-links.ts';
 import { incidentRoutes } from './routes/incidents.ts';
 import { settingsRoutes } from './routes/settings.ts';
 import { setupRoutes } from './routes/setup.ts';
@@ -51,6 +52,7 @@ api.route('/', componentRoutes());
 api.route('/', incidentRoutes());
 api.route('/', settingsRoutes());
 api.route('/', setupRoutes());
+api.route('/', inviteLinkRoutes());
 
 api.doc31('/openapi.json', {
   openapi: '3.1.0',
@@ -85,6 +87,11 @@ api.doc31('/openapi.json', {
     { name: 'Incidents', description: 'Incidents and their timelines.' },
     { name: 'Settings', description: 'Site-wide settings.' },
     { name: 'Setup', description: 'First-run initialization.' },
+    {
+      name: 'Invite links',
+      description:
+        'Operator-generated registration URLs. Public sign-up stays closed; each link allows a fixed number of Better Auth createUser calls.',
+    },
   ],
 });
 

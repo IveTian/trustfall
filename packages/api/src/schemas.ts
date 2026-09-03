@@ -136,6 +136,52 @@ export const setupSchema = z
   })
   .openapi('Setup');
 
+export const inviteLinkStateSchema = z.enum(['ACTIVE', 'EXHAUSTED', 'REVOKED']).openapi({
+  description:
+    'ACTIVE can still be used to register. EXHAUSTED has hit `max_uses`. REVOKED was cancelled.',
+});
+
+export const inviteLinkSchema = z
+  .object({
+    id: z.string().openapi({ example: 'inv_1f0a' }),
+    token: z.string().openapi({
+      description:
+        'Secret in the registration URL. Anyone who has it can register until the link is spent or revoked.',
+    }),
+    url: z.string().openapi({
+      description: 'Absolute registration URL to share.',
+      example: 'https://status.example.com/admin/register?invite=ab12',
+    }),
+    max_uses: z.number().int().openapi({ description: 'How many accounts this link may create.' }),
+    use_count: z
+      .number()
+      .int()
+      .openapi({ description: 'How many accounts have already been created with it.' }),
+    remaining_uses: z.number().int(),
+    state: inviteLinkStateSchema,
+    created_by: z
+      .string()
+      .openapi({ description: 'User id of the operator who generated the link.' }),
+    revoked_at: timestamp('When the link was revoked, or null while it is active.').nullable(),
+    created_at: timestamp('When the link was generated.'),
+    updated_at: timestamp('When the link last changed.'),
+  })
+  .openapi('InviteLink');
+
+export const publicInviteSchema = z
+  .object({
+    state: inviteLinkStateSchema,
+    remaining_uses: z.number().int(),
+  })
+  .openapi('PublicInvite');
+
+export const registrationSchema = z
+  .object({
+    email: z.email(),
+    display_name: z.string(),
+  })
+  .openapi('Registration');
+
 /**
  * Collections are objects, never bare arrays, so page metadata and later
  * additions have somewhere to live.

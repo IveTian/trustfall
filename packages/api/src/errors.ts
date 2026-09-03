@@ -16,6 +16,7 @@ export const ProblemType = {
   ALREADY_EXISTS: '/problems/already-exists',
   RESOURCE_IN_USE: '/problems/resource-in-use',
   ALREADY_INITIALIZED: '/problems/already-initialized',
+  FAILED_PRECONDITION: '/problems/failed-precondition',
   PRECONDITION_FAILED: '/problems/precondition-failed',
   INTERNAL_ERROR: '/problems/internal-error',
 } as const;
@@ -29,6 +30,7 @@ const PROBLEMS: Record<ProblemTypeUri, { status: number; title: string }> = {
   [ProblemType.ALREADY_EXISTS]: { status: 409, title: 'Already exists' },
   [ProblemType.RESOURCE_IN_USE]: { status: 409, title: 'Resource in use' },
   [ProblemType.ALREADY_INITIALIZED]: { status: 409, title: 'Already initialized' },
+  [ProblemType.FAILED_PRECONDITION]: { status: 400, title: 'Failed precondition' },
   [ProblemType.PRECONDITION_FAILED]: { status: 412, title: 'Precondition failed' },
   [ProblemType.INTERNAL_ERROR]: { status: 500, title: 'Internal error' },
 };

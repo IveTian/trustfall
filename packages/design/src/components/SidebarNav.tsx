@@ -6,6 +6,7 @@ import { radius } from '../tokens/radius.stylex.ts';
 import { shadow } from '../tokens/shadow.stylex.ts';
 import { space } from '../tokens/space.stylex.ts';
 import { text } from '../tokens/text.stylex.ts';
+import { IconButton } from './Button.tsx';
 import { Icon } from './Icon.tsx';
 
 const styles = stylex.create({
@@ -150,5 +151,54 @@ const sectionStyles = stylex.create({
     lineHeight: text.lineCaption,
     margin: 0,
     paddingInline: space[2],
+  },
+});
+
+/**
+ * The top of a rail that was pushed in over another: the way back on the
+ * start edge, and the name of where you are beside it. It stands where the
+ * console rail keeps its profile menu, so the two rails line up as they swap.
+ */
+export function SidebarHeader({
+  onBack,
+  backLabel,
+  children,
+}: {
+  onBack: () => void;
+  backLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <div {...stylex.props(headerStyles.header)}>
+      <IconButton label={backLabel} size="sm" onClick={onBack}>
+        <Icon name="arrow-left-line" size={16} />
+      </IconButton>
+      <span {...stylex.props(headerStyles.title)}>{children}</span>
+    </div>
+  );
+}
+
+const headerStyles = stylex.create({
+  header: {
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    display: 'flex',
+    gap: space[2],
+    // Pull the button's own padding back so its glyph sits on the rail's
+    // text edge, where the nav icons and the avatar sit.
+    marginInlineStart: `calc(${space[2]} * -1)`,
+    minHeight: control.heightLg,
+    minWidth: 0,
+  },
+  title: {
+    color: color.textPrimary,
+    fontFamily: text.familyUi,
+    fontSize: text.sizeBodySmall,
+    fontWeight: text.weightMedium,
+    lineHeight: text.lineBodySmall,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 });
