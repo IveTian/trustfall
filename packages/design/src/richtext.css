@@ -69,7 +69,10 @@
   padding-inline-start: 0.8em;
 }
 
+/* Above a card's stretched title link, so a link in the body keeps its own click. */
 .tf-prose a {
+  position: relative;
+  z-index: 1;
   color: light-dark(#5f7eec, #8ca3f2);
   text-decoration: underline;
   text-underline-offset: 2px;

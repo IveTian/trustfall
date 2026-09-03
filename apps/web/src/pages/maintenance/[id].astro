@@ -1,0 +1,99 @@
+---
+import { env } from 'cloudflare:workers';
+import { createDb, getMaintenance, getSetting, isSiteInitialized } from '@trustfall/db';
+import {
+  describeRecurrence,
+  formatWindow,
+  IncidentTimeline,
+  SiteGroup,
+  SiteHeading,
+  SitePanel,
+  Stack,
+  StatusPill,
+  Text,
+} from '@trustfall/design';
+import UninitializedNotice from '../../components/UninitializedNotice.astro';
+import Site from '../../layouts/Site.astro';
+
+const { id } = Astro.params;
+if (!id) {
+  return new Response('Not found', { status: 404 });
+}
+
+const db = createDb(env.DB);
+const initialized = await isSiteInitialized(db);
+
+let maintenance: Awaited<ReturnType<typeof getMaintenance>> = undefined;
+let siteName = 'TrustFall';
+if (initialized) {
+  maintenance = await getMaintenance(db, id);
+  if (!maintenance) {
+    return new Response('Not found', { status: 404 });
+  }
+  siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+
+// The window is written in the schedule's own zone, since that is the zone
+// it was promised in; the timeline below follows the reader's.
+const zone = maintenance?.timeZone;
+const window = maintenance
+  ? formatWindow(maintenance.windowStart, maintenance.windowEnd, zone, 'en')
+  : '';
+const repeats =
+  maintenance?.recurrence != null
+    ? describeRecurrence(maintenance.recurrence, maintenance.startTime, zone, 'en')
+    : null;
+---
+
+{
+  maintenance ? (
+    <Site title={`${maintenance.title} · ${siteName}`} siteName={siteName} current="maintenance">
+      <SiteGroup spacing="shared">
+        <SitePanel density="row">
+          <Text as="h1" tone="display">
+            {maintenance.title}
+          </Text>
+        </SitePanel>
+        <SitePanel>
+          <Stack gap={3}>
+            <Stack direction="horizontal" gap={2} wrap>
+              <StatusPill status={maintenance.status} kind="maintenance" />
+            </Stack>
+            <Stack gap={1}>
+              <Text tone="caption">
+                {maintenance.status === 'IN_PROGRESS'
+                  ? 'Under way'
+                  : maintenance.status === 'SCHEDULED'
+                    ? 'Window'
+                    : 'Ran'}{' '}
+                {window}
+              </Text>
+              {repeats ? <Text tone="caption">{repeats}</Text> : null}
+              {maintenance.components.length > 0 ? (
+                <Text tone="caption">
+                  Affects {maintenance.components.map((item) => item.displayName).join(', ')}
+                </Text>
+              ) : null}
+            </Stack>
+          </Stack>
+        </SitePanel>
+      </SiteGroup>
+
+      <SiteHeading>Updates</SiteHeading>
+      <SitePanel>
+        <IncidentTimeline
+          client:load
+          kind="maintenance"
+          updates={maintenance.updates}
+          locale="en"
+        />
+      </SitePanel>
+    </Site>
+  ) : (
+    <UninitializedNotice />
+  )
+}

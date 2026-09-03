@@ -14,6 +14,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 const styles = stylex.create({
+  // Positioned so a stretched title link (CardTitleLink) covers the card.
   card: {
     backgroundColor: color.surfaceRaised,
     borderColor: color.border,
@@ -21,9 +22,11 @@ const styles = stylex.create({
     borderStyle: 'solid',
     borderWidth: mesh.line,
     padding: space[4],
+    position: 'relative',
   },
   // No chrome of its own: for a card that sits inside a surface which already
-  // draws the box, such as a public-site block.
+  // draws the box, such as a public-site block. Not positioned, so a stretched
+  // link reaches the block's own edges, padding included.
   plain: {
     backgroundColor: 'transparent',
     borderWidth: 0,
@@ -31,6 +34,7 @@ const styles = stylex.create({
     flexDirection: 'column',
     flexGrow: 1,
     padding: 0,
+    position: 'static',
   },
   // The whole card is the control: quiet at rest, a soft shadow lift on
   // hover, the standard ring on focus. Nested links keep their own click.

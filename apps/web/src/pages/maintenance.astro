@@ -1,9 +1,16 @@
 ---
 import { env } from 'cloudflare:workers';
-import { createDb, getSetting, isSiteInitialized, listMaintenances } from '@trustfall/db';
+import {
+  createDb,
+  getSetting,
+  isSiteInitialized,
+  listActiveMaintenances,
+  listMaintenances,
+} from '@trustfall/db';
 import { MaintenanceCard, SiteGroup, SiteHeading, SitePanel, Text } from '@trustfall/design';
 import UninitializedNotice from '../components/UninitializedNotice.astro';
 import Site from '../layouts/Site.astro';
+import { toMaintenance } from '../public-cards.ts';
 
 const db = createDb(env.DB);
 const initialized = await isSiteInitialized(db);
@@ -15,14 +22,22 @@ if (initialized) {
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
 
-let maintenances: Awaited<ReturnType<typeof listMaintenances>>['maintenances'] = [];
+// What is ahead — under way first, then the next windows soonest first —
+// and what is over, newest first. The Scheduled section only appears when
+// there is something in it.
+type Maintenances = Awaited<ReturnType<typeof listMaintenances>>['maintenances'];
+let scheduled: Maintenances = [];
+let past: Maintenances = [];
 let siteName = 'TrustFall';
 if (initialized) {
   try {
-    const listed = await listMaintenances(db, { pageSize: 50 });
-    maintenances = listed.maintenances;
+    [scheduled, past] = await Promise.all([
+      listActiveMaintenances(db),
+      listMaintenances(db, { state: 'PAST', pageSize: 50 }).then((page) => page.maintenances),
+    ]);
   } catch {
-    maintenances = [];
+    scheduled = [];
+    past = [];
   }
   try {
     siteName = (await getSetting(db, 'siteName')) ?? 'TrustFall';
@@ -36,30 +51,41 @@ if (initialized) {
   initialized ? (
     <Site title={`Maintenance · ${siteName}`} siteName={siteName} current="maintenance">
       <SiteHeading as="h1">Maintenance</SiteHeading>
+      {scheduled.length > 0 ? (
+        <>
+          <SiteHeading tone="group">Scheduled</SiteHeading>
+          <SiteGroup>
+            {scheduled.map((maintenance) => (
+              <SitePanel as="article" minRows={2.5} step={0.5}>
+                <MaintenanceCard
+                  client:load
+                  surface="plain"
+                  locale="en"
+                  maintenance={toMaintenance(maintenance)}
+                />
+              </SitePanel>
+            ))}
+          </SiteGroup>
+          <SiteHeading tone="group">Past</SiteHeading>
+        </>
+      ) : null}
       <SiteGroup>
-        {maintenances.length === 0 ? (
+        {past.length === 0 ? (
           <SitePanel density="row">
-            <Text tone="muted">No maintenance windows have been published.</Text>
+            <Text tone="muted">
+              {scheduled.length > 0
+                ? 'No maintenance has been completed yet.'
+                : 'No maintenance windows have been published.'}
+            </Text>
           </SitePanel>
         ) : (
-          maintenances.map((maintenance) => (
+          past.map((maintenance) => (
             <SitePanel as="article" minRows={2.5} step={0.5}>
               <MaintenanceCard
                 client:load
                 surface="plain"
                 locale="en"
-                maintenance={{
-                  id: maintenance.id,
-                  title: maintenance.title,
-                  status: maintenance.status,
-                  windowStart: maintenance.windowStart,
-                  windowEnd: maintenance.windowEnd,
-                  startTime: maintenance.startTime,
-                  recurrence: maintenance.recurrence ?? null,
-                  timeZone: maintenance.timeZone,
-                  affectedComponents: maintenance.components,
-                  updates: maintenance.updates,
-                }}
+                maintenance={toMaintenance(maintenance)}
               />
             </SitePanel>
           ))
