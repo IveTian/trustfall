@@ -240,14 +240,14 @@ function InviteLinksPanel({ onToast }: { onToast: (message: string) => void }) {
       return;
     }
     setGenerating(false);
-    closeCreate();
-    await load();
     try {
       await navigator.clipboard.writeText(created.url);
       onToast('Invite link copied.');
     } catch {
       onToast('Invite link created.');
     }
+    closeCreate();
+    await load();
   }
 
   async function copyLink(url: string) {

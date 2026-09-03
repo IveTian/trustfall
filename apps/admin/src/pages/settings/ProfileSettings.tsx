@@ -105,14 +105,19 @@ function PicturePanel({ onToast }: { onToast: (message: string) => void }) {
       return;
     }
     setPending(true);
-    const image = next ? await gravatarUrl(user.email) : null;
-    const result = await authClient.updateUser({ image });
-    setPending(false);
-    if (result.error) {
-      onToast(result.error.message ?? 'Could not update your picture.');
-      return;
+    try {
+      const image = next ? await gravatarUrl(user.email) : null;
+      const result = await authClient.updateUser({ image });
+      if (result.error) {
+        onToast(result.error.message ?? 'Could not update your picture.');
+        return;
+      }
+      onToast(next ? 'Gravatar turned on.' : 'Gravatar turned off.');
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : 'Could not update your picture.');
+    } finally {
+      setPending(false);
     }
-    onToast(next ? 'Gravatar turned on.' : 'Gravatar turned off.');
   }
 
   return (
