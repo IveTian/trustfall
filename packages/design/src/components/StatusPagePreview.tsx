@@ -1,4 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
+import { rollupOverallStatus } from '@trustfall/shared';
+import { overallStatusCopy } from '../status.ts';
 import { color } from '../tokens/color.stylex.ts';
 import { mesh } from '../tokens/const.stylex.ts';
 import type { PublicComponent } from './ComponentGroupSection.tsx';
@@ -7,23 +9,31 @@ import { SiteCanvas, SiteHeading, SitePanel } from './SiteShell.tsx';
 import { Text } from './Text.tsx';
 
 /**
- * The public Status page as the console sees it: the same heading, canvas
- * and folding tree of group and service blocks the site renders, drawn by
- * the same components, in a frame. Only the history differs — the bars show
- * a clean record, since the point is the shape the setting produces, not the
+ * The public Status page as the console sees it: the same heading — the
+ * overall status as a sentence, rolled up from the services — canvas and
+ * folding tree of group and service blocks the site renders, drawn by the
+ * same components, in a frame. Only the history differs — the bars show a
+ * clean record, since the point is the shape the setting produces, not the
  * history itself.
  */
 export function StatusPagePreview({
+  siteName,
   groups,
   ungrouped,
   showHistory,
   now,
 }: {
+  siteName: string;
   groups: PublicServiceGroup[];
   ungrouped: PublicComponent[];
   showHistory: boolean;
   now: number;
 }) {
+  const overall = rollupOverallStatus(
+    [...groups.flatMap((group) => group.components), ...ungrouped].map(
+      (component) => component.status,
+    ),
+  );
   const withHistory = (component: PublicComponent): PublicComponent =>
     showHistory ? { ...component, history: [] } : { ...component, history: undefined };
   const shownGroups = groups
@@ -34,7 +44,7 @@ export function StatusPagePreview({
   return (
     <div {...stylex.props(styles.frame)}>
       <SiteCanvas as="div">
-        <SiteHeading as="h1">Status</SiteHeading>
+        <SiteHeading as="h1">{overallStatusCopy(overall, siteName)}</SiteHeading>
         {shownGroups.length === 0 && shownUngrouped.length === 0 ? (
           <SitePanel density="row">
             <Text tone="muted">No components have been published yet.</Text>

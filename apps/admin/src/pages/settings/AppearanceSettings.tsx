@@ -160,6 +160,7 @@ export function AppearanceSettings({ onToast }: { onToast: (message: string) => 
               <Stack gap={2}>
                 <Text tone="label">Preview</Text>
                 <StatusPagePreview
+                  siteName={settings.site_name}
                   groups={tree.groups}
                   ungrouped={tree.ungrouped}
                   showHistory={settings.show_status_history}
