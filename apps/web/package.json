@@ -19,7 +19,7 @@
     "@trustfall/shared": "workspace:*",
     "astro": "^7.2.9",
     "@astrojs/check": "^0.9.6",
-    "hono": "^4.13.5",
+    "hono": "^4.13.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "@trustfall/jobs": "workspace:*"
